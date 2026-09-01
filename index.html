@@ -284,6 +284,29 @@
   .modal .mrow:last-child{border-bottom:none;}
   .modal .mrow .obs{color:var(--muted); font-size:12.5px; font-style:italic;}
 
+  .dtable-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px; margin:10px 0 14px;}
+  .dtable{width:100%; border-collapse:collapse; font-size:13.5px; min-width:600px;}
+  .dtable thead th{
+    text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); background:var(--surface-2); padding:9px 10px; white-space:nowrap;
+    border-bottom:1px solid var(--line);
+  }
+  .dtable tbody td{padding:6px 8px; border-top:1px solid var(--line); vertical-align:middle;}
+  .dtable td.n{width:34px; text-align:center; color:var(--muted); font-weight:600;}
+  .dtable td.rm{width:34px; text-align:center;}
+  .dtable input{
+    width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:7px;
+    background:var(--surface); color:var(--ink); font:inherit; font-size:13px;
+  }
+  .dtable .rm-btn{
+    appearance:none; border:none; background:none; color:var(--muted); cursor:pointer;
+    font-size:14px; padding:4px; line-height:1;
+  }
+  .dtable .rm-btn:hover{color:var(--bad);}
+  .dtable tr.total-row td{background:var(--surface-2); border-top:1px solid var(--line);}
+  .dtable td.total-label{text-align:right; font-weight:700; padding-right:14px;}
+  .dtable td.total-val{font-weight:700; font-family:var(--mono, ui-monospace, monospace);}
+
   @media(prefers-reduced-motion: reduce){ *{transition:none !important;} }
 
   @media (max-width:560px){
@@ -331,6 +354,7 @@ const CATEGORIES = {
   honorarios: {
     letter: "B",
     label: "Honorarios (prestación de servicios)",
+    detalle: true,
     items: [
       "Resolución que aprueba el convenio de prestación de servicios a honorarios",
       "Informe de actividades o productos entregados, con firma del superior jerárquico o encargado(a) de área (Subdirector(a) u otro homólogo)",
@@ -341,6 +365,7 @@ const CATEGORIES = {
   basicos: {
     letter: "C",
     label: "Servicios Básicos",
+    detalle: true,
     items: [
       "Resolución exenta (REX) que aprueba el pago de consumos básicos",
       "CDP (Certificado de Disponibilidad Presupuestaria)",
@@ -353,6 +378,7 @@ const CATEGORIES = {
   adquisiciones: {
     letter: "D",
     label: "Adquisiciones (bienes y servicios)",
+    detalle: true,
     note: "Tratándose de la prestación de servicios, la unidad requirente debe estar en posesión de las órdenes de trabajo, imágenes y/o listas de asistencia u otros medios de verificación que sustenten el otorgamiento de la recepción conforme. Dicha documentación no forma parte de la verificación que efectúa Finanzas conforme al presente certificado, sin perjuicio de que debe encontrarse disponible ante requerimientos de auditoría o fiscalización.",
     items: [
       "Resolución o decreto que aprueba la contratación (Convenio Marco, Licitación Pública o Trato Directo)",
@@ -364,6 +390,7 @@ const CATEGORIES = {
       "Solicitud de Compra (en gasto SEP debe indicar la acción y la dimensión del PME), cuando corresponda",
       "Recepción conforme (Servicio)",
       "Recepción conforme (Establecimiento / Director o Directora)",
+      "Documento/s Tributario/s",
     ],
     complementario: {
       label: "D.1 Complementario — Prestaciones de servicios con participación de estudiantes y/o infraestructura",
@@ -421,6 +448,7 @@ function blankWizard(){
     tipo: null,
     complementarioOn: false,
     checklist: {},
+    detalleDocs: [],
     decl: { nombre: "", rut: "", cargo: "", fecha: new Date().toISOString().slice(0,10) },
     submitting: false,
     submitError: "",
@@ -459,6 +487,18 @@ function fmtDate(iso){
   }catch(e){ return iso; }
 }
 function tipoLabel(tipo){ return tipo ? CATEGORIES[tipo].label.replace(/\s*\(.+?\)\s*$/, "") : "—"; }
+function parseMonto(v){
+  if(v == null || v === "") return 0;
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+function fmtMonto(n){
+  try{ return "$" + Math.round(n).toLocaleString("es-CL"); }
+  catch(e){ return String(n); }
+}
+function detalleTotal(list){
+  return (list || []).reduce((sum, d) => sum + parseMonto(d.monto), 0);
+}
 
 function activeItemKeys(tipo, complOn){
   const cat = CATEGORIES[tipo];
@@ -583,6 +623,34 @@ function buildCertificadoPdf(cert){
     y += 3;
   }
   checklistBlock(cat, false);
+  if(cat.detalle && (cert.detalleDocs || []).length){
+    ensureSpace(8);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(23,34,43);
+    doc.text("Detalle de documentos, folios y montos", marginX, y);
+    y += 6;
+    const colX = { n: marginX, tipo: marginX + 8, folio: marginX + 78, fecha: marginX + 108, monto: pageW - marginX };
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(92,107,116);
+    doc.text("N°", colX.n, y); doc.text("TIPO DE DOCUMENTO", colX.tipo, y); doc.text("FOLIO", colX.folio, y);
+    doc.text("FECHA", colX.fecha, y); doc.text("MONTO", colX.monto, y, { align: "right" });
+    y += 2; doc.setDrawColor(220,227,225); doc.line(marginX, y, pageW - marginX, y); y += 4.5;
+    let total = 0;
+    cert.detalleDocs.forEach((d, idx) => {
+      ensureSpace(5.5);
+      const monto = parseMonto(d.monto); total += monto;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(23,34,43);
+      doc.text(String(idx+1), colX.n, y);
+      doc.text(doc.splitTextToSize(d.tipo || "—", 66)[0] || "—", colX.tipo, y);
+      doc.text(d.folio || "—", colX.folio, y);
+      doc.text(fmtDate(d.fecha), colX.fecha, y);
+      doc.text(fmtMonto(monto), colX.monto, y, { align: "right" });
+      y += 4.8;
+    });
+    ensureSpace(6); doc.setDrawColor(220,227,225); doc.line(marginX, y, pageW - marginX, y); y += 4.5;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(23,34,43);
+    doc.text("Total", colX.fecha, y);
+    doc.text(fmtMonto(total), colX.monto, y, { align: "right" });
+    y += 8;
+  }
   if(cert.complementarioOn && cat.complementario) checklistBlock(cat.complementario, true);
 
   heading("III. Declaración del Ministro o Ministra de Fe");
@@ -694,6 +762,35 @@ function renderChecklistBlock(tipo, compl){
   `;
 }
 
+function renderDetalleTable(){
+  const rows = wizard.detalleDocs;
+  const rowsHtml = rows.map((d, idx) => `
+    <tr>
+      <td class="n">${idx+1}</td>
+      <td><input type="text" data-det-idx="${idx}" data-det-field="tipo" value="${esc(d.tipo)}" placeholder="Ej: Boleta de honorarios"></td>
+      <td><input type="text" data-det-idx="${idx}" data-det-field="folio" value="${esc(d.folio)}" placeholder="N° folio"></td>
+      <td><input type="date" data-det-idx="${idx}" data-det-field="fecha" value="${esc(d.fecha)}"></td>
+      <td><input type="text" class="mono" data-det-idx="${idx}" data-det-field="monto" value="${esc(d.monto)}" placeholder="0" inputmode="numeric"></td>
+      <td class="rm"><button type="button" class="rm-btn" data-det-remove="${idx}" aria-label="Eliminar fila">✕</button></td>
+    </tr>`).join("");
+  return `
+    <h3 style="font-size:15px; margin-bottom:8px;">Detalle de documentos, folios y montos</h3>
+    <div class="note-panel">Individualice cada documento de respaldo asociado a este set, indicando su tipo, folio, fecha de emisión y monto a pagar.</div>
+    <div class="dtable-wrap">
+      <table class="dtable">
+        <thead><tr><th class="n">N°</th><th>Tipo de documento</th><th>Folio</th><th>Fecha de emisión</th><th>Monto a pagar</th><th></th></tr></thead>
+        <tbody>
+          ${rowsHtml}
+          <tr class="total-row"><td colspan="4" class="total-label">Total</td><td class="total-val" id="detalle-total">${fmtMonto(detalleTotal(rows))}</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-bottom:18px;">
+      <button type="button" class="btn" id="btn-add-detalle">+ Agregar documento</button>
+    </div>
+  `;
+}
+
 function renderStep2(){
   if(!wizard.tipo){
     return `<p class="step-desc">Vuelve al paso anterior y selecciona un tipo de set de pago.</p>
@@ -714,6 +811,7 @@ function renderStep2(){
     <h2 class="step-title">II. Verificación documental</h2>
     <p class="step-desc">Marque "Sí" si el documento está presente e íntegro, "No" si falta o está incompleto, y "N/A" si no aplica al caso. El checklist mostrado corresponde al tipo de set de pago seleccionado en el paso I.</p>
     ${renderChecklistBlock(wizard.tipo, false)}
+    ${cat.detalle ? renderDetalleTable() : ""}
     ${complBlock}
     <div class="actions">
       <button class="btn" id="btn-back-2">Atrás</button>
@@ -786,7 +884,7 @@ function attachNuevoHandlers(){
     document.getElementById("f-nombre").oninput = e => { wizard.nombreSet = e.target.value; syncNextBtn1(); };
     document.getElementById("f-unidad").oninput = e => { wizard.unidad = e.target.value; syncNextBtn1(); };
     document.querySelectorAll(".chip").forEach(btn=>{
-      btn.onclick = () => { wizard.tipo = btn.dataset.tipo; wizard.complementarioOn = false; wizard.checklist = {}; render(); };
+      btn.onclick = () => { wizard.tipo = btn.dataset.tipo; wizard.complementarioOn = false; wizard.checklist = {}; wizard.detalleDocs = []; render(); };
     });
     const nb = document.getElementById("btn-next-1");
     if(nb) nb.onclick = () => { wizard.step = 2; render(); };
@@ -800,6 +898,21 @@ function attachNuevoHandlers(){
     });
     const tgl = document.getElementById("btn-toggle-compl");
     if(tgl) tgl.onclick = () => { wizard.complementarioOn = !wizard.complementarioOn; render(); };
+    document.querySelectorAll("[data-det-field]").forEach(inp=>{
+      inp.oninput = () => {
+        const idx = +inp.dataset.detIdx;
+        wizard.detalleDocs[idx][inp.dataset.detField] = inp.value;
+        if(inp.dataset.detField === "monto"){
+          const totalEl = document.getElementById("detalle-total");
+          if(totalEl) totalEl.textContent = fmtMonto(detalleTotal(wizard.detalleDocs));
+        }
+      };
+    });
+    document.querySelectorAll("[data-det-remove]").forEach(btn=>{
+      btn.onclick = () => { wizard.detalleDocs.splice(+btn.dataset.detRemove, 1); render(); };
+    });
+    const addDet = document.getElementById("btn-add-detalle");
+    if(addDet) addDet.onclick = () => { wizard.detalleDocs.push({tipo:"", folio:"", fecha:"", monto:""}); render(); };
     document.getElementById("btn-back-2").onclick = () => { wizard.step = 1; render(); };
     const nb = document.getElementById("btn-next-2");
     if(nb) nb.onclick = () => { wizard.step = 3; render(); };
@@ -838,6 +951,7 @@ function submitCertificado(){
     tipo: wizard.tipo,
     complementarioOn: wizard.complementarioOn,
     checklist: wizard.checklist,
+    detalleDocs: wizard.detalleDocs,
     decl: wizard.decl,
     createdAt: new Date().toISOString(),
   };
@@ -936,6 +1050,18 @@ function renderModal(){
     }).join("");
     return `<div class="cat-block"><div class="cat-title">${esc(src.label)}</div>${rowsHtml}</div>`;
   };
+  const detalleBlock = () => {
+    if(!cat.detalle || !(c.detalleDocs || []).length) return "";
+    const rowsHtml = c.detalleDocs.map((d, idx) => `<div class="mrow">
+        <span>${idx+1}. ${esc(d.tipo || "—")} ${d.folio ? `<span class="obs">(folio ${esc(d.folio)})</span>` : ""}</span>
+        <span>${esc(fmtMonto(parseMonto(d.monto)))}</span>
+      </div>`).join("");
+    return `<div class="cat-block">
+      <div class="cat-title">Detalle de documentos, folios y montos</div>
+      ${rowsHtml}
+      <div class="mrow" style="font-weight:700;"><span>Total</span><span>${esc(fmtMonto(detalleTotal(c.detalleDocs)))}</span></div>
+    </div>`;
+  };
   const overlay = document.createElement("div");
   overlay.className = "modal-overlay";
   overlay.id = "cert-modal";
@@ -953,6 +1079,7 @@ function renderModal(){
         <dt>RUT</dt><dd class="mono">${esc((c.decl||{}).rut)}</dd>
       </dl>
       ${catBlock(cat, false)}
+      ${detalleBlock()}
       ${c.complementarioOn && cat.complementario ? catBlock(cat.complementario, true) : ""}
       <div class="actions" style="margin-top:6px; padding-top:16px;">
         <div class="btn-spacer"></div>
