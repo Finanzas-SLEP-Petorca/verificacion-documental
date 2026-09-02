@@ -459,6 +459,7 @@ let pdfNotice = "";
 function blankWizard(){
   return {
     step: 1,
+    folio: "",
     nombreSet: "",
     unidad: "",
     tipo: null,
@@ -605,6 +606,7 @@ function buildCertificadoPdf(cert){
   y += 8;
 
   heading("I. Identificación del set de pago");
+  field("Folio del certificado", cert.folio);
   field("Nombre de set de pago", cert.nombreSet);
   field("Unidad o establecimiento", cert.unidad);
   field("Tipo de set de pago", tipoLabel(cert.tipo));
@@ -751,6 +753,10 @@ function renderStep1(){
     <h2 class="step-title">I. Identificación del set de pago</h2>
     <p class="step-desc">Complete los datos generales y seleccione el tipo de set de pago. Esto habilitará el checklist correspondiente en el siguiente paso.</p>
     <div class="field">
+      <label for="f-folio">Folio del certificado</label>
+      <input type="text" id="f-folio" value="${esc(wizard.folio)}" placeholder="Ej: 001-2026">
+    </div>
+    <div class="field">
       <label for="f-nombre">Nombre de set de pago</label>
       <input type="text" id="f-nombre" value="${esc(wizard.nombreSet)}" placeholder="Ej: Remuneraciones agosto 2026 — Jardín Cuncunita">
     </div>
@@ -769,7 +775,7 @@ function renderStep1(){
     </div>
     <div class="actions">
       <div class="btn-spacer"></div>
-      <button class="btn primary" id="btn-next-1" ${(!wizard.nombreSet.trim()||!wizard.unidad.trim()||!wizard.tipo)?"disabled":""}>Siguiente</button>
+      <button class="btn primary" id="btn-next-1" ${(!wizard.folio.trim()||!wizard.nombreSet.trim()||!wizard.unidad.trim()||!wizard.tipo)?"disabled":""}>Siguiente</button>
     </div>
   `;
 }
@@ -946,6 +952,7 @@ function renderNuevo(){
 
 function attachNuevoHandlers(){
   if(wizard.step === 1){
+    document.getElementById("f-folio").oninput = e => { wizard.folio = e.target.value; syncNextBtn1(); };
     document.getElementById("f-nombre").oninput = e => { wizard.nombreSet = e.target.value; syncNextBtn1(); };
     document.getElementById("f-unidad").onchange = e => { wizard.unidad = e.target.value; syncNextBtn1(); };
     document.querySelectorAll(".chip").forEach(btn=>{
@@ -1005,7 +1012,7 @@ function attachNuevoHandlers(){
 }
 function syncNextBtn1(){
   const nb = document.getElementById("btn-next-1");
-  if(nb) nb.disabled = !(wizard.nombreSet.trim() && wizard.unidad.trim() && wizard.tipo);
+  if(nb) nb.disabled = !(wizard.folio.trim() && wizard.nombreSet.trim() && wizard.unidad.trim() && wizard.tipo);
 }
 function syncSubmitBtn(){
   const b = document.getElementById("btn-submit");
@@ -1019,6 +1026,7 @@ function submitCertificado(){
   render();
   const payload = {
     id: newId(),
+    folio: wizard.folio,
     nombreSet: wizard.nombreSet,
     unidad: wizard.unidad,
     tipo: wizard.tipo,
@@ -1155,6 +1163,7 @@ function renderModal(){
         <button class="close" id="modal-close" aria-label="Cerrar">✕</button>
       </div>
       <dl>
+        <dt>Folio</dt><dd>${esc(c.folio)}</dd>
         <dt>Unidad</dt><dd>${esc(c.unidad)}</dd>
         <dt>Tipo de set</dt><dd>${esc(tipoLabel(c.tipo))}</dd>
         <dt>Fecha</dt><dd>${fmtDate(c.createdAt)}</dd>
