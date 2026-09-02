@@ -588,19 +588,45 @@ function buildCertificadoPdf(cert){
     y += 5.2;
     for(let i=1;i<lines.length;i++){ ensureSpace(5); doc.text(lines[i], marginX + labelW, y); y += 5.2; }
   }
+  function fieldRight(label, value){
+    const rightX = pageW - marginX;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    const lines = doc.splitTextToSize(String(value || "—"), maxW * 0.6);
+    ensureSpace(5.2 * lines.length);
+    const labelText = label + ": ";
+    doc.setFont("helvetica", "bold"); doc.setTextColor(23,34,43);
+    const labelW = doc.getTextWidth(labelText);
+    doc.setFont("helvetica", "normal");
+    const firstW = doc.getTextWidth(lines[0] || "—");
+    doc.setFont("helvetica", "bold");
+    doc.text(labelText, rightX - labelW - firstW, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(lines[0] || "—", rightX - firstW, y);
+    y += 5.2;
+    for(let i=1;i<lines.length;i++){
+      const w = doc.getTextWidth(lines[i]);
+      ensureSpace(5);
+      doc.text(lines[i], rightX - w, y);
+      y += 5.2;
+    }
+  }
 
   // Header
+  const logoW = 42, logoH = 13.65; // proporción real del logo: 1000x325 px
   try{
     const img = document.querySelector(".masthead img");
-    if(img && img.src) doc.addImage(img.src, "PNG", marginX, y, 14, 13.4);
+    if(img && img.src) doc.addImage(img.src, "PNG", marginX, y, logoW, logoH);
   }catch(e){ /* ignore image failures */ }
+  y += logoH + 6;
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(92,107,116);
-  doc.text("SERVICIO LOCAL DE EDUCACIÓN PÚBLICA PETORCA", marginX + 18, y + 4);
+  doc.text("SERVICIO LOCAL DE EDUCACIÓN PÚBLICA PETORCA", marginX, y);
+  y += 7;
   doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(23,34,43);
-  doc.text("Certificado de Ministro de Fe", marginX + 18, y + 10.5);
+  doc.text(`Certificado de Ministro de Fe — N° ${cert.folio || "—"}`, marginX, y);
+  y += 6;
   doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(92,107,116);
-  doc.text("Verificación de documentación del set de pago para rendición de cuentas", marginX + 18, y + 15.5);
-  y += 24;
+  doc.text(cert.unidad || "—", marginX, y);
+  y += 8;
   doc.setDrawColor(180,190,188);
   doc.line(marginX, y, pageW - marginX, y);
   y += 8;
@@ -702,18 +728,11 @@ function buildCertificadoPdf(cert){
     { size: 9.5, gap: 4.6 }
   );
   y += 6;
-  field("Nombre completo", (cert.decl||{}).nombre);
-  field("RUT", (cert.decl||{}).rut);
-  field("Cargo / unidad", (cert.decl||{}).cargo);
-  field("Fecha de certificación", fmtDate((cert.decl||{}).fecha || cert.createdAt));
-
-  y += 10;
-  ensureSpace(20);
-  doc.setDrawColor(140,150,148);
-  doc.line(marginX, y, marginX + 70, y);
-  y += 4.5;
-  doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.setTextColor(92,107,116);
-  doc.text("Firma ministro/a de fe — pendiente de firma electrónica en FirmaGob (firmagob.gob.cl)", marginX, y);
+  ensureSpace(4 * 5.2);
+  fieldRight("Nombre completo", (cert.decl||{}).nombre);
+  fieldRight("RUT", (cert.decl||{}).rut);
+  fieldRight("Cargo / unidad", (cert.decl||{}).cargo);
+  fieldRight("Fecha de certificación", fmtDate((cert.decl||{}).fecha || cert.createdAt));
 
   return doc;
 }
