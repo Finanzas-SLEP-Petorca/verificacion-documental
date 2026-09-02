@@ -613,19 +613,20 @@ function buildCertificadoPdf(cert){
 
   // Header
   const logoW = 42, logoH = 13.65; // proporción real del logo: 1000x325 px
+  const centerX = pageW / 2;
   try{
     const img = document.querySelector(".masthead img");
-    if(img && img.src) doc.addImage(img.src, "PNG", marginX, y, logoW, logoH);
+    if(img && img.src) doc.addImage(img.src, "PNG", centerX - logoW / 2, y, logoW, logoH);
   }catch(e){ /* ignore image failures */ }
-  y += logoH + 6;
+  y += logoH + 12;
   doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(92,107,116);
-  doc.text("SERVICIO LOCAL DE EDUCACIÓN PÚBLICA PETORCA", marginX, y);
+  doc.text("SERVICIO LOCAL DE EDUCACIÓN PÚBLICA PETORCA", centerX, y, { align: "center" });
   y += 7;
   doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(23,34,43);
-  doc.text(`Certificado de Ministro de Fe — N° ${cert.folio || "—"}`, marginX, y);
+  doc.text(`Certificado de Ministro de Fe — N° ${cert.folio || "—"}`, centerX, y, { align: "center" });
   y += 6;
   doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(92,107,116);
-  doc.text(cert.unidad || "—", marginX, y);
+  doc.text(cert.unidad || "—", centerX, y, { align: "center" });
   y += 8;
   doc.setDrawColor(180,190,188);
   doc.line(marginX, y, pageW - marginX, y);
