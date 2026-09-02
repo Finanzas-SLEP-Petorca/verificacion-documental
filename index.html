@@ -135,11 +135,11 @@
 
   .field{margin-bottom:18px;}
   .field label{display:block; font-size:13.5px; font-weight:600; margin-bottom:6px;}
-  .field input[type="text"], .field input[type="date"]{
+  .field input[type="text"], .field input[type="date"], .field select{
     width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
     background:var(--surface); color:var(--ink); font:inherit; font-size:14.5px;
   }
-  .field input:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .field input:focus-visible, .field select:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
   .hint{font-size:12.5px; color:var(--muted); margin-top:4px;}
 
   .chip-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px;}
@@ -423,6 +423,14 @@ const CATEGORIES = {
   },
 };
 const TIPO_ORDER = ["remuneraciones", "honorarios", "basicos", "adquisiciones", "viaticos"];
+const UNIDADES = [
+  "Subdirección de Administración y Finanzas",
+  "Subdirección Planificación y Control de Gestión",
+  "Subdirección de Infraestructura y Mantenimiento",
+  "Subdirección de Gestión y Desarrollo de Personas",
+  "Subdirección de Unidad de Apoyo Técnico y Pedagógico",
+  "Gabinete y Gestión de Apoyo a los Establecimientos Educacionales",
+];
 
 /* ============================== STORAGE (local al navegador) ============================== */
 const STORAGE_KEY = "slep-petorca:certificados-ministro-fe:v1";
@@ -748,7 +756,10 @@ function renderStep1(){
     </div>
     <div class="field">
       <label for="f-unidad">Unidad o establecimiento que origina el gasto</label>
-      <input type="text" id="f-unidad" value="${esc(wizard.unidad)}" placeholder="Ej: Subdepartamento de Finanzas">
+      <select id="f-unidad">
+        <option value="" ${wizard.unidad ? "" : "selected"} disabled>Seleccione una unidad…</option>
+        ${UNIDADES.map(u => `<option value="${esc(u)}" ${wizard.unidad===u?"selected":""}>${esc(u)}</option>`).join("")}
+      </select>
     </div>
     <div class="field">
       <label>Tipo de set de pago</label>
@@ -936,7 +947,7 @@ function renderNuevo(){
 function attachNuevoHandlers(){
   if(wizard.step === 1){
     document.getElementById("f-nombre").oninput = e => { wizard.nombreSet = e.target.value; syncNextBtn1(); };
-    document.getElementById("f-unidad").oninput = e => { wizard.unidad = e.target.value; syncNextBtn1(); };
+    document.getElementById("f-unidad").onchange = e => { wizard.unidad = e.target.value; syncNextBtn1(); };
     document.querySelectorAll(".chip").forEach(btn=>{
       btn.onclick = () => { wizard.tipo = btn.dataset.tipo; wizard.complementarioOn = false; wizard.checklist = {}; wizard.detalleDocs = []; wizard.otrosItems = []; render(); };
     });
