@@ -284,6 +284,10 @@
     .cert-title{text-align:center;margin-bottom:6mm}
     .cert-title h1{font-size:24px;margin:0;color:var(--navy)}
     .cert-title p{margin:4px 0 0;color:#667d92;font-size:13px}
+    .cert-title .cert-folio{
+      margin:5px 0 0;color:var(--navy);font-size:17px;font-weight:900;letter-spacing:1.6px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    }
     .cert-meta{
       border:1px solid #ccdbe8;background:#f8fbfd;border-radius:8px;
       display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:6mm;overflow:hidden
@@ -988,7 +992,7 @@ function updateTopFields(){
   const year = new Date().getFullYear();
   const last = counters[`${m.id}-${year}`] || 0;
   $("historyCurrentFolio").textContent =
-    last ? `${m.code}-${year}-${String(last).padStart(3,"0")}` : "Sin emisiones";
+    last ? folioDe(m, year, last) : "Sin emisiones";
 }
 
 function setSegment(id, value){
@@ -1329,14 +1333,30 @@ function saveDraft(){
   renderRecords();
 }
 
+/* Correlativo: CMF-<año>-<código del Ministro de Fe>-<NNN>
+   Ej: CMF-2026-GAB700-001. Los cuatro campos son separables por "-", de modo que el
+   folio se puede desagregar después para consultas o para cargarlo a una base. */
+const FOLIO_PREFIJO = "CMF";
+function folioDe(minister, year, n){
+  return `${FOLIO_PREFIJO}-${year}-${minister.code}-${String(n).padStart(3,"0")}`;
+}
+function partesFolio(folio){
+  const m = /^([A-Z]+)-(\d{4})-([A-Z0-9]+)-(\d+)$/.exec(String(folio||""));
+  return m ? { prefijo:m[1], anio:+m[2], codigoMinistro:m[3], numero:+m[4] } : null;
+}
+
 function nextFolio(minister){
   const counters=getCounters();
   const year=new Date().getFullYear();
   const key=`${minister.id}-${year}`;
-  const next=(counters[key]||0)+1;
+  // El contador vive en este navegador. Si quedó desfasado respecto del registro
+  // (por ejemplo, si se limpió), no se reutiliza un folio ya emitido aquí.
+  const usados=new Set(getRecords().map(r=>r.folio).filter(Boolean));
+  let next=(counters[key]||0)+1;
+  while(usados.has(folioDe(minister, year, next))) next++;
   counters[key]=next;
   saveCounters(counters);
-  return `${minister.code}-${year}-${String(next).padStart(3,"0")}`;
+  return folioDe(minister, year, next);
 }
 
 function issueCertificate(){
@@ -1527,6 +1547,7 @@ function certificateHtml(r){
 
     <div class="cert-title">
       <h1>CERTIFICADO DE MINISTRO DE FE</h1>
+      <p class="cert-folio">${escapeHtml(folio)}</p>
       <p>Verificación documental del set de pago para rendición de cuentas</p>
     </div>
 
