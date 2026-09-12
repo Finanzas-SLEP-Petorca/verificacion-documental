@@ -44,12 +44,20 @@ definitivo.
 
 ### Folio correlativo por Ministro de Fe
 
-Cada Ministro de Fe tiene su propia numeración, con el formato `CÓDIGO-AÑO-NNN`:
+Cada Ministro de Fe tiene su propia numeración, con el formato
+`CMF-AÑO-PROGRAMA-CÓDIGO-NNN`:
 
 ```text
-SAF103-2026-001
-SAF103-2026-002
+CMF-2026-P01-GAB700-001
+CMF-2026-P02-GAB700-002
+CMF-2026-P01-SAF103-001
 ```
+
+- `P01`, `P02` y `EXT` corresponden al Programa 01, al Programa 02 y al
+  extrapresupuestario.
+- La serie corre **por Ministro de Fe y año**, no por programa: el programa describe el
+  certificado, no abre una numeración propia. Si cada programa tuviera su serie, un mismo
+  ministro tendría dos certificados "001" en el mismo año.
 
 El folio se asigna **al emitir**, no al abrir el formulario, para que un formulario
 abandonado no consuma un número.
