@@ -43,6 +43,8 @@
     .brand-left,.brand-right{font-weight:800;color:var(--navy)}
     .brand-logo{width:148px;max-width:100%;height:auto;display:block}
     .cert-logo{width:44mm;height:auto;display:block}
+    .mineduc-logo{width:92px;max-width:100%;height:auto;display:block;margin-left:auto}
+    .cert-logo-mineduc{width:27mm;height:auto;display:block;margin-left:auto}
     .brand-left small,.brand-right small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
     .brand-right{text-align:right}
     .brand-chip{display:inline-flex;gap:4px;margin-bottom:4px}
@@ -365,9 +367,12 @@
     <p>Verificación documental del set de pago para rendición de cuentas</p>
   </div>
   <div class="brand-right">
-    <div class="brand-chip" style="justify-content:flex-end"><span class="chip-d"></span><span class="chip-c"></span></div>
-    Ministerio de Educación
-    <small>Gobierno de Chile</small>
+    <img id="mineducLogo" class="mineduc-logo hidden" alt="Servicio Local de Educación Pública Petorca — Ministerio de Educación" />
+    <div id="brandRightText">
+      <div class="brand-chip" style="justify-content:flex-end"><span class="chip-d"></span><span class="chip-c"></span></div>
+      Ministerio de Educación
+      <small>Gobierno de Chile</small>
+    </div>
   </div>
 </header>
 
@@ -851,6 +856,23 @@ function populateUnidades(){
 
 function applyLogo(){
   document.querySelectorAll(".brand-logo").forEach(img => { img.src = LOGO_SLEP; });
+}
+
+/* Logo institucional Mineduc: se lee de assets/ para no inflar el HTML. Mientras el
+   archivo no exista, el encabezado conserva el texto de respaldo. */
+const MINEDUC_LOGO_SRC = "assets/logo-mineduc.png";
+let MINEDUC_LOGO_OK = false;
+
+function probeMineducLogo(){
+  const probe = new Image();
+  probe.onload = () => {
+    MINEDUC_LOGO_OK = true;
+    const img = $("mineducLogo");
+    img.src = MINEDUC_LOGO_SRC;
+    img.classList.remove("hidden");
+    $("brandRightText").classList.add("hidden");
+  };
+  probe.src = MINEDUC_LOGO_SRC;
 }
 
 function syncStateFromForm(){
@@ -1392,8 +1414,9 @@ function certificateHtml(r){
         <img class="cert-logo" src="${LOGO_SLEP}" alt="Servicio Local de Educación Pública Petorca" />
       </div>
       <div class="logo-text logo-right">
-        <span>Ministerio de Educación</span>
-        <strong style="font-size:15px">Gobierno de Chile</strong>
+        ${MINEDUC_LOGO_OK
+          ? `<img class="cert-logo-mineduc" src="${MINEDUC_LOGO_SRC}" alt="Servicio Local de Educación Pública Petorca — Ministerio de Educación" />`
+          : `<span>Ministerio de Educación</span><strong style="font-size:15px">Gobierno de Chile</strong>`}
       </div>
     </div>
 
@@ -1555,6 +1578,7 @@ $("recordMinisterFilter").addEventListener("change",renderRecords);
 $("recordStatusFilter").addEventListener("change",renderRecords);
 
 applyLogo();
+probeMineducLogo();
 populateMinisters();
 populateUnidades();
 attachSegments();
