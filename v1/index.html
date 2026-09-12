@@ -1,0 +1,1222 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Certificado de Ministro de Fe</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600;8..60,700&family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<style>
+  :root{color-scheme:light}
+  body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#faf9f5;color:#141413}
+  img{max-width:100%}
+  [hidden]{display:none!important}
+
+  :root{
+    --bg:#F3F5F3;
+    --surface:#FFFFFF;
+    --surface-2:#EDF1EF;
+    --ink:#17222B;
+    --muted:#5C6B74;
+    --line:#DCE3E1;
+    --accent:#2C4A6E;
+    --accent-ink:#FFFFFF;
+    --accent-soft:#E6EDF3;
+    --good:#2F7A52;
+    --good-soft:#E3F3EA;
+    --bad:#A6403A;
+    --bad-soft:#FBEAE8;
+    --warn:#94660F;
+    --warn-soft:#FBF1DE;
+    --shadow:0 1px 2px rgba(23,34,43,.07), 0 10px 28px rgba(23,34,43,.08);
+    --radius:12px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#10161B;
+      --surface:#182129;
+      --surface-2:#1E2830;
+      --ink:#E7ECEE;
+      --muted:#96A4AD;
+      --line:#2B3740;
+      --accent:#87AEDA;
+      --accent-ink:#0C1620;
+      --accent-soft:#1E2F41;
+      --good:#6FCB9A;
+      --good-soft:#173229;
+      --bad:#E48A82;
+      --bad-soft:#3A211F;
+      --warn:#E2B360;
+      --warn-soft:#3A2E15;
+      --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.4);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#10161B;
+    --surface:#182129;
+    --surface-2:#1E2830;
+    --ink:#E7ECEE;
+    --muted:#96A4AD;
+    --line:#2B3740;
+    --accent:#87AEDA;
+    --accent-ink:#0C1620;
+    --accent-soft:#1E2F41;
+    --good:#6FCB9A;
+    --good-soft:#173229;
+    --bad:#E48A82;
+    --bad-soft:#3A211F;
+    --warn:#E2B360;
+    --warn-soft:#3A2E15;
+    --shadow:0 1px 2px rgba(0,0,0,.5), 0 10px 28px rgba(0,0,0,.4);
+  }
+
+  *{box-sizing:border-box;}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:'Public Sans', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing:antialiased;
+    line-height:1.5;
+  }
+  h1,h2,h3{font-family:'Source Serif 4', Georgia, serif; text-wrap:balance; margin:0;}
+  .mono{font-family:'IBM Plex Mono', ui-monospace, monospace; font-variant-numeric:tabular-nums;}
+  a{color:var(--accent);}
+
+  .shell{max-width:920px; margin:0 auto; padding:28px 20px 64px;}
+
+  .masthead{
+    display:flex; align-items:center; gap:16px;
+    padding-bottom:20px; margin-bottom:20px;
+    border-bottom:1px solid var(--line);
+  }
+  .masthead img{width:46px; height:44px; object-fit:contain; flex-shrink:0;}
+  .masthead .org{
+    font-size:12px; font-weight:600; letter-spacing:.06em; text-transform:uppercase;
+    color:var(--muted); margin-bottom:2px;
+  }
+  .masthead h1{font-size:26px; font-weight:600; color:var(--ink);}
+  .masthead .sub{font-size:14px; color:var(--muted); font-style:italic; margin-top:2px;}
+
+  .tabbar{display:flex; gap:4px; margin-bottom:24px; border-bottom:1px solid var(--line);}
+  .tabbtn{
+    appearance:none; background:none; border:none; cursor:pointer;
+    font-family:'Public Sans', sans-serif; font-size:14.5px; font-weight:600;
+    color:var(--muted); padding:10px 6px; margin-right:22px;
+    border-bottom:2px solid transparent; margin-bottom:-1px;
+    transition:color .15s ease, border-color .15s ease;
+  }
+  .tabbtn:hover{color:var(--ink);}
+  .tabbtn.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .tabbtn:focus-visible{outline:2px solid var(--accent); outline-offset:2px; border-radius:4px;}
+
+  .card{
+    background:var(--surface); border:1px solid var(--line); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:28px;
+  }
+
+  .stepper{display:flex; align-items:center; gap:0; margin-bottom:28px;}
+  .step-node{display:flex; align-items:center; gap:10px; flex:0 0 auto;}
+  .step-circle{
+    width:28px; height:28px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:13px; font-weight:700; border:1.5px solid var(--line); color:var(--muted);
+    background:var(--surface); flex-shrink:0; transition:all .15s ease;
+  }
+  .step-node.active .step-circle{border-color:var(--accent); background:var(--accent); color:var(--accent-ink);}
+  .step-node.done .step-circle{border-color:var(--good); background:var(--good-soft); color:var(--good);}
+  .step-label{font-size:13px; font-weight:600; color:var(--muted); white-space:nowrap;}
+  .step-node.active .step-label{color:var(--ink);}
+  .step-line{flex:1 1 auto; height:1.5px; background:var(--line); margin:0 12px; min-width:16px;}
+  .step-line.done{background:var(--good);}
+
+  h2.step-title{font-size:20px; font-weight:600; margin-bottom:4px;}
+  .step-desc{font-size:14px; color:var(--muted); margin-bottom:22px;}
+
+  .field{margin-bottom:18px;}
+  .field label{display:block; font-size:13.5px; font-weight:600; margin-bottom:6px;}
+  .field input[type="text"], .field input[type="date"], .field select{
+    width:100%; padding:10px 12px; border:1px solid var(--line); border-radius:8px;
+    background:var(--surface); color:var(--ink); font:inherit; font-size:14.5px;
+  }
+  .field input:focus-visible, .field select:focus-visible{outline:2px solid var(--accent); outline-offset:1px;}
+  .hint{font-size:12.5px; color:var(--muted); margin-top:4px;}
+
+  .chip-grid{display:grid; grid-template-columns:repeat(auto-fit, minmax(150px,1fr)); gap:10px;}
+  .chip{
+    appearance:none; text-align:left; cursor:pointer; font:inherit;
+    border:1.5px solid var(--line); background:var(--surface); color:var(--ink);
+    border-radius:10px; padding:13px 14px; font-size:14px; font-weight:600;
+    transition:border-color .15s ease, background .15s ease;
+  }
+  .chip:hover{border-color:var(--accent);}
+  .chip.selected{border-color:var(--accent); background:var(--accent-soft); color:var(--accent);}
+  .chip:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+  .note-panel{
+    background:var(--surface-2); border-radius:8px; padding:14px 16px;
+    font-size:13.5px; color:var(--muted); font-style:italic; margin-bottom:18px; line-height:1.55;
+  }
+
+  .checklist{display:flex; flex-direction:column; gap:2px; margin-bottom:8px;}
+  .check-row{
+    display:grid; grid-template-columns:1fr auto; gap:14px; align-items:center;
+    padding:12px 0; border-bottom:1px solid var(--line);
+  }
+  .check-row:last-child{border-bottom:none;}
+  .check-doc{font-size:14px; line-height:1.4;}
+  .check-doc .n{color:var(--muted); font-weight:600; margin-right:6px;}
+  .segmented{display:flex; border:1px solid var(--line); border-radius:8px; overflow:hidden; flex-shrink:0;}
+  .segmented button{
+    appearance:none; border:none; background:var(--surface); color:var(--muted); cursor:pointer;
+    font:inherit; font-size:12.5px; font-weight:700; padding:7px 12px; letter-spacing:.02em;
+    border-left:1px solid var(--line);
+  }
+  .segmented button:first-child{border-left:none;}
+  .segmented button:focus-visible{outline:2px solid var(--accent); outline-offset:-2px;}
+  .segmented button.si.on{background:var(--good-soft); color:var(--good);}
+  .segmented button.no.on{background:var(--bad-soft); color:var(--bad);}
+  .segmented button.na.on{background:var(--surface-2); color:var(--ink);}
+  .obs-row{grid-column:1 / -1; margin-top:-6px;}
+  .obs-row input{
+    width:100%; padding:7px 10px; border:1px solid var(--line); border-radius:7px;
+    background:var(--surface); color:var(--ink); font:inherit; font-size:13px;
+  }
+  .obs-row input::placeholder{color:var(--muted);}
+
+  .toggle-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    background:var(--surface-2); border-radius:8px; padding:13px 16px; margin:18px 0 4px;
+  }
+  .toggle-row .txt{font-size:13.5px;}
+  .toggle-row .txt b{display:block; font-size:14px; margin-bottom:2px;}
+  .switch{
+    appearance:none; width:42px; height:24px; border-radius:99px; border:1px solid var(--line);
+    background:var(--surface); position:relative; cursor:pointer; flex-shrink:0;
+  }
+  .switch::after{
+    content:""; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%;
+    background:var(--muted); transition:transform .15s ease, background .15s ease;
+  }
+  .switch.on{background:var(--accent-soft); border-color:var(--accent);}
+  .switch.on::after{transform:translateX(18px); background:var(--accent);}
+
+  .section-gap{margin-top:30px;}
+
+  .decl-text{font-size:14.5px; line-height:1.65; margin-bottom:14px;}
+
+  .actions{display:flex; justify-content:space-between; gap:12px; margin-top:28px; padding-top:20px; border-top:1px solid var(--line);}
+  .btn{
+    appearance:none; cursor:pointer; font:inherit; font-size:14px; font-weight:700;
+    padding:11px 20px; border-radius:9px; border:1px solid var(--line); background:var(--surface); color:var(--ink);
+    transition:background .15s ease, border-color .15s ease;
+  }
+  .btn:hover{border-color:var(--accent);}
+  .btn:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+  .btn.primary{background:var(--accent); color:var(--accent-ink); border-color:var(--accent);}
+  .btn.primary:hover{opacity:.92;}
+  .btn.primary:disabled{opacity:.45; cursor:not-allowed;}
+  .btn.ghost{background:none; border-color:transparent;}
+  .btn-spacer{flex:1;}
+
+  .banner{
+    border-radius:8px; padding:12px 14px; font-size:13.5px; margin-bottom:18px;
+    display:flex; gap:10px; align-items:flex-start;
+  }
+  .banner.warn{background:var(--warn-soft); color:var(--warn);}
+  .banner.bad{background:var(--bad-soft); color:var(--bad);}
+
+  .success{text-align:center; padding:26px 10px;}
+  .success .check{
+    width:56px; height:56px; border-radius:50%; background:var(--good-soft); color:var(--good);
+    display:flex; align-items:center; justify-content:center; margin:0 auto 18px; font-size:28px;
+  }
+  .success h2{font-size:21px; margin-bottom:8px;}
+  .success p{color:var(--muted); font-size:14px; max-width:440px; margin:0 auto 22px;}
+
+  .badge{
+    display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:700;
+    padding:3px 9px; border-radius:99px; white-space:nowrap;
+  }
+  .badge.good{background:var(--good-soft); color:var(--good);}
+  .badge.warn{background:var(--warn-soft); color:var(--warn);}
+  .badge.bad{background:var(--bad-soft); color:var(--bad);}
+  .badge.neutral{background:var(--surface-2); color:var(--muted);}
+
+  .filters{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap;}
+  .filters select, .filters input{
+    padding:8px 10px; border:1px solid var(--line); border-radius:8px; background:var(--surface);
+    color:var(--ink); font:inherit; font-size:13.5px;
+  }
+  .filters input{flex:1; min-width:180px;}
+
+  .table-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px;}
+  table{width:100%; border-collapse:collapse; font-size:13.5px; min-width:640px;}
+  thead th{
+    text-align:left; font-size:11.5px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); background:var(--surface-2); padding:10px 14px; white-space:nowrap;
+  }
+  tbody td{padding:11px 14px; border-top:1px solid var(--line); vertical-align:middle;}
+  tbody tr{cursor:pointer;}
+  tbody tr:hover td{background:var(--surface-2);}
+  .empty-state{padding:48px 20px; text-align:center; color:var(--muted); font-size:14px;}
+
+  .modal-overlay{
+    position:fixed; inset:0; background:rgba(10,14,18,.5); display:flex; align-items:flex-start;
+    justify-content:center; padding:40px 16px; overflow-y:auto; z-index:50;
+  }
+  .modal{
+    background:var(--surface); border-radius:var(--radius); max-width:640px; width:100%;
+    padding:26px; box-shadow:var(--shadow); border:1px solid var(--line);
+  }
+  .modal-head{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px;}
+  .modal h3{font-size:19px;}
+  .modal .close{
+    appearance:none; border:none; background:var(--surface-2); color:var(--muted); cursor:pointer;
+    width:30px; height:30px; border-radius:50%; font-size:15px; flex-shrink:0;
+  }
+  .modal dl{display:grid; grid-template-columns:auto 1fr; gap:6px 14px; font-size:13.5px; margin-bottom:18px;}
+  .modal dt{color:var(--muted); font-weight:600;}
+  .modal dd{margin:0;}
+  .modal .cat-block{margin-bottom:16px;}
+  .modal .cat-title{font-size:13px; font-weight:700; text-transform:uppercase; letter-spacing:.03em; color:var(--muted); margin-bottom:8px;}
+  .modal .mrow{display:flex; justify-content:space-between; gap:10px; font-size:13.5px; padding:7px 0; border-bottom:1px solid var(--line);}
+  .modal .mrow:last-child{border-bottom:none;}
+  .modal .mrow .obs{color:var(--muted); font-size:12.5px; font-style:italic;}
+
+  .dtable-wrap{overflow-x:auto; border:1px solid var(--line); border-radius:10px; margin:10px 0 14px;}
+  .dtable{width:100%; border-collapse:collapse; font-size:13.5px; min-width:600px;}
+  .dtable thead th{
+    text-align:left; font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:.05em;
+    color:var(--muted); background:var(--surface-2); padding:9px 10px; white-space:nowrap;
+    border-bottom:1px solid var(--line);
+  }
+  .dtable tbody td{padding:6px 8px; border-top:1px solid var(--line); vertical-align:middle;}
+  .dtable td.n{width:34px; text-align:center; color:var(--muted); font-weight:600;}
+  .dtable td.rm{width:34px; text-align:center;}
+  .dtable input{
+    width:100%; padding:7px 9px; border:1px solid var(--line); border-radius:7px;
+    background:var(--surface); color:var(--ink); font:inherit; font-size:13px;
+  }
+  .dtable .rm-btn{
+    appearance:none; border:none; background:none; color:var(--muted); cursor:pointer;
+    font-size:14px; padding:4px; line-height:1;
+  }
+  .dtable .rm-btn:hover{color:var(--bad);}
+  .dtable tr.total-row td{background:var(--surface-2); border-top:1px solid var(--line);}
+  .dtable td.total-label{text-align:right; font-weight:700; padding-right:14px;}
+  .dtable td.total-val{font-weight:700; font-family:var(--mono, ui-monospace, monospace);}
+
+  @media(prefers-reduced-motion: reduce){ *{transition:none !important;} }
+
+  @media (max-width:560px){
+    .check-row{grid-template-columns:1fr;}
+    .segmented{justify-self:start;}
+    .stepper{overflow-x:auto;}
+  }
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="masthead">
+    <img src="data:image/png;base64,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" alt="Servicio Local de Educación Pública Petorca — La Ligua, Cabildo, Papudo, Petorca, Zapallar">
+    <div>
+      <div class="org">Servicio Local de Educación Pública Petorca</div>
+      <h1>Certificado de Ministro de Fe</h1>
+      <div class="sub">Verificación de documentación del set de pago para rendición de cuentas</div>
+    </div>
+  </div>
+
+  <div class="tabbar" role="tablist">
+    <button class="tabbtn" id="tab-nuevo" role="tab">Nuevo certificado</button>
+    <button class="tabbtn" id="tab-registro" role="tab">Registro de certificados</button>
+  </div>
+
+  <div id="view-root"></div>
+</div>
+
+<script>
+/* ============================== DATA ============================== */
+const CATEGORIES = {
+  remuneraciones: {
+    letter: "A",
+    label: "Remuneraciones (personal de planta y contrata)",
+    note: "El decreto o resolución de nombramiento; las resoluciones que autorizan asignaciones, horas extraordinarias u otros haberes variables; las liquidaciones de sueldo; y el registro de control de asistencia u horario, deben permanecer en poder de la unidad requirente, bajo su responsabilidad, como documentación sustentadora para la elaboración del Maestro de Remuneraciones, el Informe de Centralización, el Gasto por Fuente de Financiamiento y el Asiento Contable. Dicha documentación no forma parte de la verificación que efectúa Finanzas conforme al presente certificado.",
+    items: [
+      "Maestro de Remuneraciones",
+      "Informe de Centralización",
+      "Gasto por Fuente de Financiamiento",
+      "Asiento Contable",
+      "Sentencias Judiciales, cuando corresponda",
+      "Excel de Retenciones Judiciales, cuando corresponda",
+      "Archivo TXT, cuando aplique",
+    ],
+  },
+  honorarios: {
+    letter: "B",
+    label: "Honorarios (prestación de servicios)",
+    detalle: true,
+    items: [
+      "Resolución que aprueba el convenio de prestación de servicios a honorarios",
+      "Informe de actividades o productos entregados, con firma del superior jerárquico o encargado(a) de área (Subdirector(a) u otro homólogo)",
+      "Boleta de honorarios",
+      "CDP (Certificado de Disponibilidad Presupuestaria)",
+      "Requerimiento Presupuestario",
+    ],
+  },
+  basicos: {
+    letter: "C",
+    label: "Servicios Básicos",
+    detalle: true,
+    items: [
+      "Resolución exenta (REX) que aprueba el pago de consumos básicos",
+      "CDP (Certificado de Disponibilidad Presupuestaria)",
+      "Requerimiento",
+      "Boletas",
+      "Cupones de pago, cuando aplique",
+      "Resolución de intereses, cuando corresponda",
+      "Compromiso Presupuestario",
+    ],
+  },
+  adquisiciones: {
+    letter: "D",
+    label: "Adquisiciones (bienes y servicios)",
+    detalle: true,
+    note: "Tratándose de la prestación de servicios, la unidad requirente debe estar en posesión de las órdenes de trabajo, imágenes y/o listas de asistencia u otros medios de verificación que sustenten el otorgamiento de la recepción conforme. Dicha documentación no forma parte de la verificación que efectúa Finanzas conforme al presente certificado, sin perjuicio de que debe encontrarse disponible ante requerimientos de auditoría o fiscalización.",
+    items: [
+      "Resolución o decreto que aprueba la contratación (Convenio Marco, Licitación Pública o Trato Directo)",
+      "Orden de Compra",
+      "CDP (Certificado de Disponibilidad Presupuestaria)",
+      "Compromiso Presupuestario",
+      "F30, cuando corresponda",
+      "F30-1, cuando corresponda",
+      "Solicitud de Compra (en gasto SEP debe indicar la acción y la dimensión del PME), cuando corresponda",
+      "Recepción conforme (Servicio)",
+      "Recepción conforme (Establecimiento / Director o Directora)",
+      "Documento/s Tributario/s",
+      "Otros",
+    ],
+    complementario: {
+      label: "D.1 Complementario — Prestaciones de servicios con participación de estudiantes y/o infraestructura",
+      note: "Aplicable cuando la adquisición corresponda a una prestación de servicios en que participan estudiantes, o a intervenciones de infraestructura (por ejemplo, talleres o actividades financiadas con recursos SEP u otros programas de la subvención, o trabajos de mantenimiento e infraestructura). Estos antecedentes se suman a la recepción conforme y deben estar disponibles para su verificación.",
+      items: [
+        "Lista de asistencia",
+        "Nómina de alumnos y alumnas preferentes/prioritarios que participan",
+        "Informe Técnico",
+        "Respaldo fotográfico",
+      ],
+    },
+  },
+  viaticos: {
+    letter: "E",
+    label: "Viáticos y cometidos funcionarios",
+    items: [
+      "Resolución que aprueba el cometido funcionario",
+      "Programa, itinerario o invitación que motiva la salida",
+      "Informe de cometido o de actividades realizadas, con V°B° del jefe directo",
+      "Rendición de gastos de traslado (pasajes, peajes, combustible)",
+      "CDP (Certificado de Disponibilidad Presupuestaria) por cometido funcionario",
+      "Requerimiento Presupuestario en base al CDP por cometido funcionario",
+      "CDP (Certificado de Disponibilidad Presupuestaria) por concepto de reembolso",
+      "Compromiso Presupuestario por concepto de reembolso",
+    ],
+  },
+};
+const TIPO_ORDER = ["remuneraciones", "honorarios", "basicos", "adquisiciones", "viaticos"];
+const UNIDADES = [
+  "Subdirección de Administración y Finanzas",
+  "Subdirección Planificación y Control de Gestión",
+  "Subdirección de Infraestructura y Mantenimiento",
+  "Subdirección de Gestión y Desarrollo de Personas",
+  "Subdirección de Unidad de Apoyo Técnico y Pedagógico",
+  "Gabinete y Gestión de Apoyo a los Establecimientos Educacionales",
+];
+
+/* ============================== STORAGE (local al navegador) ============================== */
+const STORAGE_KEY = "slep-petorca:certificados-ministro-fe:v1";
+function loadCertificados(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    const list = raw ? JSON.parse(raw) : [];
+    return Array.isArray(list) ? list : [];
+  }catch(e){ return []; }
+}
+function saveCertificados(list){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); return true; }
+  catch(e){ return false; }
+}
+function newId(){
+  return (crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(16).slice(2)}`);
+}
+
+/* ============================== STATE ============================== */
+let currentTab = "nuevo";
+let certificados = loadCertificados();
+let selectedCert = null;
+let lastSubmittedCert = null;
+let pdfNotice = "";
+
+function blankWizard(){
+  return {
+    step: 1,
+    folio: "",
+    nombreSet: "",
+    unidad: "",
+    tipo: null,
+    complementarioOn: false,
+    checklist: {},
+    detalleDocs: [],
+    otrosItems: [],
+    decl: { nombre: "", rut: "", cargo: "", fecha: new Date().toISOString().slice(0,10) },
+    submitting: false,
+    submitError: "",
+  };
+}
+let wizard = blankWizard();
+
+function itemKey(tipo, idx, compl){ return tipo + (compl ? ":c:" : ":") + idx; }
+function getEstado(tipo, idx, compl){
+  const k = itemKey(tipo, idx, compl);
+  return (wizard.checklist[k] || {}).estado || null;
+}
+function setEstado(tipo, idx, compl, val){
+  const k = itemKey(tipo, idx, compl);
+  if(!wizard.checklist[k]) wizard.checklist[k] = {estado:null, obs:""};
+  wizard.checklist[k].estado = (wizard.checklist[k].estado === val) ? null : val;
+  render();
+}
+function setObs(tipo, idx, compl, val){
+  const k = itemKey(tipo, idx, compl);
+  if(!wizard.checklist[k]) wizard.checklist[k] = {estado:null, obs:""};
+  wizard.checklist[k].obs = val;
+}
+
+/* ============================== HELPERS ============================== */
+function esc(s){
+  return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[c]));
+}
+function fmtDate(iso){
+  if(!iso) return "—";
+  try{
+    const d = new Date(iso);
+    return d.toLocaleDateString("es-CL", {day:"2-digit", month:"2-digit", year:"numeric"});
+  }catch(e){ return iso; }
+}
+function tipoLabel(tipo){ return tipo ? CATEGORIES[tipo].label.replace(/\s*\(.+?\)\s*$/, "") : "—"; }
+function parseMonto(v){
+  if(v == null || v === "") return 0;
+  const n = Number(String(v).replace(/[^0-9.-]/g, ""));
+  return Number.isFinite(n) ? n : 0;
+}
+function fmtMonto(n){
+  try{ return "$" + Math.round(n).toLocaleString("es-CL"); }
+  catch(e){ return String(n); }
+}
+function detalleTotal(list){
+  return (list || []).reduce((sum, d) => sum + parseMonto(d.monto), 0);
+}
+
+function activeItemKeys(tipo, complOn){
+  const cat = CATEGORIES[tipo];
+  const keys = cat.items.map((_,i)=>itemKey(tipo,i,false));
+  if(cat.complementario && complOn){
+    keys.push(...cat.complementario.items.map((_,i)=>itemKey(tipo,i,true)));
+  }
+  return keys;
+}
+function step2Complete(){
+  if(!wizard.tipo) return false;
+  const keys = activeItemKeys(wizard.tipo, wizard.complementarioOn);
+  return keys.every(k => wizard.checklist[k] && wizard.checklist[k].estado);
+}
+function computeResultado(cert){
+  const vals = Object.values(cert.checklist || {});
+  if(vals.some(v => v.estado === "no")) return "bad";
+  if(vals.some(v => v.obs && v.obs.trim())) return "warn";
+  return "good";
+}
+
+/* ============================== PDF GENERATION ============================== */
+const ESTADO_LABEL = { si: "SÍ", no: "NO", na: "N/A" };
+
+function buildCertificadoPdf(cert){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageW = doc.internal.pageSize.getWidth();
+  const pageH = doc.internal.pageSize.getHeight();
+  const marginX = 18;
+  const maxW = pageW - marginX * 2;
+  let y = 20;
+
+  function ensureSpace(h){
+    if(y + h > pageH - 16){ doc.addPage(); y = 20; }
+  }
+  function writeWrapped(text, opts = {}){
+    const { size = 10, style = "normal", color = [23,34,43], gap = 4.6, indent = 0 } = opts;
+    doc.setFont("helvetica", style);
+    doc.setFontSize(size);
+    doc.setTextColor(...color);
+    const lines = doc.splitTextToSize(text, maxW - indent);
+    lines.forEach(line => {
+      ensureSpace(gap);
+      doc.text(line, marginX + indent, y);
+      y += gap;
+    });
+  }
+  function heading(text, size = 12){
+    ensureSpace(9);
+    y += 2;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(size);
+    doc.setTextColor(23,34,43);
+    doc.text(text, marginX, y);
+    y += 1.5;
+    doc.setDrawColor(220,227,225);
+    doc.line(marginX, y, pageW - marginX, y);
+    y += 6;
+  }
+  function field(label, value){
+    ensureSpace(6);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.setTextColor(23,34,43);
+    doc.text(label + ":", marginX, y);
+    const labelW = doc.getTextWidth(label + ":  ");
+    doc.setFont("helvetica", "normal");
+    const lines = doc.splitTextToSize(String(value || "—"), maxW - labelW);
+    doc.text(lines[0] || "—", marginX + labelW, y);
+    y += 5.2;
+    for(let i=1;i<lines.length;i++){ ensureSpace(5); doc.text(lines[i], marginX + labelW, y); y += 5.2; }
+  }
+  function fieldRight(label, value){
+    const rightX = pageW - marginX;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+    const lines = doc.splitTextToSize(String(value || "—"), maxW * 0.6);
+    ensureSpace(5.2 * lines.length);
+    const labelText = label + ": ";
+    doc.setFont("helvetica", "bold"); doc.setTextColor(23,34,43);
+    const labelW = doc.getTextWidth(labelText);
+    doc.setFont("helvetica", "normal");
+    const firstW = doc.getTextWidth(lines[0] || "—");
+    doc.setFont("helvetica", "bold");
+    doc.text(labelText, rightX - labelW - firstW, y);
+    doc.setFont("helvetica", "normal");
+    doc.text(lines[0] || "—", rightX - firstW, y);
+    y += 5.2;
+    for(let i=1;i<lines.length;i++){
+      const w = doc.getTextWidth(lines[i]);
+      ensureSpace(5);
+      doc.text(lines[i], rightX - w, y);
+      y += 5.2;
+    }
+  }
+
+  // Header
+  const logoW = 42, logoH = 13.65; // proporción real del logo: 1000x325 px
+  const centerX = pageW / 2;
+  try{
+    const img = document.querySelector(".masthead img");
+    if(img && img.src) doc.addImage(img.src, "PNG", centerX - logoW / 2, y, logoW, logoH);
+  }catch(e){ /* ignore image failures */ }
+  y += logoH + 12;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(8.5); doc.setTextColor(92,107,116);
+  doc.text("SERVICIO LOCAL DE EDUCACIÓN PÚBLICA PETORCA", centerX, y, { align: "center" });
+  y += 7;
+  doc.setFont("helvetica", "bold"); doc.setFontSize(16); doc.setTextColor(23,34,43);
+  doc.text(`Certificado de Ministro de Fe — N° ${cert.folio || "—"}`, centerX, y, { align: "center" });
+  y += 6;
+  doc.setFont("helvetica", "italic"); doc.setFontSize(9); doc.setTextColor(92,107,116);
+  doc.text(cert.unidad || "—", centerX, y, { align: "center" });
+  y += 8;
+  doc.setDrawColor(180,190,188);
+  doc.line(marginX, y, pageW - marginX, y);
+  y += 8;
+
+  heading("I. Identificación del set de pago");
+  field("Folio del certificado", cert.folio);
+  field("Nombre de set de pago", cert.nombreSet);
+  field("Unidad o establecimiento", cert.unidad);
+  field("Tipo de set de pago", tipoLabel(cert.tipo));
+
+  heading("II. Verificación documental");
+  const cat = CATEGORIES[cert.tipo];
+  function checklistBlock(src, compl){
+    ensureSpace(8);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(23,34,43);
+    const titleLines = doc.splitTextToSize(src.label, maxW);
+    titleLines.forEach(l => { ensureSpace(5.5); doc.text(l, marginX, y); y += 5.5; });
+    y += 0.5;
+    if(src.note) { writeWrapped(src.note, { size: 8.5, style: "italic", color: [92,107,116], gap: 4 }); y += 2; }
+    src.items.forEach((label, idx) => {
+      const k = itemKey(cert.tipo, idx, compl);
+      const v = (cert.checklist || {})[k] || {};
+      const estado = ESTADO_LABEL[v.estado] || "—";
+      const estColor = v.estado === "no" ? [166,64,58] : (v.estado === "si" ? [47,122,82] : [92,107,116]);
+      ensureSpace(5.5);
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9.5); doc.setTextColor(23,34,43);
+      const numLabel = (idx+1) + ". " + label;
+      const lines = doc.splitTextToSize(numLabel, maxW - 16);
+      doc.text(lines[0], marginX, y);
+      doc.setFont("helvetica", "bold"); doc.setTextColor(...estColor);
+      doc.text(estado, pageW - marginX, y, { align: "right" });
+      y += 4.8;
+      for(let i=1;i<lines.length;i++){ ensureSpace(4.8); doc.setFont("helvetica","normal"); doc.setTextColor(23,34,43); doc.text(lines[i], marginX, y); y += 4.8; }
+      if(v.obs && v.obs.trim()){
+        writeWrapped("Obs.: " + v.obs.trim(), { size: 8.5, style: "italic", color: [92,107,116], gap: 4, indent: 4 });
+      }
+      y += 1.2;
+    });
+    y += 3;
+  }
+  checklistBlock(cat, false);
+  const otrosIdxPdf = cat.items.indexOf("Otros");
+  const otrosMarkedPdf = otrosIdxPdf >= 0 && ((cert.checklist||{})[itemKey(cert.tipo, otrosIdxPdf, false)]||{}).estado === "si";
+  const otrosItemsPdf = (cert.otrosItems || []).filter(t => t && t.trim());
+  if(otrosMarkedPdf && otrosItemsPdf.length){
+    ensureSpace(8);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(23,34,43);
+    doc.text('Detalle del ítem "Otros"', marginX, y);
+    y += 6;
+    otrosItemsPdf.forEach((texto, idx) => {
+      const lines = doc.splitTextToSize(`${idx+1}. ${texto}`, maxW);
+      lines.forEach(line => {
+        ensureSpace(4.8);
+        doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(23,34,43);
+        doc.text(line, marginX, y);
+        y += 4.8;
+      });
+    });
+    y += 3;
+  }
+  if(cat.detalle && (cert.detalleDocs || []).length){
+    ensureSpace(8);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(10.5); doc.setTextColor(23,34,43);
+    doc.text("Detalle de documentos, folios y montos", marginX, y);
+    y += 6;
+    const colX = { n: marginX, tipo: marginX + 8, folio: marginX + 78, fecha: marginX + 108, monto: pageW - marginX };
+    doc.setFont("helvetica", "bold"); doc.setFontSize(8); doc.setTextColor(92,107,116);
+    doc.text("N°", colX.n, y); doc.text("TIPO DE DOCUMENTO", colX.tipo, y); doc.text("FOLIO", colX.folio, y);
+    doc.text("FECHA", colX.fecha, y); doc.text("MONTO", colX.monto, y, { align: "right" });
+    y += 2; doc.setDrawColor(220,227,225); doc.line(marginX, y, pageW - marginX, y); y += 4.5;
+    let total = 0;
+    cert.detalleDocs.forEach((d, idx) => {
+      ensureSpace(5.5);
+      const monto = parseMonto(d.monto); total += monto;
+      doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.setTextColor(23,34,43);
+      doc.text(String(idx+1), colX.n, y);
+      doc.text(doc.splitTextToSize(d.tipo || "—", 66)[0] || "—", colX.tipo, y);
+      doc.text(d.folio || "—", colX.folio, y);
+      doc.text(fmtDate(d.fecha), colX.fecha, y);
+      doc.text(fmtMonto(monto), colX.monto, y, { align: "right" });
+      y += 4.8;
+    });
+    ensureSpace(6); doc.setDrawColor(220,227,225); doc.line(marginX, y, pageW - marginX, y); y += 4.5;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9.5); doc.setTextColor(23,34,43);
+    doc.text("Total", colX.fecha, y);
+    doc.text(fmtMonto(total), colX.monto, y, { align: "right" });
+    y += 8;
+  }
+  if(cert.complementarioOn && cat.complementario) checklistBlock(cat.complementario, true);
+
+  heading("III. Declaración del Ministro o Ministra de Fe");
+  writeWrapped(
+    "El o la suscrito(a), en su calidad de ministro/a de fe designado(a) por Resolución Exenta N° 450, de 2026, de este Servicio Local, que aprueba el procedimiento de autentificación documental y respaldo de rendición de cuentas del Servicio Local de Educación Pública Petorca, en concordancia con los artículos 5° y 6° de dicho procedimiento y con el artículo 2 N°15 y el artículo 27 de la Resolución N° 2, de 2026, de la Contraloría General de la República, certifica que ha verificado la documentación del set de pago individualizado en el punto I, conforme al detalle señalado en el punto II.",
+    { size: 9.5, gap: 4.6 }
+  );
+  y += 2;
+  writeWrapped(
+    "Esta certificación acredita exclusivamente la existencia, integridad y autenticidad de la documentación de respaldo del set de pago para efectos de su rendición de cuentas ante la Contraloría General de la República. El o la suscrito(a) declara no haber participado en la preparación, elaboración o tramitación del presente set de pago, en resguardo del principio de segregación de funciones establecido en el artículo 2° letra h) de la Resolución Exenta N° 450, de 2026.",
+    { size: 9.5, gap: 4.6 }
+  );
+  y += 6;
+  ensureSpace(4 * 5.2);
+  fieldRight("Nombre completo", (cert.decl||{}).nombre);
+  fieldRight("RUT", (cert.decl||{}).rut);
+  fieldRight("Cargo / unidad", (cert.decl||{}).cargo);
+  fieldRight("Fecha de certificación", fmtDate((cert.decl||{}).fecha || cert.createdAt));
+
+  return doc;
+}
+
+function downloadCertificadoPdf(cert){
+  pdfNotice = "";
+  try{
+    const doc = buildCertificadoPdf(cert);
+    const safeName = (cert.nombreSet || "certificado").replace(/[^a-zA-Z0-9-_]+/g, "_").slice(0,60);
+    doc.save(`certificado_${safeName}.pdf`);
+    pdfNotice = "ok";
+  }catch(e){
+    pdfNotice = "No se pudo generar el PDF en este navegador. Intenta nuevamente.";
+  }
+  render();
+}
+
+/* ============================== RENDER: WIZARD ============================== */
+function renderStepper(){
+  const steps = [
+    {n:1, label:"Identificación"},
+    {n:2, label:"Verificación documental"},
+    {n:3, label:"Declaración"},
+  ];
+  return `<div class="stepper">` + steps.map((s,i)=>{
+    const state = wizard.step === s.n ? "active" : (wizard.step > s.n ? "done" : "");
+    const line = i < steps.length-1 ? `<div class="step-line ${wizard.step > s.n ? 'done':''}"></div>` : "";
+    return `<div class="step-node ${state}">
+      <div class="step-circle">${wizard.step > s.n ? "✓" : s.n}</div>
+      <div class="step-label">${s.label}</div>
+    </div>${line}`;
+  }).join("") + `</div>`;
+}
+
+function renderStep1(){
+  return `
+    <h2 class="step-title">I. Identificación del set de pago</h2>
+    <p class="step-desc">Complete los datos generales y seleccione el tipo de set de pago. Esto habilitará el checklist correspondiente en el siguiente paso.</p>
+    <div class="field">
+      <label for="f-folio">Folio del certificado</label>
+      <input type="text" id="f-folio" value="${esc(wizard.folio)}" placeholder="Ej: 001-2026">
+    </div>
+    <div class="field">
+      <label for="f-nombre">Nombre de set de pago</label>
+      <input type="text" id="f-nombre" value="${esc(wizard.nombreSet)}" placeholder="Ej: Remuneraciones agosto 2026 — Jardín Cuncunita">
+    </div>
+    <div class="field">
+      <label for="f-unidad">Unidad o establecimiento que origina el gasto</label>
+      <select id="f-unidad">
+        <option value="" ${wizard.unidad ? "" : "selected"} disabled>Seleccione una unidad…</option>
+        ${UNIDADES.map(u => `<option value="${esc(u)}" ${wizard.unidad===u?"selected":""}>${esc(u)}</option>`).join("")}
+      </select>
+    </div>
+    <div class="field">
+      <label>Tipo de set de pago</label>
+      <div class="chip-grid">
+        ${TIPO_ORDER.map(t => `<button type="button" class="chip ${wizard.tipo===t?'selected':''}" data-tipo="${t}">${esc(CATEGORIES[t].label)}</button>`).join("")}
+      </div>
+    </div>
+    <div class="actions">
+      <div class="btn-spacer"></div>
+      <button class="btn primary" id="btn-next-1" ${(!wizard.folio.trim()||!wizard.nombreSet.trim()||!wizard.unidad.trim()||!wizard.tipo)?"disabled":""}>Siguiente</button>
+    </div>
+  `;
+}
+
+function renderChecklistBlock(tipo, compl){
+  const cat = CATEGORIES[tipo];
+  const src = compl ? cat.complementario : cat;
+  const rows = src.items.map((doc, idx) => {
+    const estado = getEstado(tipo, idx, compl);
+    const k = itemKey(tipo, idx, compl);
+    const obs = (wizard.checklist[k] || {}).obs || "";
+    return `
+      <div class="check-row">
+        <div class="check-doc"><span class="n">${idx+1}.</span>${esc(doc)}</div>
+        <div class="segmented" role="group" aria-label="${esc(doc)}">
+          <button type="button" class="si ${estado==='si'?'on':''}" data-tipo="${tipo}" data-idx="${idx}" data-compl="${compl?1:0}" data-val="si">SÍ</button>
+          <button type="button" class="no ${estado==='no'?'on':''}" data-tipo="${tipo}" data-idx="${idx}" data-compl="${compl?1:0}" data-val="no">NO</button>
+          <button type="button" class="na ${estado==='na'?'on':''}" data-tipo="${tipo}" data-idx="${idx}" data-compl="${compl?1:0}" data-val="na">N/A</button>
+        </div>
+        <div class="obs-row">
+          <input type="text" placeholder="Observaciones (opcional)" value="${esc(obs)}" data-obs-tipo="${tipo}" data-obs-idx="${idx}" data-obs-compl="${compl?1:0}">
+        </div>
+      </div>`;
+  }).join("");
+  return `
+    <h3 style="font-size:15px; margin-bottom:8px;">${compl ? "" : cat.letter + ". "}${esc(src.label)}</h3>
+    ${src.note ? `<div class="note-panel">${esc(src.note)}</div>` : ""}
+    <div class="checklist">${rows}</div>
+  `;
+}
+
+function renderOtrosList(){
+  const rows = wizard.otrosItems;
+  const rowsHtml = rows.map((texto, idx) => `
+    <tr>
+      <td class="n">${idx+1}</td>
+      <td><input type="text" data-otros-idx="${idx}" value="${esc(texto)}" placeholder="Ej: Certificado de recepción municipal"></td>
+      <td class="rm"><button type="button" class="rm-btn" data-otros-remove="${idx}" aria-label="Eliminar fila">✕</button></td>
+    </tr>`).join("");
+  return `
+    <h3 style="font-size:15px; margin-bottom:8px;">Detalle del ítem "Otros"</h3>
+    <div class="note-panel">Individualice los documentos o antecedentes que componen el ítem "Otros".</div>
+    <div class="dtable-wrap">
+      <table class="dtable">
+        <thead><tr><th class="n">N°</th><th>Documento o antecedente que compone el ítem "Otros"</th><th></th></tr></thead>
+        <tbody>${rowsHtml}</tbody>
+      </table>
+    </div>
+    <div style="margin-bottom:18px;">
+      <button type="button" class="btn" id="btn-add-otros">+ Agregar documento</button>
+    </div>
+  `;
+}
+
+function renderDetalleTable(){
+  const rows = wizard.detalleDocs;
+  const rowsHtml = rows.map((d, idx) => `
+    <tr>
+      <td class="n">${idx+1}</td>
+      <td><input type="text" data-det-idx="${idx}" data-det-field="tipo" value="${esc(d.tipo)}" placeholder="Ej: Boleta de honorarios"></td>
+      <td><input type="text" data-det-idx="${idx}" data-det-field="folio" value="${esc(d.folio)}" placeholder="N° folio"></td>
+      <td><input type="date" data-det-idx="${idx}" data-det-field="fecha" value="${esc(d.fecha)}"></td>
+      <td><input type="text" class="mono" data-det-idx="${idx}" data-det-field="monto" value="${esc(d.monto)}" placeholder="0" inputmode="numeric"></td>
+      <td class="rm"><button type="button" class="rm-btn" data-det-remove="${idx}" aria-label="Eliminar fila">✕</button></td>
+    </tr>`).join("");
+  return `
+    <h3 style="font-size:15px; margin-bottom:8px;">Detalle de documentos, folios y montos</h3>
+    <div class="note-panel">Individualice cada documento de respaldo asociado a este set, indicando su tipo, folio, fecha de emisión y monto a pagar.</div>
+    <div class="dtable-wrap">
+      <table class="dtable">
+        <thead><tr><th class="n">N°</th><th>Tipo de documento</th><th>Folio</th><th>Fecha de emisión</th><th>Monto a pagar</th><th></th></tr></thead>
+        <tbody>
+          ${rowsHtml}
+          <tr class="total-row"><td colspan="4" class="total-label">Total</td><td class="total-val" id="detalle-total">${fmtMonto(detalleTotal(rows))}</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="margin-bottom:18px;">
+      <button type="button" class="btn" id="btn-add-detalle">+ Agregar documento</button>
+    </div>
+  `;
+}
+
+function renderStep2(){
+  if(!wizard.tipo){
+    return `<p class="step-desc">Vuelve al paso anterior y selecciona un tipo de set de pago.</p>
+      <div class="actions"><button class="btn" id="btn-back-2">Atrás</button><div class="btn-spacer"></div></div>`;
+  }
+  const cat = CATEGORIES[wizard.tipo];
+  const otrosIdx = cat.items.indexOf("Otros");
+  const otrosOn = otrosIdx >= 0 && getEstado(wizard.tipo, otrosIdx, false) === "si";
+  let complBlock = "";
+  if(cat.complementario){
+    complBlock = `
+      <div class="toggle-row">
+        <div class="txt"><b>¿Aplica el complementario D.1?</b>Prestación de servicios con participación de estudiantes y/o infraestructura.</div>
+        <button type="button" class="switch ${wizard.complementarioOn?'on':''}" id="btn-toggle-compl" role="switch" aria-checked="${wizard.complementarioOn}"></button>
+      </div>
+      ${wizard.complementarioOn ? `<div class="section-gap">${renderChecklistBlock(wizard.tipo, true)}</div>` : ""}
+    `;
+  }
+  return `
+    <h2 class="step-title">II. Verificación documental</h2>
+    <p class="step-desc">Marque "Sí" si el documento está presente e íntegro, "No" si falta o está incompleto, y "N/A" si no aplica al caso. El checklist mostrado corresponde al tipo de set de pago seleccionado en el paso I.</p>
+    ${renderChecklistBlock(wizard.tipo, false)}
+    ${otrosOn ? renderOtrosList() : ""}
+    ${cat.detalle ? renderDetalleTable() : ""}
+    ${complBlock}
+    <div class="actions">
+      <button class="btn" id="btn-back-2">Atrás</button>
+      <div class="btn-spacer"></div>
+      <button class="btn primary" id="btn-next-2" ${step2Complete()?"":"disabled"}>Siguiente</button>
+    </div>
+  `;
+}
+
+function renderStep3(){
+  const d = wizard.decl;
+  const ready = d.nombre.trim() && d.rut.trim() && d.cargo.trim() && d.fecha;
+  return `
+    <h2 class="step-title">III. Declaración del Ministro o Ministra de Fe</h2>
+    <p class="decl-text">El o la suscrito(a), en su calidad de ministro/a de fe designado(a) por Resolución Exenta N° 450, de 2026, de este Servicio Local, que aprueba el procedimiento de autentificación documental y respaldo de rendición de cuentas del Servicio Local de Educación Pública Petorca, en concordancia con los artículos 5° y 6° de dicho procedimiento y con el artículo 2 N°15 y el artículo 27 de la Resolución N° 2, de 2026, de la Contraloría General de la República, certifica que ha verificado la documentación del set de pago individualizado en el punto I, conforme al detalle señalado en el punto II.</p>
+    <p class="decl-text">Esta certificación acredita exclusivamente la existencia, integridad y autenticidad de la documentación de respaldo del set de pago para efectos de su rendición de cuentas ante la Contraloría General de la República. El o la suscrito(a) declara no haber participado en la preparación, elaboración o tramitación del presente set de pago, en resguardo del principio de segregación de funciones establecido en el artículo 2° letra h) de la Resolución Exenta N° 450, de 2026.</p>
+    <div class="field">
+      <label for="f-decl-nombre">Nombre completo</label>
+      <input type="text" id="f-decl-nombre" value="${esc(d.nombre)}">
+    </div>
+    <div class="field">
+      <label for="f-decl-rut">RUT</label>
+      <input type="text" id="f-decl-rut" class="mono" value="${esc(d.rut)}" placeholder="12.345.678-9">
+    </div>
+    <div class="field">
+      <label for="f-decl-cargo">Cargo / unidad</label>
+      <input type="text" id="f-decl-cargo" value="${esc(d.cargo)}">
+    </div>
+    <div class="field">
+      <label for="f-decl-fecha">Fecha de certificación</label>
+      <input type="date" id="f-decl-fecha" value="${esc(d.fecha)}">
+    </div>
+    ${wizard.submitError ? `<div class="banner bad">${esc(wizard.submitError)}</div>` : ""}
+    <div class="actions">
+      <button class="btn" id="btn-back-3">Atrás</button>
+      <div class="btn-spacer"></div>
+      <button class="btn primary" id="btn-submit" ${(!ready || wizard.submitting)?"disabled":""}>${wizard.submitting ? "Enviando…" : "Firmar y enviar certificado"}</button>
+    </div>
+  `;
+}
+
+function renderStep4(){
+  return `
+    <div class="success">
+      <div class="check">✓</div>
+      <h2>Certificado generado</h2>
+      <p>El certificado quedó guardado en el Registro de certificados de este navegador. Descarga el PDF, súbelo a <a href="https://firmagob.gob.cl" target="_blank" rel="noopener">FirmaGob</a> para firmarlo electrónicamente, y luego remítelo según el procedimiento vigente al Subdepartamento de Finanzas.</p>
+      ${pdfNotice && pdfNotice !== "ok" ? `<div class="banner warn" style="text-align:left;">${esc(pdfNotice)}</div>` : ""}
+      <div style="display:flex; gap:10px; justify-content:center; flex-wrap:wrap;">
+        <button class="btn" id="btn-download-pdf">${pdfNotice === "ok" ? "Descargar PDF nuevamente" : "Descargar PDF"}</button>
+        <button class="btn primary" id="btn-new-cert">Generar otro certificado</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderNuevo(){
+  const root = document.getElementById("view-root");
+  let stepHtml = "";
+  if(wizard.step === 1) stepHtml = renderStep1();
+  else if(wizard.step === 2) stepHtml = renderStep2();
+  else if(wizard.step === 3) stepHtml = renderStep3();
+  else stepHtml = renderStep4();
+  root.innerHTML = `<div class="card">${wizard.step<=3 ? renderStepper() : ""}${stepHtml}</div>`;
+  attachNuevoHandlers();
+}
+
+function attachNuevoHandlers(){
+  if(wizard.step === 1){
+    document.getElementById("f-folio").oninput = e => { wizard.folio = e.target.value; syncNextBtn1(); };
+    document.getElementById("f-nombre").oninput = e => { wizard.nombreSet = e.target.value; syncNextBtn1(); };
+    document.getElementById("f-unidad").onchange = e => { wizard.unidad = e.target.value; syncNextBtn1(); };
+    document.querySelectorAll(".chip").forEach(btn=>{
+      btn.onclick = () => { wizard.tipo = btn.dataset.tipo; wizard.complementarioOn = false; wizard.checklist = {}; wizard.detalleDocs = []; wizard.otrosItems = []; render(); };
+    });
+    const nb = document.getElementById("btn-next-1");
+    if(nb) nb.onclick = () => { wizard.step = 2; render(); };
+  }
+  if(wizard.step === 2){
+    document.querySelectorAll(".segmented button").forEach(btn=>{
+      btn.onclick = () => setEstado(btn.dataset.tipo, +btn.dataset.idx, btn.dataset.compl==="1", btn.dataset.val);
+    });
+    document.querySelectorAll("[data-obs-tipo]").forEach(inp=>{
+      inp.oninput = () => setObs(inp.dataset.obsTipo, +inp.dataset.obsIdx, inp.dataset.obsCompl==="1", inp.value);
+    });
+    const tgl = document.getElementById("btn-toggle-compl");
+    if(tgl) tgl.onclick = () => { wizard.complementarioOn = !wizard.complementarioOn; render(); };
+    document.querySelectorAll("[data-det-field]").forEach(inp=>{
+      inp.oninput = () => {
+        const idx = +inp.dataset.detIdx;
+        wizard.detalleDocs[idx][inp.dataset.detField] = inp.value;
+        if(inp.dataset.detField === "monto"){
+          const totalEl = document.getElementById("detalle-total");
+          if(totalEl) totalEl.textContent = fmtMonto(detalleTotal(wizard.detalleDocs));
+        }
+      };
+    });
+    document.querySelectorAll("[data-det-remove]").forEach(btn=>{
+      btn.onclick = () => { wizard.detalleDocs.splice(+btn.dataset.detRemove, 1); render(); };
+    });
+    const addDet = document.getElementById("btn-add-detalle");
+    if(addDet) addDet.onclick = () => { wizard.detalleDocs.push({tipo:"", folio:"", fecha:"", monto:""}); render(); };
+    document.querySelectorAll("[data-otros-idx]").forEach(inp=>{
+      inp.oninput = () => { wizard.otrosItems[+inp.dataset.otrosIdx] = inp.value; };
+    });
+    document.querySelectorAll("[data-otros-remove]").forEach(btn=>{
+      btn.onclick = () => { wizard.otrosItems.splice(+btn.dataset.otrosRemove, 1); render(); };
+    });
+    const addOtros = document.getElementById("btn-add-otros");
+    if(addOtros) addOtros.onclick = () => { wizard.otrosItems.push(""); render(); };
+    document.getElementById("btn-back-2").onclick = () => { wizard.step = 1; render(); };
+    const nb = document.getElementById("btn-next-2");
+    if(nb) nb.onclick = () => { wizard.step = 3; render(); };
+  }
+  if(wizard.step === 3){
+    document.getElementById("f-decl-nombre").oninput = e => { wizard.decl.nombre = e.target.value; syncSubmitBtn(); };
+    document.getElementById("f-decl-rut").oninput = e => { wizard.decl.rut = e.target.value; syncSubmitBtn(); };
+    document.getElementById("f-decl-cargo").oninput = e => { wizard.decl.cargo = e.target.value; syncSubmitBtn(); };
+    document.getElementById("f-decl-fecha").oninput = e => { wizard.decl.fecha = e.target.value; syncSubmitBtn(); };
+    document.getElementById("btn-back-3").onclick = () => { wizard.step = 2; render(); };
+    document.getElementById("btn-submit").onclick = submitCertificado;
+  }
+  if(wizard.step === 4){
+    document.getElementById("btn-new-cert").onclick = () => { wizard = blankWizard(); lastSubmittedCert = null; pdfNotice = ""; render(); };
+    document.getElementById("btn-download-pdf").onclick = () => { if(lastSubmittedCert) downloadCertificadoPdf(lastSubmittedCert); };
+  }
+}
+function syncNextBtn1(){
+  const nb = document.getElementById("btn-next-1");
+  if(nb) nb.disabled = !(wizard.folio.trim() && wizard.nombreSet.trim() && wizard.unidad.trim() && wizard.tipo);
+}
+function syncSubmitBtn(){
+  const b = document.getElementById("btn-submit");
+  if(!b) return;
+  const d = wizard.decl;
+  b.disabled = !(d.nombre.trim() && d.rut.trim() && d.cargo.trim() && d.fecha) || wizard.submitting;
+}
+
+function submitCertificado(){
+  wizard.submitting = true; wizard.submitError = "";
+  render();
+  const payload = {
+    id: newId(),
+    folio: wizard.folio,
+    nombreSet: wizard.nombreSet,
+    unidad: wizard.unidad,
+    tipo: wizard.tipo,
+    complementarioOn: wizard.complementarioOn,
+    checklist: wizard.checklist,
+    detalleDocs: wizard.detalleDocs,
+    otrosItems: wizard.otrosItems,
+    decl: wizard.decl,
+    createdAt: new Date().toISOString(),
+  };
+  const ok = saveCertificados([payload, ...certificados]);
+  if(ok){
+    certificados = [payload, ...certificados];
+    wizard.step = 4;
+    lastSubmittedCert = payload;
+    pdfNotice = "";
+  } else {
+    wizard.submitError = "No se pudo guardar el certificado en este navegador (almacenamiento local no disponible o lleno). Puedes descargar igualmente el PDF con los datos ingresados.";
+    lastSubmittedCert = payload;
+  }
+  wizard.submitting = false;
+  render();
+  if(wizard.step === 4 && lastSubmittedCert){
+    downloadCertificadoPdf(lastSubmittedCert);
+  }
+}
+
+/* ============================== RENDER: REGISTRO ============================== */
+let registroFilterTipo = "";
+let registroFilterQuery = "";
+
+function renderRegistro(){
+  const root = document.getElementById("view-root");
+  let rows = certificados.slice();
+  if(registroFilterTipo) rows = rows.filter(c => c.tipo === registroFilterTipo);
+  if(registroFilterQuery.trim()){
+    const q = registroFilterQuery.trim().toLowerCase();
+    rows = rows.filter(c => (c.nombreSet||"").toLowerCase().includes(q) || (c.unidad||"").toLowerCase().includes(q));
+  }
+  const tableBody = rows.map(c => {
+    const res = computeResultado(c);
+    const badgeCls = res === "bad" ? "bad" : (res === "warn" ? "warn" : "good");
+    const badgeTxt = res === "bad" ? "Con hallazgos" : (res === "warn" ? "Con observaciones" : "Conforme");
+    return `<tr data-id="${esc(c.id)}">
+      <td class="mono">${fmtDate(c.createdAt)}</td>
+      <td>${esc(c.unidad)}</td>
+      <td>${esc(tipoLabel(c.tipo))}</td>
+      <td>${esc(c.nombreSet)}</td>
+      <td><span class="badge ${badgeCls}">${badgeTxt}</span></td>
+      <td>${esc((c.decl||{}).nombre)}</td>
+    </tr>`;
+  }).join("");
+
+  let body;
+  if(rows.length === 0){
+    body = `<div class="empty-state">${certificados.length === 0 ? "Todavía no se ha generado ningún certificado en este navegador." : "Ningún certificado coincide con el filtro aplicado."}</div>`;
+  } else {
+    body = `<div class="table-wrap"><table>
+      <thead><tr>
+        <th>Fecha</th><th>Unidad</th><th>Tipo de set</th><th>Nombre de set</th><th>Resultado</th><th>Ministro/a de fe</th>
+      </tr></thead>
+      <tbody>${tableBody}</tbody>
+    </table></div>`;
+  }
+
+  root.innerHTML = `
+    <div class="card">
+      <h2 class="step-title" style="margin-bottom:4px;">Registro de certificados</h2>
+      <p class="step-desc">Certificados generados desde este navegador, ordenados por fecha. Este registro es local a este dispositivo: no se sincroniza automáticamente con otros equipos ni con Finanzas — cada certificado se comparte enviando el PDF firmado según el procedimiento vigente.</p>
+      <div class="filters">
+        <select id="rf-tipo">
+          <option value="">Todos los tipos</option>
+          ${TIPO_ORDER.map(t=>`<option value="${t}" ${registroFilterTipo===t?"selected":""}>${esc(CATEGORIES[t].label)}</option>`).join("")}
+        </select>
+        <input type="text" id="rf-query" placeholder="Buscar por unidad o nombre de set…" value="${esc(registroFilterQuery)}">
+      </div>
+      ${body}
+    </div>
+  `;
+  document.getElementById("rf-tipo").onchange = e => { registroFilterTipo = e.target.value; renderRegistro(); };
+  document.getElementById("rf-query").oninput = e => { registroFilterQuery = e.target.value; renderRegistro(); };
+  document.querySelectorAll("tbody tr").forEach(tr=>{
+    tr.onclick = () => { selectedCert = certificados.find(c=>c.id===tr.dataset.id); renderModal(); };
+  });
+}
+
+function renderModal(){
+  let existing = document.getElementById("cert-modal");
+  if(existing) existing.remove();
+  if(!selectedCert) return;
+  const c = selectedCert;
+  const cat = CATEGORIES[c.tipo];
+  const catBlock = (src, compl) => {
+    const rowsHtml = src.items.map((doc, idx)=>{
+      const k = itemKey(c.tipo, idx, compl);
+      const v = (c.checklist||{})[k] || {};
+      const badgeCls = v.estado === "no" ? "bad" : (v.estado === "na" ? "neutral" : "good");
+      const badgeTxt = v.estado === "si" ? "Sí" : (v.estado === "no" ? "No" : (v.estado === "na" ? "N/A" : "—"));
+      return `<div class="mrow">
+        <span>${esc(doc)}</span>
+        <span style="display:flex; align-items:center; gap:8px;">${v.obs ? `<span class="obs">${esc(v.obs)}</span>`:""}<span class="badge ${badgeCls}">${badgeTxt}</span></span>
+      </div>`;
+    }).join("");
+    return `<div class="cat-block"><div class="cat-title">${esc(src.label)}</div>${rowsHtml}</div>`;
+  };
+  const otrosBlock = () => {
+    const otrosIdxModal = cat.items.indexOf("Otros");
+    if(otrosIdxModal < 0) return "";
+    const marked = ((c.checklist||{})[itemKey(c.tipo, otrosIdxModal, false)]||{}).estado === "si";
+    const items = (c.otrosItems || []).filter(t => t && t.trim());
+    if(!marked || !items.length) return "";
+    const rowsHtml = items.map((t, idx) => `<div class="mrow"><span>${idx+1}. ${esc(t)}</span></div>`).join("");
+    return `<div class="cat-block"><div class="cat-title">Detalle del ítem "Otros"</div>${rowsHtml}</div>`;
+  };
+  const detalleBlock = () => {
+    if(!cat.detalle || !(c.detalleDocs || []).length) return "";
+    const rowsHtml = c.detalleDocs.map((d, idx) => `<div class="mrow">
+        <span>${idx+1}. ${esc(d.tipo || "—")} ${d.folio ? `<span class="obs">(folio ${esc(d.folio)})</span>` : ""}</span>
+        <span>${esc(fmtMonto(parseMonto(d.monto)))}</span>
+      </div>`).join("");
+    return `<div class="cat-block">
+      <div class="cat-title">Detalle de documentos, folios y montos</div>
+      ${rowsHtml}
+      <div class="mrow" style="font-weight:700;"><span>Total</span><span>${esc(fmtMonto(detalleTotal(c.detalleDocs)))}</span></div>
+    </div>`;
+  };
+  const overlay = document.createElement("div");
+  overlay.className = "modal-overlay";
+  overlay.id = "cert-modal";
+  overlay.innerHTML = `
+    <div class="modal">
+      <div class="modal-head">
+        <h3>${esc(c.nombreSet)}</h3>
+        <button class="close" id="modal-close" aria-label="Cerrar">✕</button>
+      </div>
+      <dl>
+        <dt>Folio</dt><dd>${esc(c.folio)}</dd>
+        <dt>Unidad</dt><dd>${esc(c.unidad)}</dd>
+        <dt>Tipo de set</dt><dd>${esc(tipoLabel(c.tipo))}</dd>
+        <dt>Fecha</dt><dd>${fmtDate(c.createdAt)}</dd>
+        <dt>Ministro/a de fe</dt><dd>${esc((c.decl||{}).nombre)} — ${esc((c.decl||{}).cargo)}</dd>
+        <dt>RUT</dt><dd class="mono">${esc((c.decl||{}).rut)}</dd>
+      </dl>
+      ${catBlock(cat, false)}
+      ${otrosBlock()}
+      ${detalleBlock()}
+      ${c.complementarioOn && cat.complementario ? catBlock(cat.complementario, true) : ""}
+      <div class="actions" style="margin-top:6px; padding-top:16px;">
+        <div class="btn-spacer"></div>
+        <button class="btn" id="modal-download-pdf">Descargar PDF</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  document.getElementById("modal-close").onclick = () => { selectedCert=null; overlay.remove(); };
+  overlay.onclick = (e) => { if(e.target === overlay){ selectedCert=null; overlay.remove(); } };
+  document.getElementById("modal-download-pdf").onclick = () => downloadCertificadoPdf(c);
+}
+
+/* ============================== ROUTER ============================== */
+function render(){
+  document.getElementById("tab-nuevo").classList.toggle("active", currentTab==="nuevo");
+  document.getElementById("tab-registro").classList.toggle("active", currentTab==="registro");
+  if(currentTab === "nuevo") renderNuevo();
+  else renderRegistro();
+}
+document.getElementById("tab-nuevo").onclick = () => { currentTab = "nuevo"; render(); };
+document.getElementById("tab-registro").onclick = () => { currentTab = "registro"; render(); };
+
+render();
+</script>
+</body>
+</html>
