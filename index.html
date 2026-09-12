@@ -288,6 +288,15 @@
       margin:5px 0 0;color:var(--navy);font-size:17px;font-weight:900;letter-spacing:1.6px;
       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     }
+    .rc-panel{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:#f8fbfd}
+    .rc-linea{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .rc-linea strong{color:var(--navy);font-size:13px}
+    .rc-botones{display:flex;gap:6px;flex-wrap:wrap}
+    .rc-estado{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.45}
+    .rc-estado.ok{color:#1d6b3f}
+    .rc-estado.warn{color:#a05a00}
+    .tag-central{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:10px;
+      background:#e7eef6;color:#4a6a86;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
     .cert-meta{
       border:1px solid #ccdbe8;background:#f8fbfd;border-radius:8px;
       display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:6mm;overflow:hidden
@@ -596,7 +605,20 @@
 <section id="recordsView" class="records hidden">
   <div class="card">
     <div class="section">
-      <div class="bar"><span>REGISTRO DE CERTIFICADOS</span><small>Certificados y borradores guardados en este navegador</small></div>
+      <div class="bar"><span>REGISTRO DE CERTIFICADOS</span><small>Borradores de este navegador y certificados del Servicio</small></div>
+
+      <div class="rc-panel">
+        <div class="rc-linea">
+          <strong>Registro central del Servicio</strong>
+          <div class="rc-botones">
+            <button class="btn small" id="rcConfigBtn">Configurar</button>
+            <button class="btn small" id="rcTestBtn">Probar conexión</button>
+            <button class="btn small" id="rcSyncBtn">Actualizar</button>
+          </div>
+        </div>
+        <div id="rcEstado" class="rc-estado"></div>
+      </div>
+
       <div class="records-toolbar">
         <input id="recordSearch" placeholder="Buscar por folio, unidad o referencia" />
         <select id="recordMinisterFilter"><option value="">Todos los ministros</option></select>
@@ -1380,6 +1402,144 @@ function nextFolio(minister, programa){
   return folioDe(minister, year, programa, next);
 }
 
+/* ── Registro central ─────────────────────────────────────────────────────────
+   El certificado es un documento de fe pública: su correlativo tiene que ser
+   único en todo el Servicio, no sólo en el navegador de quien lo emite. Para
+   eso la aplicación puede apoyarse en un endpoint institucional —un flujo de
+   Power Automate que escribe en una lista de Microsoft 365— que asigna el
+   número y guarda la emisión. Ver docs/registro-central.md.
+
+   El endpoint no viaja en el repositorio, que es público: cada Ministro de Fe
+   lo pega una vez y queda guardado en su navegador. Sin endpoint configurado
+   la aplicación funciona igual que antes, con correlativos locales. */
+const ENDPOINT_KEY = "slep_ministro_fe_endpoint_v1";
+const RC_TIMEOUT_MS = 20000;
+
+async function rcFetch(url, cuerpo, contentType){
+  const ctrl = new AbortController();
+  const reloj = setTimeout(() => ctrl.abort(), RC_TIMEOUT_MS);
+  try{
+    const res = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": contentType },
+      body: JSON.stringify(cuerpo),
+      signal: ctrl.signal
+    });
+    const texto = await res.text();
+    if(!res.ok) throw new Error(`El servicio respondió ${res.status}. ${texto.slice(0,200)}`);
+    let datos;
+    try{ datos = JSON.parse(texto); }
+    catch(_){ throw new Error("La respuesta del servicio no es JSON válido."); }
+    if(datos && datos.ok === false) throw new Error(datos.error || "El servicio rechazó la solicitud.");
+    return datos;
+  } finally { clearTimeout(reloj); }
+}
+
+/* Sólo https, salvo en pruebas locales: el certificado lleva datos personales. */
+function rcUrlValida(u){
+  return /^https:\/\//i.test(u) || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?\//i.test(u);
+}
+
+const RC = {
+  url(){ return (localStorage.getItem(ENDPOINT_KEY) || "").trim(); },
+  configurado(){ return rcUrlValida(RC.url()); },
+  guardarUrl(u){
+    const limpia = String(u||"").trim();
+    if(limpia && !rcUrlValida(limpia)) throw new Error("La dirección debe empezar con https://");
+    localStorage.setItem(ENDPOINT_KEY, limpia);
+  },
+
+  async llamar(cuerpo){
+    const url = RC.url();
+    if(!url) throw new Error("No hay registro central configurado.");
+    try{
+      return await rcFetch(url, cuerpo, "application/json");
+    }catch(e){
+      if(e.name === "AbortError") throw new Error("El registro central no respondió a tiempo.");
+      /* Un preflight CORS rechazado no deja leer el motivo real del error, así
+         que se reintenta como solicitud simple (text/plain), que el navegador
+         no preflightea. El reintento es seguro porque el servidor descarta las
+         emisiones repetidas por idEmision. */
+      return await rcFetch(url, cuerpo, "text/plain;charset=UTF-8");
+    }
+  },
+
+  async ping(){ return RC.llamar({ accion:"ping" }); },
+
+  async emitir(rec){
+    const datos = await RC.llamar({
+      accion: "emitir",
+      idEmision: rec.id,
+      anio: new Date().getFullYear(),
+      prefijo: FOLIO_PREFIJO,
+      programaCodigo: programaCodigo(rec.programa),
+      ministroCodigo: rec.ministerCode,
+      ministroNombre: rec.ministerName,
+      ministroRut: rec.ministerRut,
+      ministroCargo: rec.ministerCargo,
+      programa: programaTexto(rec),
+      naturaleza: rec.natureLabel,
+      unidad: rec.unit,
+      referencia: rec.reference,
+      registro: rec
+    });
+    if(!datos || !datos.folio) throw new Error("El servicio no devolvió un folio.");
+    return datos;
+  },
+
+  async listar(){
+    const datos = await RC.llamar({ accion:"listar" });
+    return Array.isArray(datos?.registros) ? datos.registros : [];
+  }
+};
+
+/* Certificados traídos del registro central, en memoria: se consultan al abrir
+   el registro y no se mezclan con los locales en localStorage. */
+let registrosCentrales = [];
+
+/* Local más central, sin repetir: un certificado emitido desde este equipo está
+   en las dos partes y manda la copia local, que trae el detalle completo. */
+function registrosVisibles(){
+  const locales = getRecords();
+  const folios = new Set(locales.map(r => r.folio).filter(Boolean));
+  const ids = new Set(locales.map(r => r.id));
+  const ajenos = registrosCentrales
+    .filter(r => !folios.has(r.folio) && !ids.has(r.id))
+    .map(r => Object.assign({}, r, { ajeno:true }));
+  return locales.concat(ajenos);
+}
+
+function pintarEstadoRC(texto, clase){
+  const caja = $("rcEstado");
+  if(!caja) return;
+  caja.textContent = texto;
+  caja.className = "rc-estado " + (clase || "");
+}
+
+function refrescarPanelRC(){
+  const conf = RC.configurado();
+  $("rcSyncBtn").disabled = !conf;
+  $("rcTestBtn").disabled = !conf;
+  pintarEstadoRC(
+    conf ? "Registro central configurado. Los correlativos los asigna el Servicio."
+         : "Sin registro central: los correlativos son de este navegador y pueden repetirse entre equipos.",
+    conf ? "ok" : "warn"
+  );
+}
+
+async function sincronizarRC(){
+  if(!RC.configurado()) return;
+  pintarEstadoRC("Consultando el registro central…", "");
+  try{
+    registrosCentrales = await RC.listar();
+    pintarEstadoRC(`Registro central al día: ${registrosCentrales.length} certificado(s) en el Servicio.`, "ok");
+  }catch(e){
+    registrosCentrales = [];
+    pintarEstadoRC("No fue posible leer el registro central: " + e.message, "warn");
+  }
+  renderRecords();
+}
+
 /* Último folio emitido por este Ministro de Fe en el año en curso. */
 function ultimoFolioDe(minister){
   const year=new Date().getFullYear();
@@ -1392,7 +1552,7 @@ function ultimoFolioDe(minister){
   return mejor;
 }
 
-function issueCertificate(){
+async function issueCertificate(){
   const errors=validate();
   if(errors.length){ alert("No es posible emitir:\n\n• "+errors.join("\n• ")); return; }
 
@@ -1401,9 +1561,35 @@ function issueCertificate(){
   const records=getRecords();
   const old=records.find(r=>r.id===rec.id);
 
-  rec.folio = old?.folio || nextFolio(m, rec.programa);
   rec.issuedAt = new Date().toISOString();
   rec.createdAt = old?.createdAt || rec.createdAt;
+
+  if(old?.folio){
+    rec.folio = old.folio;
+    rec.origen = old.origen || "local";
+  } else if(RC.configurado()){
+    /* Con registro central el número lo asigna el Servicio, no el navegador.
+       Si no responde no se emite: un folio repetido en un documento que va a
+       la Contraloría es peor que esperar. El borrador no se pierde. */
+    const btn=$("issueBtn"), rotulo=btn.textContent;
+    btn.disabled=true; btn.textContent="Emitiendo…";
+    try{
+      const resp = await RC.emitir(rec);
+      rec.folio = resp.folio;
+      rec.origen = "central";
+    }catch(e){
+      alert("No fue posible obtener el correlativo del registro central:\n\n"
+        + e.message
+        + "\n\nEl certificado NO se emitió, para no arriesgar un folio repetido. "
+        + "Guarde el borrador y reintente en unos minutos.");
+      return;
+    }finally{
+      btn.disabled=false; btn.textContent=rotulo;
+    }
+  } else {
+    rec.folio = nextFolio(m, rec.programa);
+    rec.origen = "local";
+  }
 
   const idx=records.findIndex(r=>r.id===rec.id);
   if(idx>=0) records[idx]=rec; else records.unshift(rec);
@@ -1437,23 +1623,24 @@ function renderRecords(){
   const q=$("recordSearch").value.trim().toLowerCase();
   const mf=$("recordMinisterFilter").value;
   const sf=$("recordStatusFilter").value;
-  const rows=getRecords().filter(r=>{
+  const rows=registrosVisibles().filter(r=>{
     const hay=[r.folio,r.unit,r.reference,r.natureLabel,r.ministerName].join(" ").toLowerCase();
     return (!q||hay.includes(q)) && (!mf||r.ministerId===mf) && (!sf||r.status===sf);
   }).sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""));
 
   $("recordsBody").innerHTML=rows.length?rows.map(r=>`
     <tr>
-      <td><strong>${escapeHtml(r.folio||"Borrador")}</strong></td>
+      <td><strong>${escapeHtml(r.folio||"Borrador")}</strong>${r.ajeno?`<span class="tag-central" title="Emitido en otro equipo del Servicio">otro equipo</span>`:""}</td>
       <td>${escapeHtml(r.ministerName)}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
       <td>${escapeHtml(r.unit)}</td>
       <td>${statusLabel(r.status)}</td>
       <td>
+        ${r.ajeno ? `<span style="color:var(--muted);font-size:12px">Solo consulta</span>` : `
         <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
         ${r.status==="draft"?`<button class="btn small" onclick="editRecord('${r.id}')">Editar</button>`:""}
         <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
-        ${r.status==="draft"?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}
+        ${r.status==="draft"?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}`}
       </td>
     </tr>`).join(""):`<tr><td colspan="6" style="color:var(--muted)">No hay registros.</td></tr>`;
 }
@@ -1721,6 +1908,34 @@ function showRecordsView(){
   $("newView").classList.add("hidden"); $("recordsView").classList.remove("hidden");
   $("tabNew").classList.remove("active"); $("tabRecords").classList.add("active");
   renderRecords();
+  refrescarPanelRC();
+  if(RC.configurado()) sincronizarRC();
+}
+
+function configurarRC(){
+  const actual = RC.url();
+  const u = prompt(
+    "Dirección del registro central del Servicio (la entrega el Subdepartamento de Finanzas).\n\n" +
+    "Déjela en blanco para volver a trabajar sólo en este equipo.",
+    actual);
+  if(u === null) return;
+  try{ RC.guardarUrl(u); }
+  catch(e){ alert(e.message); return; }
+  registrosCentrales = [];
+  refrescarPanelRC();
+  renderRecords();
+  if(RC.configurado()) probarRC();
+}
+
+async function probarRC(){
+  pintarEstadoRC("Probando la conexión con el registro central…", "");
+  try{
+    await RC.ping();
+    pintarEstadoRC("Conexión correcta. Los correlativos los asigna el Servicio.", "ok");
+    sincronizarRC();
+  }catch(e){
+    pintarEstadoRC("No hay conexión con el registro central: " + e.message, "warn");
+  }
 }
 
 function changeMinister(ministerId){
@@ -1764,6 +1979,9 @@ $("closePreviewBtn").addEventListener("click",closePreview);
 $("printBtn").addEventListener("click",()=>window.print());
 $("tabNew").addEventListener("click",showNewView);
 $("tabRecords").addEventListener("click",showRecordsView);
+$("rcConfigBtn").addEventListener("click",configurarRC);
+$("rcTestBtn").addEventListener("click",probarRC);
+$("rcSyncBtn").addEventListener("click",sincronizarRC);
 $("recordSearch").addEventListener("input",renderRecords);
 $("recordMinisterFilter").addEventListener("change",renderRecords);
 $("recordStatusFilter").addEventListener("change",renderRecords);
@@ -1778,6 +1996,7 @@ updateTopFields();
 renderChecklist();
 renderHistory();
 renderRecords();
+refrescarPanelRC();
 </script>
 </body>
 </html>

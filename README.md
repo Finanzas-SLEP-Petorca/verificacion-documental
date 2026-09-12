@@ -139,13 +139,30 @@ certificado emitido con la versión anterior, debe abrir `/v1/`.
 
 ## Persistencia
 
-Los certificados se guardan en el `localStorage` del navegador. Esto sirve para uso
-individual, pero **no** constituye un sistema institucional: cada navegador mantiene su
-propio registro y sus propios correlativos, y los datos no se comparten entre equipos ni
-entre personas.
+Los borradores se guardan siempre en el `localStorage` del navegador. Los certificados
+emitidos, en cambio, dependen de si hay registro central configurado.
 
-Para un uso institucional se requiere backend con base de datos central, autenticación,
-control compartido de correlativos y auditoría de emisión y anulación.
+### Sin registro central
+
+Cada navegador mantiene su propio registro y sus propios correlativos. Sirve para uso
+individual, pero **no** es un sistema institucional: dos equipos pueden emitir el mismo
+folio y nadie ve el registro completo. La aplicación lo advierte en pantalla.
+
+### Con registro central
+
+El correlativo lo asigna el Servicio, no el navegador, y cada emisión queda en una lista
+de Microsoft 365 en el SharePoint del SLEP. El registro muestra entonces también los
+certificados emitidos en otros equipos, como *solo consulta*.
+
+Si el registro central está configurado y no responde, la aplicación **no emite**:
+avisa el motivo y sugiere guardar el borrador y reintentar. Un folio repetido en un
+documento que va a la Contraloría es peor que esperar.
+
+La dirección del servicio no viaja en este repositorio, que es público: cada Ministro de
+Fe la pega una vez en **Registro de certificados → Configurar** y queda guardada en su
+navegador.
+
+El montaje está en [`docs/registro-central.md`](docs/registro-central.md).
 
 ---
 
