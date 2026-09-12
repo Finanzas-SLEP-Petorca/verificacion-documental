@@ -1,0 +1,1567 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Certificado de Ministro de Fe — SLEP Petorca</title>
+  <style>
+    :root{
+      --navy:#0d2f57;
+      --navy-2:#174e7d;
+      --blue:#2d76b8;
+      --blue-light:#eaf4fc;
+      --line:#d7e1ea;
+      --text:#183047;
+      --muted:#6f8395;
+      --bg:#eef3f7;
+      --panel:#ffffff;
+      --success:#0f9f6e;
+      --warn:#b97900;
+      --danger:#b42318;
+      --shadow:0 10px 30px rgba(13,47,87,.10);
+      --radius:14px;
+    }
+
+    *{box-sizing:border-box}
+    html,body{margin:0;padding:0;background:var(--bg);color:var(--text);font-family:Inter,Segoe UI,Arial,sans-serif}
+    button,input,select,textarea{font:inherit}
+    button{cursor:pointer}
+    .hidden{display:none!important}
+
+    .app-header{
+      background:#fff;
+      border-bottom:1px solid var(--line);
+      padding:18px 28px;
+      display:grid;
+      grid-template-columns:250px 1fr 250px;
+      align-items:center;
+      gap:16px;
+      position:sticky;
+      top:0;
+      z-index:10;
+    }
+    .brand-left,.brand-right{font-weight:800;color:var(--navy)}
+    .brand-logo{width:210px;max-width:100%;height:auto;display:block}
+    .cert-logo{width:62mm;height:auto;display:block}
+    .brand-left small,.brand-right small{display:block;color:var(--muted);font-weight:600;margin-top:3px}
+    .brand-right{text-align:right}
+    .brand-chip{display:inline-flex;gap:4px;margin-bottom:4px}
+    .brand-chip span{width:34px;height:5px;display:block}
+    .chip-a{background:#f0a11a}.chip-b{background:#59aede}.chip-c{background:#e83d4f}.chip-d{background:#2265a8}
+    .title{text-align:center}
+    .title h1{margin:0;font-size:26px;color:var(--navy);letter-spacing:.4px}
+    .title p{margin:5px 0 0;color:var(--muted)}
+
+    .tabs{
+      max-width:1420px;
+      margin:18px auto 0;
+      display:flex;
+      gap:8px;
+      padding:0 18px;
+    }
+    .tab{
+      border:0;
+      background:transparent;
+      padding:11px 14px;
+      color:var(--muted);
+      font-weight:700;
+      border-bottom:3px solid transparent;
+    }
+    .tab.active{color:var(--navy);border-color:var(--blue)}
+
+    .layout{
+      max-width:1420px;
+      margin:0 auto;
+      padding:18px;
+      display:grid;
+      grid-template-columns:minmax(0,1fr) 330px;
+      gap:18px;
+    }
+    .card{
+      background:var(--panel);
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      box-shadow:var(--shadow);
+      overflow:hidden;
+    }
+    .section{padding:16px}
+    .section + .section{border-top:1px solid var(--line)}
+    .bar{
+      margin:-16px -16px 15px;
+      padding:12px 16px;
+      background:linear-gradient(90deg,var(--navy),var(--navy-2));
+      color:#fff;
+      font-weight:800;
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:center;
+    }
+    .bar small{font-weight:500;color:#d6e7f4}
+
+    .grid{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(0,1fr));
+      gap:12px;
+    }
+    .field{display:flex;flex-direction:column;gap:6px}
+    .field.span-2{grid-column:span 2}
+    .field.span-4{grid-column:span 4}
+    label{font-size:13px;font-weight:800;color:var(--navy)}
+    input,select,textarea{
+      width:100%;
+      border:1px solid #cbd8e3;
+      border-radius:9px;
+      padding:10px 11px;
+      background:#fff;
+      color:var(--text);
+      min-height:40px;
+      outline:none;
+    }
+    input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 3px rgba(45,118,184,.12)}
+    input[readonly]{background:#f4f7fa;color:#657789}
+    textarea{min-height:72px;resize:vertical}
+
+    .segmented{display:flex;border:1px solid #cbd8e3;border-radius:9px;overflow:hidden;background:#fff}
+    .segmented button{border:0;background:#fff;padding:10px 18px;color:var(--muted);font-weight:800;flex:1}
+    .segmented button.active{background:var(--navy-2);color:#fff}
+
+    .badge{display:inline-flex;align-items:center;gap:6px;padding:7px 10px;border-radius:999px;font-weight:800;font-size:13px}
+    .badge-draft{background:#fff0cd;color:#8d5900}
+    .badge-issued{background:#e7f7f0;color:#08734e}
+    .badge-cancel{background:#feeceb;color:#a13028}
+
+    .checklist-head,.doc-row{
+      display:grid;
+      grid-template-columns:50px minmax(220px,1.05fr) minmax(360px,2fr) 72px 38px;
+      align-items:center;
+      gap:10px;
+    }
+    .checklist-head{
+      padding:9px 10px;
+      background:#f2f6f9;
+      border:1px solid var(--line);
+      border-radius:10px 10px 0 0;
+      color:var(--navy);
+      font-size:12px;
+      font-weight:900;
+    }
+    .doc-list{border:1px solid var(--line);border-top:0;border-radius:0 0 10px 10px;overflow:hidden}
+    .doc-row{padding:10px;background:#fff}
+    .doc-row:nth-child(even){background:#fbfdff}
+    .doc-row + .doc-row{border-top:1px solid var(--line)}
+    .doc-no{font-weight:900;color:var(--blue)}
+    .doc-name{font-weight:800;font-size:13px}
+    .inline-fields{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .inline-fields .mini{display:flex;align-items:center;gap:5px}
+    .mini span{font-size:12px;color:var(--muted);font-weight:800;white-space:nowrap}
+    .mini input,.mini select{padding:7px 9px;min-height:34px;font-size:13px;min-width:130px}
+    .mini.long input{min-width:210px}
+    .check-wrap{text-align:center}
+    .check-wrap input{width:19px;height:19px;min-height:unset;accent-color:var(--blue)}
+    .ex-btn{
+      width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-weight:900
+    }
+    .ex-btn.has{background:#fff5f4;color:var(--danger);border-color:#f6c4c0}
+    .exception{
+      grid-column:2 / -1;
+      margin-top:8px;
+      display:grid;
+      grid-template-columns:180px 1fr;
+      gap:8px;
+      padding:10px;
+      background:#fff8f7;
+      border:1px solid #f3d0cc;
+      border-radius:8px;
+    }
+
+    .optional-box{
+      margin-top:14px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#fbfdff;
+      padding:12px;
+    }
+    .optional-title{display:flex;justify-content:space-between;gap:8px;align-items:center;font-weight:900;color:var(--navy)}
+    .muted-pill{font-size:12px;background:#eef3f7;color:var(--muted);padding:5px 8px;border-radius:999px}
+    .doc-hint{display:block;font-weight:600;font-size:11.5px;color:var(--muted);margin-top:3px}
+
+    .dtable{width:100%;border-collapse:collapse;font-size:13px;margin-top:10px}
+    .dtable th{background:#f2f6f9;color:var(--navy);font-size:11.5px;text-transform:uppercase;letter-spacing:.03em;
+      text-align:left;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
+    .dtable td{padding:6px;border-bottom:1px solid var(--line);vertical-align:middle}
+    .dtable td.n{width:38px;text-align:center;color:var(--blue);font-weight:900}
+    .dtable td.rm{width:38px;text-align:center}
+    .dtable input,.dtable select{min-height:34px;padding:7px 9px;font-size:13px}
+    .dtable tr.total-row td{background:#f7fafc;font-weight:900;color:var(--navy);border-bottom:0}
+    .dtable td.total-label{text-align:right}
+    .rm-btn{width:30px;height:30px;border:1px solid var(--line);border-radius:8px;background:#fff;color:var(--muted);font-weight:900}
+    .rm-btn:hover{background:#fff5f4;color:var(--danger);border-color:#f6c4c0}
+    .otros-row{display:grid;grid-template-columns:38px 1fr 38px;gap:8px;align-items:center;margin-top:8px}
+    .otros-row .n{text-align:center;color:var(--blue);font-weight:900}
+
+    .declaration{
+      display:flex;
+      gap:10px;
+      align-items:flex-start;
+      background:#f7fbff;
+      border:1px solid #dbeaf6;
+      border-radius:10px;
+      padding:12px;
+    }
+    .declaration input{width:19px;height:19px;min-height:unset;accent-color:var(--blue);margin-top:2px}
+
+    .actions{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:14px}
+    .actions .right{display:flex;gap:10px}
+    .btn{
+      border:1px solid #cbd8e3;
+      background:#fff;
+      color:var(--navy);
+      border-radius:9px;
+      padding:10px 14px;
+      font-weight:900;
+    }
+    .btn.primary{background:var(--navy-2);color:#fff;border-color:var(--navy-2)}
+    .btn.danger{color:#a13028;border-color:#efc7c3;background:#fff}
+    .btn.small{padding:6px 9px;font-size:12px}
+
+    .history-card{position:sticky;top:110px}
+    .profile{
+      padding:14px;
+      border:1px solid var(--line);
+      border-radius:10px;
+      background:#fbfdff;
+      margin-bottom:14px;
+    }
+    .profile h3{margin:0;color:var(--navy)}
+    .profile p{margin:3px 0 0;color:var(--muted);font-size:13px}
+    .profile-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+    .metric{border-top:1px solid var(--line);padding-top:10px}
+    .metric small{display:block;color:var(--muted)}
+    .metric strong{display:block;color:var(--navy);margin-top:3px}
+
+    .history-table{width:100%;border-collapse:collapse;font-size:12px}
+    .history-table th,.history-table td{padding:9px 6px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+    .history-table th{color:var(--navy);background:#f5f8fb}
+    .history-actions{display:flex;gap:5px;flex-wrap:wrap}
+
+    .records{max-width:1420px;margin:0 auto;padding:18px}
+    .records-toolbar{display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap}
+    .records-toolbar input,.records-toolbar select{max-width:260px}
+    .records-table{width:100%;border-collapse:collapse}
+    .records-table th,.records-table td{padding:10px;border-bottom:1px solid var(--line);font-size:13px;text-align:left}
+    .records-table th{background:#f3f7fa;color:var(--navy)}
+
+    .modal{
+      position:fixed;inset:0;background:rgba(10,28,48,.62);
+      z-index:100;display:flex;align-items:flex-start;justify-content:center;
+      padding:24px;overflow:auto;
+    }
+    .modal-panel{width:min(980px,100%);background:#fff;border-radius:14px;box-shadow:0 25px 70px rgba(0,0,0,.25);overflow:hidden}
+    .modal-top{display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-bottom:1px solid var(--line);position:sticky;top:0;background:#fff;z-index:5}
+    .modal-top h3{margin:0;color:var(--navy)}
+    .modal-actions{display:flex;gap:8px}
+
+    /* CERTIFICADO */
+    .certificate{
+      width:216mm;
+      min-height:330mm;
+      margin:0 auto;
+      background:#fff;
+      color:#15314b;
+      padding:13mm 13mm 24mm;
+      font-family:Arial,Helvetica,sans-serif;
+    }
+    .cert-logos{display:grid;grid-template-columns:1fr 1fr;align-items:start;margin-bottom:8mm}
+    .logo-text{font-size:12px;color:var(--navy);font-weight:900}
+    .logo-text strong{font-size:25px;display:block;letter-spacing:.5px}
+    .logo-right{text-align:right}
+    .cert-title{text-align:center;margin-bottom:6mm}
+    .cert-title h1{font-size:24px;margin:0;color:var(--navy)}
+    .cert-title p{margin:4px 0 0;color:#667d92;font-size:13px}
+    .cert-meta{
+      border:1px solid #ccdbe8;background:#f8fbfd;border-radius:8px;
+      display:grid;grid-template-columns:repeat(3,1fr);gap:0;margin-bottom:6mm;overflow:hidden
+    }
+    .cert-meta > div{padding:10px;border-right:1px solid #d7e2ec}
+    .cert-meta > div:nth-child(3){border-right:0}
+    .cert-meta .wide{grid-column:span 3;border-top:1px solid #d7e2ec;border-right:0;display:grid;grid-template-columns:1fr 1.2fr;gap:20px}
+    .cert-meta small{display:block;color:#71869a;margin-bottom:3px}
+    .cert-meta strong{color:var(--navy)}
+    .cert-section{margin-top:5mm}
+    .cert-section-title{
+      background:linear-gradient(90deg,var(--navy),var(--navy-2));
+      color:#fff;padding:8px 10px;border-radius:6px;font-weight:900;margin-bottom:0
+    }
+    .cert-table{width:100%;border-collapse:collapse;font-size:12px}
+    .cert-table th,.cert-table td{border:1px solid #d4e0ea;padding:6px 7px}
+    .cert-table th{background:#eef5fa;color:var(--navy);text-align:left}
+    .cert-declaration{font-size:12.5px;line-height:1.5;margin:10px 7px}
+    .signature-zone{min-height:72mm;display:flex;flex-direction:column;justify-content:flex-end;text-align:center}
+    .signature-line{width:90mm;border-top:1px solid #6a839a;margin:0 auto 5px}
+    .signature-zone strong{color:var(--navy)}
+    .signature-zone small{color:#7e91a3;margin-top:6px}
+    .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
+
+    @page{
+      size:8.5in 13in;
+      margin:0;
+    }
+    @media print{
+      /* Solo se imprime el certificado. Se ocultan por completo (display:none, no
+         visibility) las secciones de la aplicación: dejarlas ocupando espacio genera
+         páginas en blanco. */
+      html,body{height:auto!important;overflow:visible!important;background:#fff!important}
+      .app-header,.tabs,#newView,#recordsView{display:none!important}
+
+      /* El modal es position:fixed y su panel tiene scroll propio: en impresión eso
+         recorta el certificado y repite la primera página. Se devuelven al flujo. */
+      .modal{
+        position:static!important;inset:auto!important;display:block!important;
+        background:none!important;padding:0!important;overflow:visible!important;
+      }
+      .modal-panel{
+        width:auto!important;max-width:none!important;border-radius:0!important;
+        box-shadow:none!important;overflow:visible!important;
+      }
+      .modal-top{display:none!important}
+
+      #certificatePrint{
+        position:static!important;width:216mm!important;min-height:0!important;
+        margin:0!important;padding:13mm 13mm 24mm!important;box-shadow:none!important;
+      }
+      .cert-section,.cert-table tr{break-inside:avoid;page-break-inside:avoid}
+      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:48mm}
+    }
+
+    @media(max-width:1100px){
+      .layout{grid-template-columns:1fr}
+      .history-card{position:static}
+      .grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .field.span-4{grid-column:span 2}
+      .checklist-head{display:none}
+      .doc-row{grid-template-columns:42px 1fr 60px 38px}
+      .inline-fields{grid-column:2 / -1}
+    }
+    @media(max-width:650px){
+      .app-header{grid-template-columns:1fr;text-align:center}
+      .brand-right{text-align:center}
+      .grid{grid-template-columns:1fr}
+      .field.span-2,.field.span-4{grid-column:span 1}
+      .layout{padding:10px}
+      .doc-row{grid-template-columns:35px 1fr 48px 35px}
+      .certificate{transform-origin:top left}
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="brand-left">
+    <img class="brand-logo" alt="Servicio Local de Educación Pública Petorca" />
+  </div>
+  <div class="title">
+    <h1>CERTIFICADO DE MINISTRO DE FE</h1>
+    <p>Verificación documental del set de pago para rendición de cuentas</p>
+  </div>
+  <div class="brand-right">
+    <div class="brand-chip" style="justify-content:flex-end"><span class="chip-d"></span><span class="chip-c"></span></div>
+    Ministerio de Educación
+    <small>Gobierno de Chile</small>
+  </div>
+</header>
+
+<div class="tabs">
+  <button class="tab active" id="tabNew">Nuevo certificado</button>
+  <button class="tab" id="tabRecords">Registro de certificados</button>
+</div>
+
+<main id="newView" class="layout">
+  <section class="card">
+    <div class="section">
+      <div class="bar">
+        <span>Datos de certificación</span>
+        <small>Complete los campos y verifique la documentación del set de pago</small>
+      </div>
+
+      <div class="grid">
+        <div class="field">
+          <label>Ministro de Fe — Nombre *</label>
+          <select id="ministerNameSelect"></select>
+        </div>
+        <div class="field">
+          <label>Ministro de Fe — Código *</label>
+          <select id="ministerCodeSelect"></select>
+        </div>
+        <div class="field">
+          <label>Estado</label>
+          <div><span id="statusBadge" class="badge badge-draft">Borrador</span></div>
+        </div>
+        <div class="field">
+          <label>Naturaleza del set *</label>
+          <select id="natureSelect">
+            <option value="">Seleccione...</option>
+            <option value="adquisiciones">Adquisiciones</option>
+            <option value="honorarios">Honorarios</option>
+            <option value="servicios">Servicios Básicos</option>
+            <option value="viaticos">Viáticos y cometidos funcionarios</option>
+            <option value="remuneraciones">Remuneraciones</option>
+          </select>
+        </div>
+
+        <div class="field">
+          <label>RUT Ministro de Fe</label>
+          <input id="ministerRut" readonly />
+        </div>
+        <div class="field span-2">
+          <label>Unidad Ministro de Fe</label>
+          <input id="ministerUnit" readonly />
+        </div>
+        <div class="field">
+          <label>Cargo Ministro de Fe</label>
+          <input id="ministerCargo" readonly />
+        </div>
+
+        <div class="field">
+          <label>Unidad / Establecimiento del set *</label>
+          <select id="unitSelect"></select>
+        </div>
+
+        <div class="field span-2">
+          <label>Referencia del set</label>
+          <input id="referenceInput" placeholder="Ej: Materiales de oficina, año 2026" />
+        </div>
+
+        <div class="field" id="factoringField">
+          <label>Factura cedida a factoring</label>
+          <div class="segmented" id="factoringSegment">
+            <button type="button" data-value="yes">Sí</button>
+            <button type="button" class="active" data-value="no">No</button>
+          </div>
+        </div>
+
+        <div class="field hidden" id="refundField">
+          <label>¿Existe reembolso?</label>
+          <div class="segmented" id="refundSegment">
+            <button type="button" data-value="yes">Sí</button>
+            <button type="button" class="active" data-value="no">No</button>
+          </div>
+        </div>
+
+        <div class="field span-2 hidden" id="complementarioField">
+          <label>¿Aplica complementario D.1? — participación de estudiantes y/o infraestructura</label>
+          <div class="segmented" id="complementarioSegment">
+            <button type="button" data-value="yes">Sí</button>
+            <button type="button" class="active" data-value="no">No</button>
+          </div>
+        </div>
+
+        <div class="field hidden" id="periodField">
+          <label>Período</label>
+          <input id="periodInput" placeholder="Ej: Agosto 2026" />
+        </div>
+        <div class="field hidden" id="amountField">
+          <label>Monto total (opcional)</label>
+          <input id="amountInput" inputmode="numeric" placeholder="$ 0" />
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="bar">
+        <span>DOCUMENTACIÓN DEL SET</span>
+        <small>Marque los documentos presentes e ingrese solo la numeración necesaria</small>
+      </div>
+      <div id="emptyChecklist" style="padding:22px;text-align:center;color:var(--muted)">
+        Seleccione la naturaleza del set para cargar el checklist.
+      </div>
+      <div id="checklistContainer" class="hidden">
+        <div class="checklist-head">
+          <div>#</div><div>Documento</div><div>Información requerida</div><div>Presente</div><div></div>
+        </div>
+        <div id="docList" class="doc-list"></div>
+        <div id="optionalBox" class="optional-box hidden"></div>
+        <div id="otrosBox" class="optional-box hidden"></div>
+        <div id="detalleBox" class="optional-box hidden"></div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="bar"><span>DECLARACIÓN</span></div>
+      <div class="declaration">
+        <input type="checkbox" id="declarationCheck" />
+        <div>
+          Declaro haber revisado los antecedentes indicados y certifico su existencia, integridad y autenticidad conforme al procedimiento vigente.
+        </div>
+      </div>
+
+      <div class="actions">
+        <button class="btn" id="saveDraftBtn">Guardar borrador</button>
+        <div class="right">
+          <button class="btn" id="previewBtn">Vista previa PDF</button>
+          <button class="btn primary" id="issueBtn">Emitir certificado</button>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <aside class="card history-card">
+    <div class="section">
+      <div class="bar"><span>Historial del Ministro de Fe</span></div>
+      <div class="profile">
+        <h3 id="historyMinisterName">—</h3>
+        <p id="historyMinisterRole">Ministro de Fe</p>
+        <div class="profile-grid">
+          <div class="metric"><small>Código</small><strong id="historyMinisterCode">—</strong></div>
+          <div class="metric"><small>Último correlativo</small><strong id="historyCurrentFolio">—</strong></div>
+        </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)">
+          Seleccione por nombre o código; RUT, unidad y cargo se completan automáticamente.
+        </div>
+      </div>
+      <h4 style="color:var(--navy);margin:0 0 8px">Últimos certificados emitidos</h4>
+      <table class="history-table">
+        <thead><tr><th>Folio</th><th>Naturaleza</th><th></th></tr></thead>
+        <tbody id="historyBody"></tbody>
+      </table>
+    </div>
+  </aside>
+</main>
+
+<section id="recordsView" class="records hidden">
+  <div class="card">
+    <div class="section">
+      <div class="bar"><span>REGISTRO DE CERTIFICADOS</span><small>Certificados y borradores guardados en este navegador</small></div>
+      <div class="records-toolbar">
+        <input id="recordSearch" placeholder="Buscar por folio, unidad o referencia" />
+        <select id="recordMinisterFilter"><option value="">Todos los ministros</option></select>
+        <select id="recordStatusFilter">
+          <option value="">Todos los estados</option>
+          <option value="draft">Borrador</option>
+          <option value="issued">Emitido</option>
+          <option value="cancelled">Anulado</option>
+        </select>
+      </div>
+      <div style="overflow:auto">
+        <table class="records-table">
+          <thead><tr><th>Folio / Borrador</th><th>Ministro</th><th>Naturaleza</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody id="recordsBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div id="previewModal" class="modal hidden">
+  <div class="modal-panel">
+    <div class="modal-top">
+      <h3>Vista previa del certificado</h3>
+      <div class="modal-actions">
+        <button class="btn" id="printBtn">Imprimir / Guardar PDF</button>
+        <button class="btn" id="closePreviewBtn">Cerrar</button>
+      </div>
+    </div>
+    <div id="certificatePreview"></div>
+  </div>
+</div>
+
+<script>
+const LOGO_SLEP = "data:image/png;base64,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";
+
+const UNIDADES = [
+  {
+    "grupo": "Unidad Central",
+    "items": [
+      "Subdirección de Administración y Finanzas",
+      "Subdirección Planificación y Control de Gestión",
+      "Subdirección de Infraestructura y Mantenimiento",
+      "Subdirección de Gestión y Desarrollo de Personas",
+      "Subdirección de Unidad de Apoyo Técnico y Pedagógico",
+      "Gabinete y Gestión de Apoyo a los Establecimientos Educacionales"
+    ]
+  },
+  {
+    "grupo": "Cabildo",
+    "items": [
+      "COLEGIO BICENTENARIO — RBD 40242-7",
+      "CTRO.REC.ATENC.DIVERS.CRAD PAUL PERCY HARRIS — RBD 11196-1",
+      "ESCUELA BASICA G-45 — RBD 1180-0",
+      "ESCUELA BASICA G-47 — RBD 1182-7",
+      "ESCUELA BASICA LA FRONTERA DE ALICAHUE — RBD 1171-1",
+      "ESCUELA BASICA LA VIÑA — RBD 1178-9",
+      "ESCUELA BASICA LOS ANGELES — RBD 1181-9",
+      "ESCUELA BASICA MUNICIPAL ARAUCARIA — RBD 14479-7",
+      "ESCUELA BASICA SAN LORENZO — RBD 1174-6",
+      "ESCUELA BASICA VALLE DE ARTIFICIO — RBD 1170-3",
+      "ESCUELA ESTER SILVA SOMARRIVA BARTOLILLO — RBD 1173-8",
+      "ESCUELA HANS WENKE MENGERS — RBD 1168-1",
+      "ESCUELA MUNICIPAL LAS PUERTAS — RBD 11206-2",
+      "ESCUELA PABLO NERUDA — RBD 1176-2",
+      "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA — RBD 12336-6",
+      "LICEO Y ESCUELA MUNICIPAL — RBD 1167-3",
+      "RINCONCITO — RBD 33539",
+      "SANTA MARTA"
+    ]
+  },
+  {
+    "grupo": "La Ligua",
+    "items": [
+      "CARMEN SANCHEZ ARAYA — RBD 1134-7",
+      "CENTRO DE EDUCACION DE ADULTOS LA LIGUA — RBD 1120-7",
+      "COLEGIO LUIS CRUZ MARTINEZ — RBD 11199-6",
+      "EL CARMEN CUNCUNITA — RBD 33530",
+      "ESC. BASICA CASAS VIEJAS DE LONGOTOMA — RBD 1131-2",
+      "ESC. BASICA LOS HORNOS DE HUAQUEN — RBD 1130-4",
+      "ESC.BASICA LAS CASAS DE HUAQUEN — RBD 1133-9",
+      "ESCUELA ANGEL MENAY — RBD 1129-0",
+      "ESCUELA BASICA ANEXO PICHILEMU — RBD 12299-8",
+      "ESCUELA BASICA CARLOS ARIZTIA RUIZ — RBD 1140-1",
+      "ESCUELA BASICA HORTENCIA POWELL S. — RBD 1137-1",
+      "ESCUELA BASICA LOS MOLLES — RBD 1135-5",
+      "ESCUELA BASICA PICHICUY — RBD 1144-4",
+      "ESCUELA BASICA POZA VERDE — RBD 1132-0",
+      "ESCUELA BASICA PUYANCON — RBD 1136-3",
+      "ESCUELA BASICA QUEBRADILLA — RBD 1143-6",
+      "ESCUELA COMUNIDADES DE VALLE HERMOSO — RBD 1128-2",
+      "ESCUELA DIEGO PORTALES — RBD 1125-8",
+      "ESCUELA ENRIQUE DOLL ROJAS — RBD 1145-2",
+      "ESCUELA ESPECIAL SOL NACIENTE — RBD 1126-6",
+      "ESCUELA GABRIELA MISTRAL — RBD 1123-1",
+      "ESCUELA LA CANELA — RBD 1142-8",
+      "ESCUELA MINISTRO GOMEZ MILLAS — RBD 1139-8",
+      "ESCUELA REPUBLICA DE VENEZUELA — RBD 1122-3",
+      "HUMBERTO BASULTO",
+      "LICEO PULMAHUE DE LA LIGUA — RBD 1121-5",
+      "MANITOS DE ANGEL",
+      "MANITOS DE COLORES",
+      "PULMAHUE — RBD 33527",
+      "SANTA TERESA — RBD 33526"
+    ]
+  },
+  {
+    "grupo": "Papudo",
+    "items": [
+      "BARQUITO DE PAPEL",
+      "ESCUELA PAPUDO — RBD 1191-6",
+      "ESCUELA RURAL PULLALLY — RBD 1192-4",
+      "LICEO TECNICO PROFESIONAL PAPUDO — RBD 40099-8",
+      "RAYITO DE SOL"
+    ]
+  },
+  {
+    "grupo": "Petorca",
+    "items": [
+      "ESCUELA BASICA BENANCIO PEREZ — RBD 1158-4",
+      "ESCUELA BASICA EL CRUCERO — RBD 1153-3",
+      "ESCUELA BASICA G-24 — RBD 1156-8",
+      "ESCUELA BASICA LOS ALAMOS EL SOBRANTE — RBD 1157-6",
+      "ESCUELA BASICA NEFTALI REYES B. — RBD 1150-9",
+      "ESCUELA BASICA PEDEGUA — RBD 1161-4",
+      "ESCUELA BASICA VILLA SANTA ANA — RBD 1151-7",
+      "ESCUELA EDUARDO FREI MONTALVA — RBD 1152-5",
+      "ESCUELA FERNANDO GARCIA OLDINI — RBD 1147-9",
+      "ESCUELA HOGAR FRONTERIZA DE CHALACO — RBD 1160-6",
+      "LAMPARITA — RBD 33548-7",
+      "LICEO CORDILLERA — RBD 1149-5",
+      "LICEO JOSE MANUEL BORGOÑO NUNEZ — RBD 1148-7",
+      "MIS PRIMEROS PASOS — RBD 33550-9",
+      "MUNDO DE PEQUES — RBD 33549-5"
+    ]
+  }
+];
+const MINISTERS = [
+  {"id": "GAB700", "name": "Alejandro Barrientos Rojas", "code": "GAB700", "rut": "15.372.938-7", "unit": "Gabinete y Gestión de Apoyo a los Establecimientos Educacionales", "cargo": "Jefe de Gabinete", "role": "Ministro de Fe"},
+  {"id": "GDA801", "name": "Yhana Morales Villacorta", "code": "GDA801", "rut": "19.528.675-2", "unit": "Gabinete y Gestión de Apoyo a los Establecimientos Educacionales", "cargo": "Profesional Control de Gestión – GDAE", "role": "Ministro de Fe"},
+  {"id": "GAB701", "name": "Camilo Díaz Irirate", "code": "GAB701", "rut": "17.741.170-8", "unit": "Gabinete y Gestión de Apoyo a los Establecimientos Educacionales", "cargo": "Encargado de Gestión Territorial - Gabinete", "role": "Ministro de Fe"},
+  {"id": "PCG305", "name": "Abraham Allel Altamirano", "code": "PCG305", "rut": "10.716.687-4", "unit": "Planificación y Control de Gestión y Control de Presupuesto", "cargo": "Encargado de Control Presupuestario", "role": "Ministro de Fe"},
+  {"id": "PCG303", "name": "Gerard Díaz Jiménez", "code": "PCG303", "rut": "17.374.434-K", "unit": "Planificación y Control de Gestión y Control de Presupuesto", "cargo": "Encargado de Tecnologías de la Información", "role": "Ministro de Fe"},
+  {"id": "PCG302", "name": "Paula Opazo Tobar", "code": "PCG302", "rut": "19.793.831-5", "unit": "Planificación y Control de Gestión y Control de Presupuesto", "cargo": "Encargada de Planificación y Control de Gestión", "role": "Ministro de Fe"},
+  {"id": "GDP203", "name": "Catalina González Fernández", "code": "GDP203", "rut": "18.103.283-9", "unit": "Gestión y Desarrollo de Personas", "cargo": "Encargada de Desarrollo Organizacional", "role": "Ministro de Fe"},
+  {"id": "GDP202", "name": "Felipe Palacios Zamora", "code": "GDP202", "rut": "17.753.545-1", "unit": "Gestión y Desarrollo de Personas", "cargo": "Profesional de Remuneraciones", "role": "Ministro de Fe"},
+  {"id": "GDP201", "name": "Ana Abarca Gannat", "code": "GDP201", "rut": "8.710.013-8", "unit": "Gestión y Desarrollo de Personas", "cargo": "Profesional de Gestión de Personas", "role": "Ministro de Fe"},
+  {"id": "UATP500", "name": "Estefany Cisternas Oliarte", "code": "UATP500", "rut": "16.564.013-6", "unit": "Apoyo Técnico Pedagógico", "cargo": "Subdirectora de Unidad de Apoyo Técnico Pedagógico", "role": "Ministro de Fe"},
+  {"id": "UATP501", "name": "Carolina Villagra Marín", "code": "UATP501", "rut": "18.064.502-0", "unit": "Apoyo Técnico Pedagógico", "cargo": "Coordinadora Unidad de Apoyo Técnico Pedagógico", "role": "Ministro de Fe"},
+  {"id": "UATP502", "name": "Nataly Venegas Peña", "code": "UATP502", "rut": "17.265.351-0", "unit": "Apoyo Técnico Pedagógico", "cargo": "Profesional de Mejora Continua", "role": "Ministro de Fe"},
+  {"id": "INF400", "name": "Valentina Rojas Pacholec", "code": "INF400", "rut": "17.602.257-4", "unit": "Infraestructura y Mantenimiento", "cargo": "Coordinadora Mantenimiento e Infraestructura", "role": "Ministro de Fe"},
+  {"id": "INF404", "name": "Catalina Bobadilla Rocco", "code": "INF404", "rut": "20.239.885-5", "unit": "Infraestructura y Mantenimiento", "cargo": "Profesional de Control de Gestión Infraestructura y Mantenimiento", "role": "Ministro de Fe"},
+  {"id": "INF405", "name": "Joaquín Bustamante Fiabane", "code": "INF405", "rut": "17.269.266-4", "unit": "Infraestructura y Mantenimiento", "cargo": "Profesional de Infraestructura", "role": "Ministro de Fe"},
+  {"id": "SAF103", "name": "Daniela González Campos", "code": "SAF103", "rut": "18.117.612-1", "unit": "Administración y Finanzas", "cargo": "Encargada de Compras y Administración Interna", "role": "Ministro de Fe"},
+  {"id": "SAF104", "name": "Andre Rubio Apiolaza", "code": "SAF104", "rut": "16.304.030-1", "unit": "Administración y Finanzas", "cargo": "Coordinadora de Servicios Generales y Oficina de Partes", "role": "Ministro de Fe"},
+  {"id": "SAF105", "name": "Camilo Hodges Carrasco", "code": "SAF105", "rut": "18.015.333-0", "unit": "Administración y Finanzas", "cargo": "Profesional de Servicios Generales", "role": "Ministro de Fe"}
+];
+
+const SUBSIDIES = [
+  "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRORETENCIÓN","RESTO","OTRO"
+];
+
+const DOCS = {
+  adquisiciones: [
+    {no:"01", name:"Resolución o decreto que aprueba la contratación", required:true, fields:[
+      {key:"docType", label:"Modalidad", type:"select", options:["Convenio Marco","Licitación Pública","Trato Directo"]},
+      {key:"number", label:"N.º", type:"text"}
+    ]},
+    {no:"02", name:"Solicitud de Compra / REX", required:true, hint:"En gasto SEP debe indicar la acción y la dimensión del PME.", fields:[
+      {key:"docType", label:"Tipo", type:"select", options:["Solicitud de Compra","REX"]},
+      {key:"number", label:"N.º", type:"text"},
+      {key:"pmeAccion", label:"Acción PME", type:"text", opt:true},
+      {key:"pmeDimension", label:"Dimensión PME", type:"text", opt:true}
+    ]},
+    {no:"03", name:"CDP", required:true, fields:[
+      {key:"number", label:"N.º", type:"text"},
+      {key:"subsidy", label:"Subvención", type:"select", options:SUBSIDIES}
+    ]},
+    {no:"04", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"05", name:"Orden de Compra", required:true, fields:[{key:"number",label:"N.º OC",type:"text"}]},
+    {no:"06", name:"F30, cuando corresponda", required:false, fields:[{key:"number",label:"N.º",type:"text",opt:true}]},
+    {no:"07", name:"F30-1, cuando corresponda", required:false, fields:[{key:"number",label:"N.º",type:"text",opt:true}]},
+    {no:"08", name:"Recepción Conforme (Servicio)", required:true, fields:[]},
+    {no:"09", name:"Recepción Conforme (Establecimiento / Director o Directora)", required:true, fields:[]},
+    {no:"10", name:"Recepción Conforme Mercado Público", required:true, fields:[]},
+    {no:"11", name:"Datos Bancarios", required:true, fields:[]},
+    {no:"12", name:"Documento/s Tributario/s (Factura)", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"13", name:"Otros", required:false, otros:true, fields:[]},
+    {no:"14", name:"Cesión Factoring", required:true, conditional:"factoring", fields:[
+      {key:"assignee",label:"Cesionario",type:"text"},
+      {key:"rut",label:"RUT",type:"text"},
+      {key:"number",label:"Referencia",type:"text"}
+    ]},
+    {no:"15", name:"Datos Bancarios Factoring", required:true, conditional:"factoring", fields:[]},
+    {no:"16", name:"Lista de asistencia", required:true, conditional:"complementario", fields:[]},
+    {no:"17", name:"Nómina de alumnos y alumnas preferentes/prioritarios que participan", required:true, conditional:"complementario", fields:[]},
+    {no:"18", name:"Informe Técnico", required:true, conditional:"complementario", fields:[]},
+    {no:"19", name:"Respaldo fotográfico", required:true, conditional:"complementario", fields:[]}
+  ],
+  honorarios: [
+    {no:"01", name:"Resolución que aprueba convenio / prestación de servicios a honorarios", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"02", name:"Informe de actividades o productos entregados", required:true, fields:[]},
+    {no:"03", name:"Boleta de honorarios", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"04", name:"CDP", required:true, fields:[
+      {key:"number",label:"N.º",type:"text"},
+      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+    ]},
+    {no:"05", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]}
+  ],
+  servicios: [
+    {no:"01", name:"REX que aprueba pago de consumos básicos", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"02", name:"CDP", required:true, fields:[
+      {key:"number",label:"N.º",type:"text"},
+      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+    ]},
+    {no:"03", name:"Requerimiento", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"04", name:"Boletas", required:true, fields:[{key:"number",label:"Folio(s)",type:"text"}]},
+    {no:"05", name:"Cupones de pago, cuando aplique", required:false, fields:[]},
+    {no:"06", name:"Resolución de intereses, cuando corresponda", required:false, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"07", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]}
+  ],
+  viaticos: [
+    {no:"01", name:"Resolución que aprueba el cometido funcionario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"02", name:"Programa, itinerario o invitación que motiva la salida", required:true, fields:[]},
+    {no:"03", name:"Informe de cometido o actividades realizadas", required:true, fields:[]},
+    {no:"04", name:"Rendición de gastos de traslado", required:true, fields:[{key:"number",label:"Referencia / folio",type:"text"}]},
+    {no:"05", name:"CDP por cometido funcionario", required:true, fields:[
+      {key:"number",label:"N.º",type:"text"},
+      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+    ]},
+    {no:"06", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    {no:"07", name:"CDP por concepto de reembolso", required:true, conditional:"refund", fields:[
+      {key:"number",label:"N.º",type:"text"},
+      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+    ]},
+    {no:"08", name:"Compromiso Presupuestario por concepto de reembolso", required:true, conditional:"refund", fields:[{key:"number",label:"N.º",type:"text"}]}
+  ],
+  remuneraciones: [
+    {no:"01", name:"Maestro de Remuneraciones", required:true, fields:[]},
+    {no:"02", name:"Informe de Centralización", required:true, fields:[]},
+    {no:"03", name:"Gasto por Fuente de Financiamiento", required:true, fields:[]},
+    {no:"04", name:"Asiento Contable", required:true, fields:[]},
+    {no:"05", name:"Sentencias Judiciales, cuando corresponda", required:false, fields:[]},
+    {no:"06", name:"Excel de Retenciones Judiciales, cuando corresponda", required:false, fields:[]},
+    {no:"07", name:"Archivo TXT, cuando aplique", required:false, fields:[]}
+  ]
+};
+
+const NATURE_LABELS = {
+  adquisiciones:"Adquisiciones",
+  honorarios:"Honorarios",
+  servicios:"Servicios Básicos",
+  viaticos:"Viáticos y cometidos funcionarios",
+  remuneraciones:"Remuneraciones"
+};
+
+const STORAGE_KEY = "slep_ministro_fe_records_v1";
+const COUNTERS_KEY = "slep_ministro_fe_counters_v1";
+
+let state = {
+  recordId:null,
+  status:"draft",
+  ministerId:"GAB700",
+  nature:"",
+  unit:"",
+  reference:"",
+  factoring:false,
+  refund:false,
+  complementario:false,
+  period:"",
+  amount:"",
+  declaration:false,
+  docs:{},
+  detalle:[],
+  otros:[]
+};
+
+// Naturalezas que llevan tabla de detalle de documentos, folios y montos.
+const DETALLE_NATURES = ["adquisiciones","honorarios","servicios"];
+
+const $ = id => document.getElementById(id);
+const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+
+function getRecords(){ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
+function saveRecords(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
+function getCounters(){ return JSON.parse(localStorage.getItem(COUNTERS_KEY) || "{}"); }
+function saveCounters(obj){ localStorage.setItem(COUNTERS_KEY, JSON.stringify(obj)); }
+
+function currentMinister(){ return MINISTERS.find(m => m.id === state.ministerId) || MINISTERS[0]; }
+
+function populateMinisters(){
+  $("ministerNameSelect").innerHTML = MINISTERS.map(m =>
+    `<option value="${m.id}">${escapeHtml(m.name)}</option>`
+  ).join("");
+
+  $("ministerCodeSelect").innerHTML = MINISTERS.map(m =>
+    `<option value="${m.id}">${escapeHtml(m.code)}</option>`
+  ).join("");
+
+  $("recordMinisterFilter").innerHTML =
+    `<option value="">Todos los ministros</option>` +
+    MINISTERS.map(m => `<option value="${m.id}">${escapeHtml(m.code)} — ${escapeHtml(m.name)}</option>`).join("");
+
+  $("ministerNameSelect").value = state.ministerId;
+  $("ministerCodeSelect").value = state.ministerId;
+}
+
+function populateUnidades(){
+  $("unitSelect").innerHTML =
+    `<option value="">Seleccione...</option>` +
+    UNIDADES.map(g =>
+      `<optgroup label="${escapeHtml(g.grupo)}">` +
+      g.items.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("") +
+      `</optgroup>`
+    ).join("");
+}
+
+function applyLogo(){
+  document.querySelectorAll(".brand-logo").forEach(img => { img.src = LOGO_SLEP; });
+}
+
+function syncStateFromForm(){
+  state.ministerId = $("ministerNameSelect").value;
+  state.nature = $("natureSelect").value;
+  state.unit = $("unitSelect").value;
+  state.reference = $("referenceInput").value.trim();
+  state.period = $("periodInput").value.trim();
+  state.amount = $("amountInput").value.trim();
+  state.declaration = $("declarationCheck").checked;
+}
+
+function updateTopFields(){
+  const m = currentMinister();
+
+  // Nombre y código siempre quedan sincronizados.
+  $("ministerNameSelect").value = m.id;
+  $("ministerCodeSelect").value = m.id;
+
+  // Autocompletado del resto de la ficha.
+  $("ministerRut").value = m.rut || "";
+  $("ministerUnit").value = m.unit || "";
+  $("ministerCargo").value = m.cargo || "";
+
+  // Historial personal del Ministro de Fe.
+  $("historyMinisterName").textContent = m.name;
+  $("historyMinisterRole").textContent = `${m.cargo || ""}${m.cargo ? " · " : ""}Ministro de Fe`;
+  $("historyMinisterCode").textContent = m.code;
+
+  const counters = getCounters();
+  const year = new Date().getFullYear();
+  const last = counters[`${m.id}-${year}`] || 0;
+  $("historyCurrentFolio").textContent =
+    last ? `${m.code}-${year}-${String(last).padStart(3,"0")}` : "Sin emisiones";
+}
+
+function setSegment(id, value){
+  [...$(id).querySelectorAll("button")].forEach(b => b.classList.toggle("active", b.dataset.value === value));
+}
+function attachSegments(){
+  $("factoringSegment").addEventListener("click",e=>{
+    if(e.target.tagName !== "BUTTON") return;
+    state.factoring = e.target.dataset.value === "yes";
+    setSegment("factoringSegment", state.factoring ? "yes":"no");
+    renderChecklist();
+  });
+  $("refundSegment").addEventListener("click",e=>{
+    if(e.target.tagName !== "BUTTON") return;
+    state.refund = e.target.dataset.value === "yes";
+    setSegment("refundSegment", state.refund ? "yes":"no");
+    renderChecklist();
+  });
+  $("complementarioSegment").addEventListener("click",e=>{
+    if(e.target.tagName !== "BUTTON") return;
+    state.complementario = e.target.dataset.value === "yes";
+    setSegment("complementarioSegment", state.complementario ? "yes":"no");
+    renderChecklist();
+  });
+}
+
+function conditionVisible(doc){
+  if(doc.conditional === "factoring") return state.factoring;
+  if(doc.conditional === "refund") return state.refund;
+  if(doc.conditional === "complementario") return state.complementario;
+  return true;
+}
+
+function ensureDocState(doc){
+  if(!state.docs[doc.no]) state.docs[doc.no] = { checked:false, fields:{}, exceptionType:"", exceptionNote:"" };
+  return state.docs[doc.no];
+}
+
+function renderFields(doc, ds){
+  if(!doc.fields?.length) return `<span style="color:var(--muted);font-size:12px">Sin datos adicionales</span>`;
+  return doc.fields.map(f=>{
+    const val = ds.fields?.[f.key] || "";
+    if(f.type === "select"){
+      return `<div class="mini">
+        <span>${escapeHtml(f.label)}</span>
+        <select data-doc="${doc.no}" data-field="${f.key}">
+          <option value="">Seleccione...</option>
+          ${(f.options||[]).map(o=>`<option value="${escapeHtml(o)}" ${val===o?"selected":""}>${escapeHtml(o)}</option>`).join("")}
+        </select>
+      </div>`;
+    }
+    return `<div class="mini ${f.key==="assignee"?"long":""}">
+      <span>${escapeHtml(f.label)}</span>
+      <input data-doc="${doc.no}" data-field="${f.key}" value="${escapeHtml(val)}" />
+    </div>`;
+  }).join("");
+}
+
+/* ---------- Detalle de documentos, folios y montos ---------- */
+function parseMonto(v){
+  if(v==null || v==="") return 0;
+  const n = Number(String(v).replace(/[^0-9.-]/g,""));
+  return Number.isFinite(n) ? n : 0;
+}
+function fmtMonto(n){
+  try{ return "$" + Math.round(n).toLocaleString("es-CL"); }catch(e){ return "$"+n; }
+}
+function detalleTotal(list){
+  return (list||[]).reduce((s,d)=>s+parseMonto(d.monto),0);
+}
+
+function renderDetalle(){
+  const box = $("detalleBox");
+  const aplica = DETALLE_NATURES.includes(state.nature);
+  box.classList.toggle("hidden", !aplica);
+  if(!aplica) return;
+  const rows = (state.detalle||[]).map((d,i)=>`
+    <tr>
+      <td class="n">${i+1}</td>
+      <td><input data-det="${i}" data-det-field="tipo" value="${escapeHtml(d.tipo||"")}" placeholder="Ej: Factura" /></td>
+      <td><input data-det="${i}" data-det-field="folio" value="${escapeHtml(d.folio||"")}" placeholder="Folio" /></td>
+      <td><input data-det="${i}" data-det-field="fecha" type="date" value="${escapeHtml(d.fecha||"")}" /></td>
+      <td><input data-det="${i}" data-det-field="monto" inputmode="numeric" value="${escapeHtml(d.monto||"")}" placeholder="0" /></td>
+      <td class="rm"><button type="button" class="rm-btn" data-det-rm="${i}" title="Eliminar">✕</button></td>
+    </tr>`).join("");
+  box.innerHTML = `
+    <div class="optional-title">
+      <span>Detalle de documentos, folios y montos</span>
+      <span class="muted-pill">Opcional</span>
+    </div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">
+      Individualice cada documento de respaldo asociado a este set, indicando tipo, folio, fecha de emisión y monto.
+    </div>
+    <div style="overflow:auto">
+      <table class="dtable">
+        <thead><tr><th>N.º</th><th>Tipo de documento</th><th>Folio</th><th>Fecha de emisión</th><th>Monto a pagar</th><th></th></tr></thead>
+        <tbody>
+          ${rows}
+          <tr class="total-row"><td colspan="4" class="total-label">Total</td><td id="detalleTotal">${fmtMonto(detalleTotal(state.detalle))}</td><td></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <button type="button" class="btn small" id="addDetalleBtn" style="margin-top:10px">+ Agregar documento</button>`;
+
+  $("addDetalleBtn").addEventListener("click",()=>{
+    state.detalle.push({tipo:"",folio:"",fecha:"",monto:""});
+    renderDetalle();
+  });
+  box.querySelectorAll("[data-det-field]").forEach(el=>el.addEventListener("input",()=>{
+    state.detalle[+el.dataset.det][el.dataset.detField] = el.value;
+    if(el.dataset.detField === "monto"){
+      const t = $("detalleTotal");
+      if(t) t.textContent = fmtMonto(detalleTotal(state.detalle));
+    }
+  }));
+  box.querySelectorAll("[data-det-rm]").forEach(btn=>btn.addEventListener("click",()=>{
+    state.detalle.splice(+btn.dataset.detRm,1);
+    renderDetalle();
+  }));
+}
+
+/* ---------- Detalle del ítem "Otros" ---------- */
+function otrosDoc(){
+  return (DOCS[state.nature]||[]).find(d=>d.otros);
+}
+function otrosActivo(){
+  const doc = otrosDoc();
+  return !!doc && !!state.docs[doc.no]?.checked;
+}
+
+function renderOtros(){
+  const box = $("otrosBox");
+  const activo = otrosActivo();
+  box.classList.toggle("hidden", !activo);
+  if(!activo) return;
+  const rows = (state.otros||[]).map((t,i)=>`
+    <div class="otros-row">
+      <span class="n">${i+1}</span>
+      <input data-otros="${i}" value="${escapeHtml(t||"")}" placeholder="Ej: Certificado de recepción municipal" />
+      <button type="button" class="rm-btn" data-otros-rm="${i}" title="Eliminar">✕</button>
+    </div>`).join("");
+  box.innerHTML = `
+    <div class="optional-title"><span>Detalle del ítem "Otros"</span></div>
+    <div style="font-size:12px;color:var(--muted);margin-top:4px">
+      Individualice los documentos o antecedentes que componen el ítem "Otros".
+    </div>
+    ${rows}
+    <button type="button" class="btn small" id="addOtrosBtn" style="margin-top:10px">+ Agregar documento</button>`;
+
+  $("addOtrosBtn").addEventListener("click",()=>{ state.otros.push(""); renderOtros(); });
+  box.querySelectorAll("[data-otros]").forEach(el=>el.addEventListener("input",()=>{
+    state.otros[+el.dataset.otros] = el.value;
+  }));
+  box.querySelectorAll("[data-otros-rm]").forEach(btn=>btn.addEventListener("click",()=>{
+    state.otros.splice(+btn.dataset.otrosRm,1); renderOtros();
+  }));
+}
+
+function renderChecklist(){
+  const nature = state.nature;
+  $("emptyChecklist").classList.toggle("hidden", !!nature);
+  $("checklistContainer").classList.toggle("hidden", !nature);
+
+  $("factoringField").classList.toggle("hidden", nature !== "adquisiciones");
+  $("complementarioField").classList.toggle("hidden", nature !== "adquisiciones");
+  $("refundField").classList.toggle("hidden", nature !== "viaticos");
+  $("periodField").classList.toggle("hidden", nature !== "remuneraciones");
+  $("amountField").classList.toggle("hidden", nature !== "remuneraciones");
+
+  if(!nature){ $("docList").innerHTML=""; return; }
+
+  const docs = DOCS[nature] || [];
+  const visible = docs.filter(conditionVisible);
+  $("docList").innerHTML = visible.map(doc=>{
+    const ds = ensureDocState(doc);
+    const hasEx = !!ds.exceptionType;
+    return `<div class="doc-row" data-row="${doc.no}">
+      <div class="doc-no">${doc.no}</div>
+      <div class="doc-name">${escapeHtml(doc.name)} ${doc.required ? "" : '<span style="color:var(--muted);font-weight:600">(opcional)</span>'}
+        ${doc.hint ? `<span class="doc-hint">${escapeHtml(doc.hint)}</span>` : ""}</div>
+      <div class="inline-fields">${renderFields(doc,ds)}</div>
+      <div class="check-wrap"><input type="checkbox" data-check="${doc.no}" ${ds.checked?"checked":""} /></div>
+      <div><button class="ex-btn ${hasEx?"has":""}" type="button" data-ex="${doc.no}" title="Registrar excepción">⋯</button></div>
+      <div class="exception ${hasEx?"":"hidden"}" id="ex-${doc.no}">
+        <select data-ex-type="${doc.no}">
+          <option value="">Seleccione excepción...</option>
+          ${["Falta","Incompleto","No aplica","Otro"].map(o=>`<option ${ds.exceptionType===o?"selected":""}>${o}</option>`).join("")}
+        </select>
+        <input data-ex-note="${doc.no}" placeholder="Observación breve" value="${escapeHtml(ds.exceptionNote||"")}" />
+      </div>
+    </div>`;
+  }).join("");
+
+  const hiddenConditionals = docs.filter(d => d.conditional && !conditionVisible(d));
+  if(hiddenConditionals.length){
+    $("optionalBox").classList.remove("hidden");
+    const etiquetas = {factoring:"factoring", refund:"reembolso", complementario:"complementario D.1"};
+    const motivos = [...new Set(hiddenConditionals.map(d=>etiquetas[d.conditional]||d.conditional))];
+    $("optionalBox").innerHTML =
+      `<div class="optional-title">
+         <span>Antecedentes que no aplican según la selección actual (${escapeHtml(motivos.join(" · "))})</span>
+         <span class="muted-pill">${hiddenConditionals.map(d=>d.no).join(" · ")}</span>
+       </div>`;
+  } else {
+    $("optionalBox").classList.add("hidden");
+  }
+
+  bindChecklistInputs();
+  renderOtros();
+  renderDetalle();
+}
+
+function bindChecklistInputs(){
+  document.querySelectorAll("[data-check]").forEach(el => el.addEventListener("change",()=>{
+    ensureDocState({no:el.dataset.check}).checked = el.checked;
+    if(el.checked){
+      state.docs[el.dataset.check].exceptionType="";
+      state.docs[el.dataset.check].exceptionNote="";
+      renderChecklist();
+    }
+  }));
+
+  document.querySelectorAll("[data-field]").forEach(el => el.addEventListener("input",()=>{
+    const no=el.dataset.doc, key=el.dataset.field;
+    if(!state.docs[no]) state.docs[no]={checked:false,fields:{},exceptionType:"",exceptionNote:""};
+    state.docs[no].fields[key]=el.value;
+  }));
+
+  document.querySelectorAll("[data-ex]").forEach(btn=>btn.addEventListener("click",()=>{
+    const no=btn.dataset.ex;
+    document.getElementById(`ex-${no}`).classList.toggle("hidden");
+  }));
+
+  document.querySelectorAll("[data-ex-type]").forEach(el=>el.addEventListener("change",()=>{
+    const no=el.dataset.exType;
+    state.docs[no].exceptionType=el.value;
+    if(el.value) state.docs[no].checked=false;
+    renderChecklist();
+  }));
+
+  document.querySelectorAll("[data-ex-note]").forEach(el=>el.addEventListener("input",()=>{
+    state.docs[el.dataset.exNote].exceptionNote=el.value;
+  }));
+}
+
+function validate(){
+  syncStateFromForm();
+  const errors=[];
+  if(!state.ministerId) errors.push("Seleccione Ministro de Fe.");
+  if(!state.nature) errors.push("Seleccione la naturaleza del set.");
+  if(!state.unit) errors.push("Seleccione unidad / establecimiento.");
+  if(!state.declaration) errors.push("Debe aceptar la declaración.");
+
+  const docs = (DOCS[state.nature]||[]).filter(conditionVisible);
+  for(const doc of docs){
+    const ds=ensureDocState(doc);
+    if(doc.required && !ds.checked && !ds.exceptionType) errors.push(`${doc.no} ${doc.name}: debe verificarse o registrar una excepción.`);
+    if(ds.checked){
+      for(const f of doc.fields||[]){
+        if(f.opt) continue;
+        if(!String(ds.fields?.[f.key]||"").trim()) errors.push(`${doc.no} ${doc.name}: falta ${f.label}.`);
+      }
+      if(doc.otros && !(state.otros||[]).some(t=>String(t||"").trim())){
+        errors.push(`${doc.no} ${doc.name}: detalle al menos un documento del ítem "Otros".`);
+      }
+    }
+    if(ds.exceptionType && ds.exceptionType!=="No aplica" && !String(ds.exceptionNote||"").trim()){
+      errors.push(`${doc.no} ${doc.name}: agregue una observación para la excepción.`);
+    }
+  }
+  return errors;
+}
+
+function makeRecord(status){
+  syncStateFromForm();
+  const m=currentMinister();
+  return {
+    id: state.recordId || crypto.randomUUID(),
+    status,
+    ministerId:state.ministerId,
+    ministerName:m.name,
+    ministerCode:m.code,
+    ministerRut:m.rut,
+    ministerUnit:m.unit,
+    ministerCargo:m.cargo,
+    ministerRole:m.role,
+    nature:state.nature,
+    natureLabel:NATURE_LABELS[state.nature]||"",
+    unit:state.unit,
+    reference:state.reference,
+    factoring:state.factoring,
+    refund:state.refund,
+    complementario:state.complementario,
+    period:state.period,
+    amount:state.amount,
+    declaration:state.declaration,
+    docs:JSON.parse(JSON.stringify(state.docs)),
+    detalle:JSON.parse(JSON.stringify(state.detalle||[])),
+    otros:(state.otros||[]).slice(),
+    updatedAt:new Date().toISOString(),
+    createdAt:new Date().toISOString(),
+    folio:null,
+    issuedAt:null
+  };
+}
+
+function saveDraft(){
+  syncStateFromForm();
+  const rec=makeRecord("draft");
+  const records=getRecords();
+  const idx=records.findIndex(r=>r.id===rec.id);
+  if(idx>=0){
+    rec.createdAt=records[idx].createdAt;
+    rec.folio=records[idx].folio;
+    records[idx]=rec;
+  }else records.unshift(rec);
+  saveRecords(records);
+  state.recordId=rec.id;
+  alert("Borrador guardado.");
+  renderHistory();
+  renderRecords();
+}
+
+function nextFolio(minister){
+  const counters=getCounters();
+  const year=new Date().getFullYear();
+  const key=`${minister.id}-${year}`;
+  const next=(counters[key]||0)+1;
+  counters[key]=next;
+  saveCounters(counters);
+  return `${minister.code}-${year}-${String(next).padStart(3,"0")}`;
+}
+
+function issueCertificate(){
+  const errors=validate();
+  if(errors.length){ alert("No es posible emitir:\n\n• "+errors.join("\n• ")); return; }
+
+  const m=currentMinister();
+  let rec=makeRecord("issued");
+  const records=getRecords();
+  const old=records.find(r=>r.id===rec.id);
+
+  rec.folio = old?.folio || nextFolio(m);
+  rec.issuedAt = new Date().toISOString();
+  rec.createdAt = old?.createdAt || rec.createdAt;
+
+  const idx=records.findIndex(r=>r.id===rec.id);
+  if(idx>=0) records[idx]=rec; else records.unshift(rec);
+  saveRecords(records);
+
+  state.status="issued";
+  state.recordId=rec.id;
+  $("statusBadge").textContent="Emitido";
+  $("statusBadge").className="badge badge-issued";
+  renderHistory(); renderRecords(); updateTopFields();
+  openPreview(rec);
+}
+
+function statusLabel(s){ return ({draft:"Borrador",issued:"Emitido",cancelled:"Anulado"})[s]||s; }
+
+function renderHistory(){
+  const m=currentMinister();
+  const rows=getRecords().filter(r=>r.ministerId===m.id && r.status==="issued").sort((a,b)=>(b.issuedAt||"").localeCompare(a.issuedAt||"")).slice(0,5);
+  $("historyBody").innerHTML = rows.length ? rows.map(r=>`
+    <tr>
+      <td><strong>${escapeHtml(r.folio)}</strong></td>
+      <td>${escapeHtml(r.natureLabel)}</td>
+      <td><div class="history-actions">
+        <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
+        <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
+      </div></td>
+    </tr>`).join("") : `<tr><td colspan="3" style="color:var(--muted)">Sin certificados emitidos.</td></tr>`;
+}
+
+function renderRecords(){
+  const q=$("recordSearch").value.trim().toLowerCase();
+  const mf=$("recordMinisterFilter").value;
+  const sf=$("recordStatusFilter").value;
+  const rows=getRecords().filter(r=>{
+    const hay=[r.folio,r.unit,r.reference,r.natureLabel,r.ministerName].join(" ").toLowerCase();
+    return (!q||hay.includes(q)) && (!mf||r.ministerId===mf) && (!sf||r.status===sf);
+  }).sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""));
+
+  $("recordsBody").innerHTML=rows.length?rows.map(r=>`
+    <tr>
+      <td><strong>${escapeHtml(r.folio||"Borrador")}</strong></td>
+      <td>${escapeHtml(r.ministerName)}</td>
+      <td>${escapeHtml(r.natureLabel)}</td>
+      <td>${escapeHtml(r.unit)}</td>
+      <td>${statusLabel(r.status)}</td>
+      <td>
+        <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
+        ${r.status==="draft"?`<button class="btn small" onclick="editRecord('${r.id}')">Editar</button>`:""}
+        <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
+        ${r.status==="draft"?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}
+      </td>
+    </tr>`).join(""):`<tr><td colspan="6" style="color:var(--muted)">No hay registros.</td></tr>`;
+}
+
+function loadRecordIntoState(r, duplicate=false){
+  state={
+    recordId: duplicate ? null : r.id,
+    status: duplicate ? "draft" : r.status,
+    ministerId:r.ministerId,
+    nature:r.nature,
+    unit:r.unit,
+    reference:r.reference||"",
+    factoring:!!r.factoring,
+    refund:!!r.refund,
+    complementario:!!r.complementario,
+    period:r.period||"",
+    amount:r.amount||"",
+    declaration: duplicate ? false : !!r.declaration,
+    docs:JSON.parse(JSON.stringify(r.docs||{})),
+    detalle:JSON.parse(JSON.stringify(r.detalle||[])),
+    otros:(r.otros||[]).slice()
+  };
+  populateFormFromState();
+}
+
+function populateFormFromState(){
+  $("ministerNameSelect").value=state.ministerId;
+  $("ministerCodeSelect").value=state.ministerId;
+  $("natureSelect").value=state.nature;
+  $("unitSelect").value=state.unit;
+  $("referenceInput").value=state.reference;
+  $("periodInput").value=state.period;
+  $("amountInput").value=state.amount;
+  $("declarationCheck").checked=state.declaration;
+  setSegment("factoringSegment",state.factoring?"yes":"no");
+  setSegment("refundSegment",state.refund?"yes":"no");
+  setSegment("complementarioSegment",state.complementario?"yes":"no");
+  $("statusBadge").textContent=statusLabel(state.status);
+  $("statusBadge").className="badge "+(state.status==="issued"?"badge-issued":state.status==="cancelled"?"badge-cancel":"badge-draft");
+  updateTopFields(); renderChecklist(); renderHistory();
+}
+
+window.viewRecord=function(id){
+  const r=getRecords().find(x=>x.id===id); if(!r)return;
+  openPreview(r);
+}
+window.editRecord=function(id){
+  const r=getRecords().find(x=>x.id===id); if(!r||r.status!=="draft")return;
+  loadRecordIntoState(r,false); showNewView();
+}
+window.duplicateRecord=function(id){
+  const r=getRecords().find(x=>x.id===id); if(!r)return;
+  loadRecordIntoState(r,true); showNewView();
+  alert("Se creó un nuevo borrador a partir del certificado seleccionado.");
+}
+window.deleteRecord=function(id){
+  if(!confirm("¿Eliminar este borrador?"))return;
+  saveRecords(getRecords().filter(x=>x.id!==id)); renderRecords(); renderHistory();
+}
+
+function visibleDocsForRecord(r){
+  const docs=DOCS[r.nature]||[];
+  return docs.filter(d=>{
+    if(d.conditional==="factoring") return !!r.factoring;
+    if(d.conditional==="refund") return !!r.refund;
+    if(d.conditional==="complementario") return !!r.complementario;
+    return true;
+  });
+}
+
+function docIdentification(doc, ds, rec){
+  if(ds?.exceptionType) return `${ds.exceptionType}${ds.exceptionNote?" — "+ds.exceptionNote:""}`;
+  if(!ds?.checked) return doc.required ? "Pendiente" : "No aplica";
+  if(doc.otros){
+    const n=(rec?.otros||[]).filter(t=>String(t||"").trim()).length;
+    return n ? `${n} antecedente${n>1?"s":""} — ver detalle II.a` : "Verificado";
+  }
+  const f=ds.fields||{};
+  if(doc.name==="Datos Bancarios" || doc.name==="Datos Bancarios Factoring") return "Verificados";
+  if(!doc.fields?.length) return "Verificada";
+  const parts=[];
+  if(f.docType) parts.push(f.docType);
+  if(f.number) parts.push(`N.º ${f.number}`);
+  if(f.subsidy) parts.push(`Subvención ${f.subsidy}`);
+  if(f.assignee) parts.push(`Cesionario: ${f.assignee}`);
+  if(f.rut) parts.push(`RUT: ${f.rut}`);
+  return parts.join(" · ") || "Verificada";
+}
+
+function formatDate(iso){
+  const d=iso?new Date(iso):new Date();
+  return new Intl.DateTimeFormat("es-CL",{day:"2-digit",month:"long",year:"numeric"}).format(d);
+}
+function shortDate(iso){
+  const d=iso?new Date(iso):new Date();
+  return new Intl.DateTimeFormat("es-CL",{day:"2-digit",month:"2-digit",year:"numeric"}).format(d);
+}
+
+function certificateHtml(r){
+  const docs=visibleDocsForRecord(r);
+  const minister=MINISTERS.find(m=>m.id===r.ministerId)||{name:r.ministerName,code:r.ministerCode,rut:r.ministerRut,unit:r.ministerUnit,cargo:r.ministerCargo,role:r.ministerRole};
+  const folio=r.folio||"BORRADOR / SIN FOLIO";
+  const otrosCert=(r.otros||[]).filter(t=>String(t||"").trim());
+  const detalleCert=(r.detalle||[]).filter(d=>
+    String(d.tipo||"").trim() || String(d.folio||"").trim() || String(d.monto||"").trim());
+  return `
+  <article class="certificate" id="certificatePrint">
+    <div class="cert-logos">
+      <div class="logo-text">
+        <img class="cert-logo" src="${LOGO_SLEP}" alt="Servicio Local de Educación Pública Petorca" />
+      </div>
+      <div class="logo-text logo-right">
+        <span>Ministerio de Educación</span>
+        <strong style="font-size:15px">Gobierno de Chile</strong>
+      </div>
+    </div>
+
+    <div class="cert-title">
+      <h1>CERTIFICADO DE MINISTRO DE FE</h1>
+      <p>Verificación documental del set de pago para rendición de cuentas</p>
+    </div>
+
+    <div class="cert-meta">
+      <div><small>Folio certificado:</small><strong>${escapeHtml(folio)}</strong></div>
+      <div><small>Fecha de emisión:</small><strong>${escapeHtml(shortDate(r.issuedAt||new Date().toISOString()))}</strong></div>
+      <div><small>Naturaleza del set:</small><strong>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</strong></div>
+      <div class="wide">
+        <span><small>Unidad / Establecimiento:</small><strong>${escapeHtml(r.unit||"—")}</strong></span>
+        <span><small>Referencia del set:</small><strong>${escapeHtml(r.reference||"—")}</strong></span>
+      </div>
+    </div>
+
+    <div class="cert-section">
+      <div class="cert-section-title">I. &nbsp; Identificación del set de pago</div>
+      <table class="cert-table">
+        <tr><th>Ministro de Fe</th><td>${escapeHtml(minister.name)}</td><th>Código</th><td>${escapeHtml(minister.code)}</td></tr>
+        <tr><th>RUT</th><td>${escapeHtml(minister.rut||"—")}</td><th>Cargo</th><td>${escapeHtml(minister.cargo||"—")}</td></tr>
+        <tr><th>Unidad del Ministro de Fe</th><td colspan="3">${escapeHtml(minister.unit||"—")}</td></tr>
+        <tr><th>Naturaleza del set</th><td>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</td><th>Unidad / Establecimiento del set</th><td>${escapeHtml(r.unit||"—")}</td></tr>
+        <tr><th>Estado del certificado</th><td>${escapeHtml(statusLabel(r.status))}</td><th>Correlativo personal</th><td>${escapeHtml(folio)}</td></tr>
+        ${r.nature==="remuneraciones" ? `<tr><th>Período</th><td>${escapeHtml(r.period||"—")}</td><th>Monto total</th><td>${escapeHtml(r.amount||"—")}</td></tr>`:""}
+      </table>
+    </div>
+
+    <div class="cert-section">
+      <div class="cert-section-title">II. &nbsp; Documentación verificada</div>
+      <table class="cert-table">
+        <thead><tr><th style="width:11%">N.º</th><th style="width:47%">Documento</th><th>Identificación</th></tr></thead>
+        <tbody>
+          ${docs.map(doc=>{
+            const ds=r.docs?.[doc.no]||{};
+            return `<tr><td>${doc.no}</td><td>${escapeHtml(doc.name)}</td><td>${escapeHtml(docIdentification(doc,ds,r))}</td></tr>`;
+          }).join("")}
+        </tbody>
+      </table>
+    </div>
+
+    ${otrosCert.length ? `
+    <div class="cert-section">
+      <div class="cert-section-title">II.a &nbsp; Detalle del ítem "Otros"</div>
+      <table class="cert-table">
+        <thead><tr><th style="width:11%">N.º</th><th>Documento o antecedente</th></tr></thead>
+        <tbody>
+          ${otrosCert.map((t,i)=>`<tr><td>${i+1}</td><td>${escapeHtml(t)}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>` : ""}
+
+    ${detalleCert.length ? `
+    <div class="cert-section">
+      <div class="cert-section-title">II.b &nbsp; Detalle de documentos, folios y montos</div>
+      <table class="cert-table">
+        <thead><tr>
+          <th style="width:8%">N.º</th><th>Tipo de documento</th><th style="width:18%">Folio</th>
+          <th style="width:18%">Fecha de emisión</th><th style="width:18%;text-align:right">Monto</th>
+        </tr></thead>
+        <tbody>
+          ${detalleCert.map((d,i)=>`<tr>
+            <td>${i+1}</td>
+            <td>${escapeHtml(d.tipo||"—")}</td>
+            <td>${escapeHtml(d.folio||"—")}</td>
+            <td>${d.fecha?escapeHtml(shortDate(d.fecha)):"—"}</td>
+            <td style="text-align:right">${escapeHtml(fmtMonto(parseMonto(d.monto)))}</td>
+          </tr>`).join("")}
+          <tr>
+            <th colspan="4" style="text-align:right">Total</th>
+            <th style="text-align:right">${escapeHtml(fmtMonto(detalleTotal(detalleCert)))}</th>
+          </tr>
+        </tbody>
+      </table>
+    </div>` : ""}
+
+    <div class="cert-section">
+      <div class="cert-section-title">III. &nbsp; Declaración</div>
+      <div class="cert-declaration">
+        <p>El o la suscrito(a), en su calidad de ministro/a de fe designado(a) por Resolución Exenta N° 450, de 2026, de este Servicio Local, que aprueba el procedimiento de autentificación documental y respaldo de rendición de cuentas del Servicio Local de Educación Pública Petorca, en concordancia con los artículos 5° y 6° de dicho procedimiento y con el artículo 2 N°15 y el artículo 27 de la Resolución N° 2, de 2026, de la Contraloría General de la República, certifica que ha verificado la documentación del set de pago individualizado en el punto I, conforme al detalle señalado en el punto II.</p>
+        <p>Esta certificación acredita exclusivamente la existencia, integridad y autenticidad de la documentación de respaldo del set de pago para efectos de su rendición de cuentas ante la Contraloría General de la República. El o la suscrito(a) declara no haber participado en la preparación, elaboración o tramitación del presente set de pago, en resguardo del principio de segregación de funciones establecido en el artículo 2° letra h) de la Resolución Exenta N° 450, de 2026.</p>
+        <p style="text-align:center;margin-top:18px">Petorca, ${escapeHtml(formatDate(r.issuedAt||new Date().toISOString()))}.</p>
+      </div>
+    </div>
+
+    <div class="signature-zone">
+      <div class="signature-line"></div>
+      <strong>${escapeHtml(minister.name)}</strong>
+      <span>${escapeHtml(minister.cargo||"")}</span>
+      <span>${escapeHtml(minister.role||"Ministro de Fe")}</span>
+      <span>Servicio Local de Educación Pública Petorca</span>
+      <small>Espacio reservado para firma</small>
+    </div>
+
+    <div class="cert-footer">
+      <span>Servicio Local de Educación Pública Petorca</span>
+      <span>Certificado de Ministro de Fe</span>
+    </div>
+  </article>`;
+}
+
+function currentPreviewRecord(){
+  syncStateFromForm();
+  const rec=makeRecord(state.status);
+  const old=getRecords().find(r=>r.id===state.recordId);
+  rec.folio=old?.folio||null;
+  rec.issuedAt=old?.issuedAt||null;
+  return rec;
+}
+
+function openPreview(rec){
+  $("certificatePreview").innerHTML=certificateHtml(rec);
+  $("previewModal").classList.remove("hidden");
+}
+function closePreview(){ $("previewModal").classList.add("hidden"); }
+
+function showNewView(){
+  $("newView").classList.remove("hidden"); $("recordsView").classList.add("hidden");
+  $("tabNew").classList.add("active"); $("tabRecords").classList.remove("active");
+}
+function showRecordsView(){
+  $("newView").classList.add("hidden"); $("recordsView").classList.remove("hidden");
+  $("tabNew").classList.remove("active"); $("tabRecords").classList.add("active");
+  renderRecords();
+}
+
+function changeMinister(ministerId){
+  state.ministerId = ministerId;
+  updateTopFields();
+  renderHistory();
+}
+
+$("ministerNameSelect").addEventListener("change",()=>{
+  changeMinister($("ministerNameSelect").value);
+});
+
+$("ministerCodeSelect").addEventListener("change",()=>{
+  changeMinister($("ministerCodeSelect").value);
+});
+$("natureSelect").addEventListener("change",()=>{
+  state.nature=$("natureSelect").value; state.docs={};
+  state.factoring=false; state.refund=false; state.complementario=false;
+  state.detalle=[]; state.otros=[];
+  setSegment("factoringSegment","no"); setSegment("refundSegment","no"); setSegment("complementarioSegment","no");
+  renderChecklist();
+});
+$("unitSelect").addEventListener("change",()=>state.unit=$("unitSelect").value);
+$("saveDraftBtn").addEventListener("click",saveDraft);
+$("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));
+$("issueBtn").addEventListener("click",issueCertificate);
+$("closePreviewBtn").addEventListener("click",closePreview);
+$("printBtn").addEventListener("click",()=>window.print());
+$("tabNew").addEventListener("click",showNewView);
+$("tabRecords").addEventListener("click",showRecordsView);
+$("recordSearch").addEventListener("input",renderRecords);
+$("recordMinisterFilter").addEventListener("change",renderRecords);
+$("recordStatusFilter").addEventListener("change",renderRecords);
+
+applyLogo();
+populateMinisters();
+populateUnidades();
+attachSegments();
+updateTopFields();
+renderChecklist();
+renderHistory();
+renderRecords();
+</script>
+</body>
+</html>
