@@ -271,7 +271,9 @@
       margin:0 auto;
       background:#fff;
       color:#15314b;
-      padding:13mm 13mm 24mm;
+      /* Mismo pie de 50 mm que reserva @page al imprimir, para que la vista previa
+         muestre el espacio real que queda libre para la firma de DocDigital. */
+      padding:13mm 13mm 50mm;
       font-family:Arial,Helvetica,sans-serif;
     }
     .cert-logos{display:grid;grid-template-columns:1fr 1fr;align-items:center;margin-bottom:8mm}
@@ -307,7 +309,12 @@
 
     @page{
       size:8.5in 13in;
-      margin:0;
+      /* Los 50 mm inferiores quedan libres en TODAS las hojas: ahí DocDigital estampa,
+         al exportar el documento firmado, su banda de pie (QR, la referencia a la ley
+         N° 19.799 y el enlace al validador). El margen va en @page y no como padding
+         del contenedor, porque el padding solo deja aire al final del documento y no
+         al pie de cada hoja. */
+      margin:13mm 13mm 50mm;
     }
     @media print{
       /* Solo se imprime el certificado. Se ocultan por completo (display:none, no
@@ -328,9 +335,10 @@
       }
       .modal-top{display:none!important}
 
+      /* Los márgenes los pone @page, no el elemento. */
       #certificatePrint{
-        position:static!important;width:216mm!important;min-height:0!important;
-        margin:0!important;padding:13mm 13mm 24mm!important;box-shadow:none!important;
+        position:static!important;width:auto!important;min-height:0!important;
+        margin:0!important;padding:0!important;box-shadow:none!important;
       }
       /* No se usa break-inside:avoid en .cert-section: si la declaración no cabe
          completa, salta entera a la hoja siguiente y deja un hueco al final de la
@@ -339,8 +347,9 @@
       .cert-table tr{break-inside:avoid;page-break-inside:avoid}
       .cert-section-title{break-after:avoid;page-break-after:avoid}
       .cert-declaration p{orphans:3;widows:3}
-      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:42mm}
-      #certificatePrint{padding-bottom:16mm!important}
+      /* El timbre circular de firma de DocDigital mide unos 38 mm: la zona de firma
+         reserva ese alto para que quepa sin montarse sobre el texto. */
+      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:40mm}
     }
 
     @media(max-width:1100px){
