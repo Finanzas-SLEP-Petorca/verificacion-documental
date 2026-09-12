@@ -439,12 +439,17 @@
           <select id="programaSelect"></select>
         </div>
 
+        <div class="field hidden" id="programaNombreField">
+          <label>Nombre del programa *</label>
+          <input id="programaNombre" placeholder="Indique el programa extrapresupuestario" />
+        </div>
+
         <div class="field">
           <label>Unidad / Establecimiento del set *</label>
           <select id="unitSelect"></select>
         </div>
 
-        <div class="field span-2">
+        <div class="field span-2" id="referenceField">
           <label>Referencia del set</label>
           <input id="referenceInput" placeholder="Ej: Materiales de oficina, año 2026" />
         </div>
@@ -712,6 +717,15 @@ const PROGRAMAS = [
   "Programa 02",
   "Programa Extrapresupuestario"
 ];
+// Solo el extrapresupuestario pide nombre; los otros dos son fijos.
+const PROGRAMA_CON_NOMBRE = "Programa Extrapresupuestario";
+function programaPideNombre(v){ return v === PROGRAMA_CON_NOMBRE; }
+function programaTexto(r){
+  const base = r.programa || "";
+  if(!base) return "—";
+  const nombre = String(r.programaNombre || "").trim();
+  return programaPideNombre(base) && nombre ? `${base} — ${nombre}` : base;
+}
 
 const SUBSIDIES = [
   "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRORETENCIÓN","RESTO","OTRO"
@@ -820,6 +834,7 @@ let state = {
   ministerId:"GAB700",
   nature:"",
   programa:"",
+  programaNombre:"",
   unit:"",
   reference:"",
   factoring:false,
@@ -904,6 +919,7 @@ function syncStateFromForm(){
   state.ministerId = $("ministerNameSelect").value;
   state.nature = $("natureSelect").value;
   state.programa = $("programaSelect").value;
+  state.programaNombre = $("programaNombre").value.trim();
   state.unit = $("unitSelect").value;
   state.reference = $("referenceInput").value.trim();
   state.period = $("periodInput").value.trim();
@@ -1184,6 +1200,8 @@ function validate(){
   if(!state.ministerId) errors.push("Seleccione Ministro de Fe.");
   if(!state.nature) errors.push("Seleccione la naturaleza del set.");
   if(!state.programa) errors.push("Seleccione el programa presupuestario.");
+  if(programaPideNombre(state.programa) && !state.programaNombre)
+    errors.push("Indique el nombre del programa extrapresupuestario.");
   if(!state.unit) errors.push("Seleccione unidad / establecimiento.");
   if(!state.declaration) errors.push("Debe aceptar la declaración.");
 
@@ -1223,6 +1241,7 @@ function makeRecord(status){
     nature:state.nature,
     natureLabel:NATURE_LABELS[state.nature]||"",
     programa:state.programa,
+    programaNombre:state.programaNombre,
     unit:state.unit,
     reference:state.reference,
     factoring:state.factoring,
@@ -1341,6 +1360,7 @@ function loadRecordIntoState(r, duplicate=false){
     ministerId:r.ministerId,
     nature:r.nature,
     programa:r.programa||"",
+    programaNombre:r.programaNombre||"",
     unit:r.unit,
     reference:r.reference||"",
     factoring:!!r.factoring,
@@ -1361,6 +1381,8 @@ function populateFormFromState(){
   $("ministerCodeSelect").value=state.ministerId;
   $("natureSelect").value=state.nature;
   $("programaSelect").value=state.programa;
+  $("programaNombre").value=state.programaNombre||"";
+  syncProgramaNombre();
   $("unitSelect").value=state.unit;
   $("referenceInput").value=state.reference;
   $("periodInput").value=state.period;
@@ -1460,7 +1482,7 @@ function certificateHtml(r){
       <div><small>Fecha de emisión:</small><strong>${escapeHtml(shortDate(r.issuedAt||new Date().toISOString()))}</strong></div>
       <div><small>Naturaleza del set:</small><strong>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</strong></div>
       <div class="wide">
-        <span><small>Programa Presupuestario:</small><strong>${escapeHtml(r.programa||"—")}</strong></span>
+        <span><small>Programa Presupuestario:</small><strong>${escapeHtml(programaTexto(r))}</strong></span>
         <span><small>Unidad / Establecimiento:</small><strong>${escapeHtml(r.unit||"—")}</strong></span>
         <span><small>Referencia del set:</small><strong>${escapeHtml(r.reference||"—")}</strong></span>
       </div>
@@ -1595,7 +1617,19 @@ $("natureSelect").addEventListener("change",()=>{
   setSegment("factoringSegment","no"); setSegment("refundSegment","no"); setSegment("complementarioSegment","no");
   renderChecklist();
 });
-$("programaSelect").addEventListener("change",()=>state.programa=$("programaSelect").value);
+function syncProgramaNombre(){
+  const pide = programaPideNombre(state.programa);
+  $("programaNombreField").classList.toggle("hidden", !pide);
+  // La fila tiene 4 columnas: al aparecer el nombre, la referencia cede una para que
+  // no quede un hueco y no se parta la línea.
+  $("referenceField").classList.toggle("span-2", !pide);
+  if(!pide){ state.programaNombre = ""; $("programaNombre").value = ""; }
+}
+$("programaSelect").addEventListener("change",()=>{
+  state.programa=$("programaSelect").value;
+  syncProgramaNombre();
+});
+$("programaNombre").addEventListener("input",()=>state.programaNombre=$("programaNombre").value.trim());
 $("unitSelect").addEventListener("change",()=>state.unit=$("unitSelect").value);
 $("saveDraftBtn").addEventListener("click",saveDraft);
 $("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));
