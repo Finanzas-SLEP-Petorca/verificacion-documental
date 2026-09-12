@@ -275,6 +275,7 @@
          muestre el espacio real que queda libre para la firma de DocDigital. */
       padding:13mm 13mm 50mm;
       font-family:Arial,Helvetica,sans-serif;
+      position:relative;
     }
     .cert-logos{display:grid;grid-template-columns:1fr 1fr;align-items:center;margin-bottom:8mm}
     .logo-text{font-size:12px;color:var(--navy);font-weight:900}
@@ -306,6 +307,26 @@
     .signature-zone strong{color:var(--navy)}
     .signature-zone small{color:#7e91a3;margin-top:6px}
     .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
+
+    /* Marca de agua para todo lo que no sea un certificado emitido con folio. */
+    .cert-watermark{
+      position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+      pointer-events:none;z-index:5;
+    }
+    .cert-watermark span{
+      transform:rotate(-30deg);
+      font-size:82px;font-weight:900;letter-spacing:14px;
+      color:rgba(180,35,24,.18);
+      border:7px solid rgba(180,35,24,.18);
+      border-radius:14px;padding:12px 40px;white-space:nowrap;
+    }
+    .preview-warning{
+      margin:0;padding:12px 16px;background:#fff8f7;border-bottom:1px solid #f3d0cc;
+      color:#8a2b21;font-size:13.5px;line-height:1.5;
+    }
+    .preview-warning b{display:block;margin-bottom:4px;color:#a13028}
+    .preview-warning ul{margin:6px 0 0;padding-left:20px}
+    .preview-warning li{margin:2px 0}
 
     @page{
       size:8.5in 13in;
@@ -347,6 +368,15 @@
       .cert-table tr{break-inside:avoid;page-break-inside:avoid}
       .cert-section-title{break-after:avoid;page-break-after:avoid}
       .cert-declaration p{orphans:3;widows:3}
+
+      /* En impresión los elementos position:fixed se repiten en cada hoja: así la
+         marca de agua queda en todas y no solo en la primera. */
+      .cert-watermark{position:fixed;inset:0}
+      .cert-watermark span{
+        -webkit-print-color-adjust:exact;print-color-adjust:exact;
+        color:rgba(180,35,24,.22);border-color:rgba(180,35,24,.22);
+      }
+      .preview-warning{display:none!important}
       /* El timbre circular de firma de DocDigital mide unos 38 mm: la zona de firma
          reserva ese alto para que quepa sin montarse sobre el texto. */
       .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:40mm}
@@ -592,6 +622,7 @@
         <button class="btn" id="closePreviewBtn">Cerrar</button>
       </div>
     </div>
+    <div id="previewWarning" class="preview-warning hidden"></div>
     <div id="certificatePreview"></div>
   </div>
 </div>
@@ -1203,27 +1234,28 @@ function bindChecklistInputs(){
   }));
 }
 
-function validate(){
-  syncStateFromForm();
+/* Reglas de emisión. Se evalúan sobre un objeto de datos (el formulario en curso o un
+   registro guardado) para que la vista previa muestre exactamente lo mismo que exige
+   la emisión, sin duplicar las reglas en dos lugares. */
+function revisarDatos(d){
   const errors=[];
-  if(!state.ministerId) errors.push("Seleccione Ministro de Fe.");
-  if(!state.nature) errors.push("Seleccione la naturaleza del set.");
-  if(!state.programa) errors.push("Seleccione el programa presupuestario.");
-  if(programaPideNombre(state.programa) && !state.programaNombre)
+  if(!d.ministerId) errors.push("Seleccione Ministro de Fe.");
+  if(!d.nature) errors.push("Seleccione la naturaleza del set.");
+  if(!d.programa) errors.push("Seleccione el programa presupuestario.");
+  if(programaPideNombre(d.programa) && !String(d.programaNombre||"").trim())
     errors.push("Indique el nombre del programa extrapresupuestario.");
-  if(!state.unit) errors.push("Seleccione unidad / establecimiento.");
-  if(!state.declaration) errors.push("Debe aceptar la declaración.");
+  if(!d.unit) errors.push("Seleccione unidad / establecimiento.");
+  if(!d.declaration) errors.push("Debe aceptar la declaración.");
 
-  const docs = (DOCS[state.nature]||[]).filter(conditionVisible);
-  for(const doc of docs){
-    const ds=ensureDocState(doc);
+  for(const doc of visibleDocsForRecord(d)){
+    const ds=(d.docs||{})[doc.no]||{};
     if(doc.required && !ds.checked && !ds.exceptionType) errors.push(`${doc.no} ${doc.name}: debe verificarse o registrar una excepción.`);
     if(ds.checked){
       for(const f of doc.fields||[]){
         if(f.opt) continue;
         if(!String(ds.fields?.[f.key]||"").trim()) errors.push(`${doc.no} ${doc.name}: falta ${f.label}.`);
       }
-      if(doc.otros && !(state.otros||[]).some(t=>String(t||"").trim())){
+      if(doc.otros && !(d.otros||[]).some(t=>String(t||"").trim())){
         errors.push(`${doc.no} ${doc.name}: detalle al menos un documento del ítem "Otros".`);
       }
     }
@@ -1233,6 +1265,17 @@ function validate(){
   }
   return errors;
 }
+
+function validate(){
+  syncStateFromForm();
+  // ensureDocState normaliza las entradas del checklist antes de revisar.
+  (DOCS[state.nature]||[]).filter(conditionVisible).forEach(ensureDocState);
+  return revisarDatos(state);
+}
+
+/* Solo un certificado emitido y con folio es definitivo. Cualquier otra cosa que se
+   imprima lleva marca de agua. */
+function esDefinitivo(r){ return r && r.status === "issued" && !!r.folio; }
 
 function makeRecord(status){
   syncStateFromForm();
@@ -1470,6 +1513,7 @@ function certificateHtml(r){
     String(d.tipo||"").trim() || String(d.folio||"").trim() || String(d.monto||"").trim());
   return `
   <article class="certificate" id="certificatePrint">
+    ${esDefinitivo(r) ? "" : `<div class="cert-watermark"><span>BORRADOR</span></div>`}
     <div class="cert-logos">
       <div class="logo-text">
         <img class="cert-logo" src="${LOGO_SLEP}" alt="Servicio Local de Educación Pública Petorca" />
@@ -1592,6 +1636,25 @@ function currentPreviewRecord(){
 
 function openPreview(rec){
   $("certificatePreview").innerHTML=certificateHtml(rec);
+
+  // Un borrador se puede imprimir, pero el Ministro de Fe debe ver antes qué le falta
+  // para emitir: sin esto la vista previa llegaba al mismo PDF sin mostrar ninguna alerta.
+  const aviso = $("previewWarning");
+  if(esDefinitivo(rec)){
+    aviso.classList.add("hidden");
+    aviso.innerHTML = "";
+  } else {
+    const faltan = revisarDatos(rec);
+    aviso.innerHTML =
+      `<b>Borrador — este documento no es válido como certificado.</b>` +
+      `No tiene folio y se imprime con la marca de agua "BORRADOR". Para obtener el ` +
+      `certificado definitivo use <em>Emitir certificado</em>.` +
+      (faltan.length
+        ? `<ul>${faltan.map(e=>`<li>${escapeHtml(e)}</li>`).join("")}</ul>`
+        : `<ul><li>No quedan antecedentes pendientes: ya puede emitirlo.</li></ul>`);
+    aviso.classList.remove("hidden");
+  }
+
   $("previewModal").classList.remove("hidden");
 }
 function closePreview(){ $("previewModal").classList.add("hidden"); }

@@ -28,6 +28,20 @@ Ministro o Ministra de Fe abre el enlace y lo usa.
 5. **Declaración y emisión.** Al emitir se asigna el folio y se abre la vista previa,
    desde donde se imprime o se guarda como PDF.
 
+### Borrador y definitivo
+
+Solo **Emitir certificado** produce el documento válido: pasa la validación completa y
+recibe su folio correlativo.
+
+**Vista previa PDF** no valida nada, así que todo lo que se imprima desde ahí sale con
+la marca de agua **BORRADOR** en diagonal sobre cada hoja, con "BORRADOR / SIN FOLIO" en
+lugar del folio. Además, la vista previa muestra arriba la lista de antecedentes que
+faltan para poder emitir. Así un borrador impreso no puede confundirse con el
+certificado definitivo ni adjuntarse al set de pago como tal.
+
+Un certificado ya emitido, visto luego desde el registro, se imprime limpio: es el
+definitivo.
+
 ### Folio correlativo por Ministro de Fe
 
 Cada Ministro de Fe tiene su propia numeración, con el formato `CÓDIGO-AÑO-NNN`:
