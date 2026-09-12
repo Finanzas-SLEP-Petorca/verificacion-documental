@@ -287,7 +287,7 @@
     }
     .cert-meta > div{padding:10px;border-right:1px solid #d7e2ec}
     .cert-meta > div:nth-child(3){border-right:0}
-    .cert-meta .wide{grid-column:span 3;border-top:1px solid #d7e2ec;border-right:0;display:grid;grid-template-columns:1fr 1.2fr;gap:20px}
+    .cert-meta .wide{grid-column:span 3;border-top:1px solid #d7e2ec;border-right:0;display:grid;grid-template-columns:.85fr 1.3fr 1.3fr;gap:18px}
     .cert-meta small{display:block;color:#71869a;margin-bottom:3px}
     .cert-meta strong{color:var(--navy)}
     .cert-section{margin-top:5mm}
@@ -432,6 +432,11 @@
         <div class="field">
           <label>Cargo Ministro de Fe</label>
           <input id="ministerCargo" readonly />
+        </div>
+
+        <div class="field">
+          <label>Programa Presupuestario *</label>
+          <select id="programaSelect"></select>
         </div>
 
         <div class="field">
@@ -702,6 +707,12 @@ const MINISTERS = [
   {"id": "SAF105", "name": "Camilo Hodges Carrasco", "code": "SAF105", "rut": "18.015.333-0", "unit": "Administración y Finanzas", "cargo": "Profesional de Servicios Generales", "role": "Ministro de Fe"}
 ];
 
+const PROGRAMAS = [
+  "Programa 01",
+  "Programa 02",
+  "Programa Extrapresupuestario"
+];
+
 const SUBSIDIES = [
   "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRORETENCIÓN","RESTO","OTRO"
 ];
@@ -808,6 +819,7 @@ let state = {
   status:"draft",
   ministerId:"GAB700",
   nature:"",
+  programa:"",
   unit:"",
   reference:"",
   factoring:false,
@@ -851,6 +863,12 @@ function populateMinisters(){
   $("ministerCodeSelect").value = state.ministerId;
 }
 
+function populateProgramas(){
+  $("programaSelect").innerHTML =
+    `<option value="">Seleccione...</option>` +
+    PROGRAMAS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
+}
+
 function populateUnidades(){
   $("unitSelect").innerHTML =
     `<option value="">Seleccione...</option>` +
@@ -885,6 +903,7 @@ function probeMineducLogo(){
 function syncStateFromForm(){
   state.ministerId = $("ministerNameSelect").value;
   state.nature = $("natureSelect").value;
+  state.programa = $("programaSelect").value;
   state.unit = $("unitSelect").value;
   state.reference = $("referenceInput").value.trim();
   state.period = $("periodInput").value.trim();
@@ -1164,6 +1183,7 @@ function validate(){
   const errors=[];
   if(!state.ministerId) errors.push("Seleccione Ministro de Fe.");
   if(!state.nature) errors.push("Seleccione la naturaleza del set.");
+  if(!state.programa) errors.push("Seleccione el programa presupuestario.");
   if(!state.unit) errors.push("Seleccione unidad / establecimiento.");
   if(!state.declaration) errors.push("Debe aceptar la declaración.");
 
@@ -1202,6 +1222,7 @@ function makeRecord(status){
     ministerRole:m.role,
     nature:state.nature,
     natureLabel:NATURE_LABELS[state.nature]||"",
+    programa:state.programa,
     unit:state.unit,
     reference:state.reference,
     factoring:state.factoring,
@@ -1319,6 +1340,7 @@ function loadRecordIntoState(r, duplicate=false){
     status: duplicate ? "draft" : r.status,
     ministerId:r.ministerId,
     nature:r.nature,
+    programa:r.programa||"",
     unit:r.unit,
     reference:r.reference||"",
     factoring:!!r.factoring,
@@ -1338,6 +1360,7 @@ function populateFormFromState(){
   $("ministerNameSelect").value=state.ministerId;
   $("ministerCodeSelect").value=state.ministerId;
   $("natureSelect").value=state.nature;
+  $("programaSelect").value=state.programa;
   $("unitSelect").value=state.unit;
   $("referenceInput").value=state.reference;
   $("periodInput").value=state.period;
@@ -1437,6 +1460,7 @@ function certificateHtml(r){
       <div><small>Fecha de emisión:</small><strong>${escapeHtml(shortDate(r.issuedAt||new Date().toISOString()))}</strong></div>
       <div><small>Naturaleza del set:</small><strong>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</strong></div>
       <div class="wide">
+        <span><small>Programa Presupuestario:</small><strong>${escapeHtml(r.programa||"—")}</strong></span>
         <span><small>Unidad / Establecimiento:</small><strong>${escapeHtml(r.unit||"—")}</strong></span>
         <span><small>Referencia del set:</small><strong>${escapeHtml(r.reference||"—")}</strong></span>
       </div>
@@ -1571,6 +1595,7 @@ $("natureSelect").addEventListener("change",()=>{
   setSegment("factoringSegment","no"); setSegment("refundSegment","no"); setSegment("complementarioSegment","no");
   renderChecklist();
 });
+$("programaSelect").addEventListener("change",()=>state.programa=$("programaSelect").value);
 $("unitSelect").addEventListener("change",()=>state.unit=$("unitSelect").value);
 $("saveDraftBtn").addEventListener("click",saveDraft);
 $("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));
@@ -1586,6 +1611,7 @@ $("recordStatusFilter").addEventListener("change",renderRecords);
 applyLogo();
 probeMineducLogo();
 populateMinisters();
+populateProgramas();
 populateUnidades();
 attachSegments();
 updateTopFields();
