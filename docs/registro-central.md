@@ -54,6 +54,9 @@ En el sitio de SharePoint del Subdepartamento de Finanzas, cree una lista llamad
 | `Unidad` | Texto | |
 | `Referencia` | Texto | |
 | `FechaEmision` | Fecha y hora | |
+| `Estado` | Texto | `Emitido` o `Anulado` |
+| `MotivoAnulacion` | Varias líneas de texto, texto sin formato | Vacío mientras esté vigente |
+| `FechaAnulacion` | Fecha y hora | Vacío mientras esté vigente |
 | `Datos` | Varias líneas de texto, **texto sin formato** | Certificado completo en JSON |
 
 Indexe `CodigoMinistro`, `Anio` e `IdEmision`: el flujo los consulta en cada emisión.
@@ -80,7 +83,7 @@ En Power Automate, flujo **instantáneo** con el desencadenador
    Si esa expresión da problemas en su entorno, use simplemente
    `json(string(triggerBody()))`, que funciona cuando el cuerpo llega como texto.
 
-4. **Condición / Switch** sobre `outputs('Entrada')?['accion']`, con tres casos.
+4. **Condición / Switch** sobre `outputs('Entrada')?['accion']`, con cuatro casos.
 
 ### Caso `ping`
 
@@ -107,7 +110,9 @@ Una acción **Respuesta**:
      "natureLabel":  "@{item()?['Naturaleza']}",
      "unit":         "@{item()?['Unidad']}",
      "reference":    "@{item()?['Referencia']}",
-     "status":       "issued",
+     "status":       "@{if(equals(item()?['Estado'], 'Anulado'), 'cancelled', 'issued')}",
+     "cancelReason": "@{item()?['MotivoAnulacion']}",
+     "cancelledAt":  "@{item()?['FechaAnulacion']}",
      "issuedAt":     "@{item()?['FechaEmision']}",
      "updatedAt":    "@{item()?['FechaEmision']}"
    }
@@ -133,12 +138,33 @@ Una acción **Respuesta**:
    ```
    @{concat(outputs('Entrada')?['prefijo'], '-', string(outputs('Entrada')?['anio']), '-', outputs('Entrada')?['programaCodigo'], '-', outputs('Entrada')?['ministroCodigo'], '-', substring(concat('000', string(outputs('Numero'))), sub(length(concat('000', string(outputs('Numero')))), 3), 3))}
    ```
-6. **Crear elemento** en la lista, con `Datos` =
+6. **Crear elemento** en la lista, con `Estado` = `Emitido` y `Datos` =
    `@{string(outputs('Entrada')?['registro'])}` y el resto de las columnas desde
    `Entrada`. En `FechaEmision` use `utcNow()`: la hora la pone el servidor, no el
    equipo de quien emite.
 7. **Respuesta**: `{ "ok": true, "folio": "@{outputs('Folio')}", "numero": @{outputs('Numero')} }`,
    con los encabezados de CORS.
+
+### Caso `anular`
+
+Un certificado emitido no se elimina ni se edita: se anula, y el folio queda consumido.
+Así el correlativo nunca reasigna un número y la anulación queda documentada.
+
+1. **Obtener elementos**, filtro `IdEmision eq '@{outputs('Entrada')?['idEmision']}'`,
+   límite 1.
+2. **Condición**: si no hay resultados, **Respuesta** `404` con
+   `{ "ok": false, "error": "El folio no está en el registro del Servicio." }`.
+3. **Actualizar elemento** sobre ese `ID`:
+   - `Estado` → `Anulado`
+   - `MotivoAnulacion` → `@{outputs('Entrada')?['motivo']}`
+   - `FechaAnulacion` → `utcNow()`
+
+   No toque `Folio`, `Numero` ni `Anio`: el número sigue ocupado, que es justamente
+   el objetivo.
+4. **Respuesta** `{ "ok": true, "folio": "@{outputs('Entrada')?['folio']}" }`.
+
+Conviene activar el **historial de versiones** de la lista: deja registro de quién
+anuló y cuándo, sin trabajo adicional.
 
 ### Manejo de errores
 
@@ -176,7 +202,7 @@ no el resto.
 |---|---|
 | Sin dirección configurada | Correlativos locales, como hasta ahora. Lo advierte en pantalla. |
 | Configurada y respondiendo | El folio lo asigna el Servicio. El registro muestra también lo emitido en otros equipos, como *solo consulta*. |
-| Configurada y sin respuesta | **No emite.** Avisa el motivo y sugiere guardar el borrador y reintentar. El borrador no se pierde. |
+| Configurada y sin respuesta | **No emite ni anula.** Avisa el motivo y sugiere reintentar. El borrador no se pierde. |
 
 La tercera fila es deliberada: un folio repetido en un documento que va a la Contraloría
 es peor que esperar unos minutos.

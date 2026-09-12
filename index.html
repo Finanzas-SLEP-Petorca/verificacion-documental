@@ -295,6 +295,9 @@
     .rc-estado{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.45}
     .rc-estado.ok{color:#1d6b3f}
     .rc-estado.warn{color:#a05a00}
+    .fila-anulada td{opacity:.62}
+    .tag-anulado{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:10px;
+      background:#feeceb;color:#a13028;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
     .tag-central{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:10px;
       background:#e7eef6;color:#4a6a86;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
     .cert-meta{
@@ -333,6 +336,13 @@
       border:7px solid rgba(180,35,24,.18);
       border-radius:14px;padding:12px 40px;white-space:nowrap;
     }
+    .cert-anulacion{
+      border:1.5px solid #b42318;background:#fff5f4;color:#8a2b21;border-radius:6px;
+      padding:8px 12px;margin-bottom:5mm;font-size:11px;line-height:1.5;
+      break-inside:avoid;page-break-inside:avoid;
+    }
+    .cert-anulacion strong{display:block;color:#b42318;letter-spacing:.6px;margin-bottom:2px}
+    .cert-anulacion span{display:block;margin-top:2px}
     .preview-warning{
       margin:0;padding:12px 16px;background:#fff8f7;border-bottom:1px solid #f3d0cc;
       color:#8a2b21;font-size:13.5px;line-height:1.5;
@@ -389,6 +399,7 @@
         -webkit-print-color-adjust:exact;print-color-adjust:exact;
         color:rgba(180,35,24,.22);border-color:rgba(180,35,24,.22);
       }
+      .cert-anulacion{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .preview-warning{display:none!important}
       /* El timbre circular de firma de DocDigital mide unos 38 mm: la zona de firma
          reserva ese alto para que quepa sin montarse sobre el texto. */
@@ -1300,6 +1311,7 @@ function validate(){
 /* Solo un certificado emitido y con folio es definitivo. Cualquier otra cosa que se
    imprima lleva marca de agua. */
 function esDefinitivo(r){ return r && r.status === "issued" && !!r.folio; }
+function esAnulado(r){ return r && r.status === "cancelled" && !!r.folio; }
 
 function makeRecord(status){
   syncStateFromForm();
@@ -1487,6 +1499,16 @@ const RC = {
     return datos;
   },
 
+  async anular(rec, motivo, fecha){
+    return RC.llamar({
+      accion: "anular",
+      idEmision: rec.id,
+      folio: rec.folio,
+      motivo,
+      fechaAnulacion: fecha
+    });
+  },
+
   async listar(){
     const datos = await RC.llamar({ accion:"listar" });
     return Array.isArray(datos?.registros) ? datos.registros : [];
@@ -1607,14 +1629,18 @@ function statusLabel(s){ return ({draft:"Borrador",issued:"Emitido",cancelled:"A
 
 function renderHistory(){
   const m=currentMinister();
-  const rows=getRecords().filter(r=>r.ministerId===m.id && r.status==="issued").sort((a,b)=>(b.issuedAt||"").localeCompare(a.issuedAt||"")).slice(0,5);
+  // Los anulados también se listan: el folio sigue consumido y debe verse.
+  const rows=getRecords()
+    .filter(r=>r.ministerId===m.id && !!r.folio && (r.status==="issued"||r.status==="cancelled"))
+    .sort((a,b)=>(b.issuedAt||"").localeCompare(a.issuedAt||"")).slice(0,5);
   $("historyBody").innerHTML = rows.length ? rows.map(r=>`
-    <tr>
-      <td><strong>${escapeHtml(r.folio)}</strong></td>
+    <tr${r.status==="cancelled"?` class="fila-anulada"`:""}>
+      <td><strong>${escapeHtml(r.folio)}</strong>${r.status==="cancelled"?`<span class="tag-anulado">anulado</span>`:""}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
       <td><div class="history-actions">
         <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
         <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
+        ${r.status==="issued"?`<button class="btn small danger" onclick="anularRecord('${r.id}')">Anular</button>`:""}
       </div></td>
     </tr>`).join("") : `<tr><td colspan="3" style="color:var(--muted)">Sin certificados emitidos.</td></tr>`;
 }
@@ -1640,6 +1666,7 @@ function renderRecords(){
         <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
         ${r.status==="draft"?`<button class="btn small" onclick="editRecord('${r.id}')">Editar</button>`:""}
         <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
+        ${r.status==="issued"?`<button class="btn small danger" onclick="anularRecord('${r.id}')">Anular</button>`:""}
         ${r.status==="draft"?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}`}
       </td>
     </tr>`).join(""):`<tr><td colspan="6" style="color:var(--muted)">No hay registros.</td></tr>`;
@@ -1701,6 +1728,59 @@ window.duplicateRecord=function(id){
   loadRecordIntoState(r,true); showNewView();
   alert("Se creó un nuevo borrador a partir del certificado seleccionado.");
 }
+/* Anular no libera el número: el folio queda consumido y el certificado subsiste
+   con la constancia de su anulación. Es lo que corresponde en un correlativo de
+   fe pública — si el número volviera a la fila, dos documentos distintos podrían
+   llevar el mismo folio y se perdería la trazabilidad de lo que se emitió. Para
+   rehacer el trabajo se duplica: los antecedentes ya cargados no se pierden. */
+window.anularRecord=async function(id){
+  const r=getRecords().find(x=>x.id===id);
+  if(!r || r.status!=="issued") return;
+
+  const motivo=(prompt(
+    `Anulación del certificado ${r.folio}\n\n` +
+    "Indique el motivo. Queda impreso en el certificado anulado y en el registro del Servicio.",
+    "") || "").trim();
+  if(!motivo) return;
+  if(motivo.length < 10){ alert("Escriba un motivo más específico: al menos 10 caracteres."); return; }
+  if(!confirm(
+    `Se anulará el certificado ${r.folio}.\n\n` +
+    "El folio queda consumido: no se reasigna a otro certificado. Para rehacer el " +
+    "trabajo use Duplicar, que conserva todos los antecedentes ya cargados.\n\n¿Continuar?")) return;
+
+  const cancelledAt=new Date().toISOString();
+
+  if(RC.configurado()){
+    try{
+      await RC.anular(r, motivo, cancelledAt);
+    }catch(e){
+      alert("No fue posible anular en el registro central:\n\n" + e.message +
+        "\n\nEl certificado NO se anuló, para que el registro de este equipo no quede " +
+        "diciendo algo distinto del registro del Servicio. Reintente en unos minutos.");
+      return;
+    }
+  }
+
+  const records=getRecords();
+  const i=records.findIndex(x=>x.id===id);
+  records[i]=Object.assign({}, records[i], {
+    status:"cancelled",
+    cancelledAt,
+    cancelReason:motivo,
+    updatedAt:cancelledAt
+  });
+  saveRecords(records);
+  renderRecords(); renderHistory(); updateTopFields();
+  if(state.recordId===id){
+    state.status="cancelled";
+    $("statusBadge").textContent="Anulado";
+    $("statusBadge").className="badge badge-cancel";
+  }
+
+  if(confirm("Certificado anulado.\n\n¿Desea duplicarlo ahora para emitir el reemplazo?"))
+    duplicateRecord(id);
+};
+
 window.deleteRecord=function(id){
   if(!confirm("¿Eliminar este borrador?"))return;
   saveRecords(getRecords().filter(x=>x.id!==id)); renderRecords(); renderHistory();
@@ -1753,7 +1833,16 @@ function certificateHtml(r){
     String(d.tipo||"").trim() || String(d.folio||"").trim() || String(d.monto||"").trim());
   return `
   <article class="certificate" id="certificatePrint">
-    ${esDefinitivo(r) ? "" : `<div class="cert-watermark"><span>BORRADOR</span></div>`}
+    ${esAnulado(r)
+      ? `<div class="cert-watermark anulado"><span>ANULADO</span></div>`
+      : esDefinitivo(r) ? "" : `<div class="cert-watermark"><span>BORRADOR</span></div>`}
+    ${esAnulado(r) ? `
+    <div class="cert-anulacion">
+      <strong>CERTIFICADO ANULADO</strong>
+      Anulado el ${escapeHtml(formatDate(r.cancelledAt))}. El folio ${escapeHtml(r.folio||"")} queda
+      consumido y no se reasigna.
+      ${r.cancelReason ? `<span>Motivo: ${escapeHtml(r.cancelReason)}</span>` : ""}
+    </div>` : ""}
     <div class="cert-logos">
       <div class="logo-text">
         <img class="cert-logo" src="${LOGO_SLEP}" alt="Servicio Local de Educación Pública Petorca" />
@@ -1884,6 +1973,13 @@ function openPreview(rec){
   if(esDefinitivo(rec)){
     aviso.classList.add("hidden");
     aviso.innerHTML = "";
+  } else if(esAnulado(rec)){
+    aviso.innerHTML =
+      `<b>Certificado anulado — no adjuntar al set de pago.</b>` +
+      `El folio ${escapeHtml(rec.folio)} queda consumido y no se reasigna. ` +
+      `Para emitir el reemplazo, duplique este certificado desde el registro.` +
+      (rec.cancelReason ? `<ul><li>Motivo: ${escapeHtml(rec.cancelReason)}</li></ul>` : "");
+    aviso.classList.remove("hidden");
   } else {
     const faltan = revisarDatos(rec);
     aviso.innerHTML =

@@ -62,12 +62,28 @@ CMF-2026-P01-SAF103-001
 El folio se asigna **al emitir**, no al abrir el formulario, para que un formulario
 abandonado no consuma un número.
 
+### Anulación
+
+Un certificado emitido no se edita ni se elimina: se **anula**. La anulación pide un
+motivo, que queda impreso en el certificado y guardado en el registro.
+
+El folio **sigue consumido**: no se reasigna a otro certificado. Es lo que corresponde
+en un correlativo de fe pública — si el número volviera a la fila, dos documentos
+distintos podrían llevar el mismo folio y se perdería la trazabilidad de lo emitido.
+
+Un certificado anulado se imprime con la marca de agua **ANULADO** y con la constancia
+de su anulación en el encabezado, de modo que no pueda adjuntarse al set de pago por
+error.
+
+Para rehacer el trabajo se usa **Duplicar**: los antecedentes ya cargados se conservan
+en un borrador nuevo, que al emitirse toma el folio siguiente. El ciclo completo es
+*emitir → anular → duplicar → emitir*, y no se pierde nada de lo hecho.
+
 ### Borradores y registro
 
-Un certificado se puede guardar como borrador, editarlo y retomarlo después. Los
-emitidos no se editan: para corregir uno se duplica y se emite de nuevo, de modo que
-quede la trazabilidad. La pestaña **Registro de certificados** permite buscar por folio,
-unidad o referencia, y filtrar por ministro y por estado.
+Un certificado se puede guardar como borrador, editarlo y retomarlo después. La pestaña
+**Registro de certificados** permite buscar por folio, unidad o referencia, y filtrar
+por ministro y por estado.
 
 ---
 
