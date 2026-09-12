@@ -89,9 +89,20 @@ El CSS de impresión de la V2 dejaba el modal en `position:fixed` y el certifica
 página se repetía: un certificado con complementario D.1 salía en 4 páginas idénticas y
 **nunca llegaba a imprimir la declaración ni la firma**.
 
-La V3 devuelve el modal y el certificado al flujo normal del documento, oculta el resto
+La V3 devuelve el modal y el certificado al flujo normal del documento y oculta el resto
 de la aplicación con `display:none` en vez de `visibility:hidden` (que dejaba páginas en
-blanco) y evita cortes dentro de las tablas y del bloque de firma.
+blanco).
+
+Sobre los saltos de página: no se usa `break-inside:avoid` a nivel de sección, porque si
+la declaración no cabe completa salta entera a la hoja siguiente y deja un hueco grande
+al final de la anterior. Se deja fluir el texto y se protege solo lo que no debe
+partirse: las filas de tabla, el bloque de firma y los títulos de sección (`break-after`,
+para que ninguno quede solo al pie). Los párrafos de la declaración llevan control de
+líneas viudas y huérfanas.
+
+Un certificado típico ocupa dos hojas: el contenido ronda los 410 mm frente a los 301 mm
+útiles de una hoja oficio. Forzarlo a una sola exigiría comprimir cerca de un 27 % del
+documento, a costa de la legibilidad.
 
 ---
 

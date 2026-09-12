@@ -274,7 +274,7 @@
       padding:13mm 13mm 24mm;
       font-family:Arial,Helvetica,sans-serif;
     }
-    .cert-logos{display:grid;grid-template-columns:1fr 1fr;align-items:start;margin-bottom:8mm}
+    .cert-logos{display:grid;grid-template-columns:1fr 1fr;align-items:center;margin-bottom:8mm}
     .logo-text{font-size:12px;color:var(--navy);font-weight:900}
     .logo-text strong{font-size:25px;display:block;letter-spacing:.5px}
     .logo-right{text-align:right}
@@ -332,8 +332,15 @@
         position:static!important;width:216mm!important;min-height:0!important;
         margin:0!important;padding:13mm 13mm 24mm!important;box-shadow:none!important;
       }
-      .cert-section,.cert-table tr{break-inside:avoid;page-break-inside:avoid}
-      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:48mm}
+      /* No se usa break-inside:avoid en .cert-section: si la declaración no cabe
+         completa, salta entera a la hoja siguiente y deja un hueco al final de la
+         anterior. Se deja fluir el texto y solo se protegen las filas de tabla, el
+         bloque de firma y los títulos (para que no queden solos al pie). */
+      .cert-table tr{break-inside:avoid;page-break-inside:avoid}
+      .cert-section-title{break-after:avoid;page-break-after:avoid}
+      .cert-declaration p{orphans:3;widows:3}
+      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:42mm}
+      #certificatePrint{padding-bottom:16mm!important}
     }
 
     @media(max-width:1100px){
@@ -1510,7 +1517,6 @@ function certificateHtml(r){
       <span>${escapeHtml(minister.cargo||"")}</span>
       <span>${escapeHtml(minister.role||"Ministro de Fe")}</span>
       <span>Servicio Local de Educación Pública Petorca</span>
-      <small>Espacio reservado para firma</small>
     </div>
 
     <div class="cert-footer">
