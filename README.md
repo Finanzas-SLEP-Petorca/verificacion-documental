@@ -168,7 +168,9 @@ folio y nadie ve el registro completo. La aplicación lo advierte en pantalla.
 
 El correlativo lo asigna el Servicio, no el navegador, y cada emisión queda en una lista
 de Microsoft 365 en el SharePoint del SLEP. El registro muestra entonces también los
-certificados emitidos en otros equipos, como *solo consulta*.
+certificados emitidos en otros equipos: se pueden abrir e imprimir igual que los
+propios —el certificado completo se pide al Servicio al abrirlo— pero no editarlos,
+duplicarlos ni anularlos desde ahí. Eso le corresponde a quien los emitió.
 
 Si el registro central está configurado y no responde, la aplicación **no emite**:
 avisa el motivo y sugiere guardar el borrador y reintentar. Un folio repetido en un

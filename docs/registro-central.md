@@ -83,7 +83,7 @@ En Power Automate, flujo **instantáneo** con el desencadenador
    Si esa expresión da problemas en su entorno, use simplemente
    `json(string(triggerBody()))`, que funciona cuando el cuerpo llega como texto.
 
-4. **Condición / Switch** sobre `outputs('Entrada')?['accion']`, con cuatro casos.
+4. **Condición / Switch** sobre `outputs('Entrada')?['accion']`, con cinco casos.
 
 ### Caso `ping`
 
@@ -145,6 +145,24 @@ Una acción **Respuesta**:
 7. **Respuesta**: `{ "ok": true, "folio": "@{outputs('Folio')}", "numero": @{outputs('Numero')} }`,
    con los encabezados de CORS.
 
+### Caso `obtener`
+
+`listar` sólo devuelve el resumen que llena la tabla. Para **abrir e imprimir** un
+certificado emitido en otro equipo hace falta el certificado completo, que es lo que
+guarda la columna `Datos`.
+
+1. **Obtener elementos**, filtro `IdEmision eq '@{outputs('Entrada')?['idEmision']}'`,
+   límite 1.
+2. Si no hay resultados, **Respuesta** `404` con
+   `{ "ok": false, "error": "El folio no está en el registro del Servicio." }`.
+3. Si lo hay, **Respuesta** `{ "ok": true, "registro": @{json(first(body('Obtener_por_id')?['value'])?['Datos'])} }`.
+
+`Datos` se escribió al emitir, así que no refleja una anulación posterior. La página
+corrige el estado con lo que trae `listar` antes de imprimir, de modo que un
+certificado anulado en otro equipo sale con la marca de agua **ANULADO** aunque
+`Datos` siga diciendo `issued`. Si prefiere que el flujo también quede correcto por sí
+solo, actualice `Datos` en el caso `anular`; no es indispensable.
+
 ### Caso `anular`
 
 Un certificado emitido no se elimina ni se edita: se anula, y el folio queda consumido.
@@ -201,7 +219,7 @@ no el resto.
 | Situación | Comportamiento |
 |---|---|
 | Sin dirección configurada | Correlativos locales, como hasta ahora. Lo advierte en pantalla. |
-| Configurada y respondiendo | El folio lo asigna el Servicio. El registro muestra también lo emitido en otros equipos, como *solo consulta*. |
+| Configurada y respondiendo | El folio lo asigna el Servicio. El registro muestra también lo emitido en otros equipos: se pueden abrir e imprimir, pero no editar, duplicar ni anular desde ahí. |
 | Configurada y sin respuesta | **No emite ni anula.** Avisa el motivo y sugiere reintentar. El borrador no se pierde. |
 
 La tercera fila es deliberada: un folio repetido en un documento que va a la Contraloría

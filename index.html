@@ -1509,6 +1509,12 @@ const RC = {
     });
   },
 
+  async obtener(id){
+    const datos = await RC.llamar({ accion:"obtener", idEmision:id });
+    if(!datos || !datos.registro) throw new Error("El Servicio no devolvió el certificado.");
+    return datos.registro;
+  },
+
   async listar(){
     const datos = await RC.llamar({ accion:"listar" });
     return Array.isArray(datos?.registros) ? datos.registros : [];
@@ -1518,6 +1524,10 @@ const RC = {
 /* Certificados traídos del registro central, en memoria: se consultan al abrir
    el registro y no se mezclan con los locales en localStorage. */
 let registrosCentrales = [];
+
+/* Certificados completos traídos del Servicio para imprimirlos. Viven en memoria
+   y no en localStorage: son de otro equipo, no del registro de éste. */
+const certificadosCentrales = new Map();
 
 /* Local más central, sin repetir: un certificado emitido desde este equipo está
    en las dos partes y manda la copia local, que trae el detalle completo. */
@@ -1662,7 +1672,7 @@ function renderRecords(){
       <td>${escapeHtml(r.unit)}</td>
       <td>${statusLabel(r.status)}</td>
       <td>
-        ${r.ajeno ? `<span style="color:var(--muted);font-size:12px">Solo consulta</span>` : `
+        ${r.ajeno ? `<button class="btn small" onclick="verRecordCentral('${r.id}', this)">Ver</button>` : `
         <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
         ${r.status==="draft"?`<button class="btn small" onclick="editRecord('${r.id}')">Editar</button>`:""}
         <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
@@ -1719,6 +1729,36 @@ window.viewRecord=function(id){
   const r=getRecords().find(x=>x.id===id); if(!r)return;
   openPreview(r);
 }
+/* Un certificado emitido en otro equipo se puede ver e imprimir, pero no está en
+   este navegador: `listar` sólo trae el resumen que llena la tabla, así que el
+   certificado completo hay que pedirlo al Servicio al momento de abrirlo. */
+window.verRecordCentral=async function(id, boton){
+  const resumen = registrosCentrales.find(x => x.id === id);
+
+  if(certificadosCentrales.has(id)) return openPreview(certificadosCentrales.get(id));
+
+  const rotulo = boton ? boton.textContent : null;
+  if(boton){ boton.disabled = true; boton.textContent = "Cargando…"; }
+  try{
+    const completo = await RC.obtener(id);
+    /* El estado manda desde las columnas de la lista, no desde el certificado
+       guardado: una anulación posterior a la emisión sólo queda registrada ahí.
+       Sin esto un certificado anulado en otro equipo se imprimiría como vigente. */
+    const rec = Object.assign({}, completo, resumen ? {
+      status: resumen.status || completo.status,
+      folio: resumen.folio || completo.folio,
+      cancelReason: resumen.cancelReason || completo.cancelReason,
+      cancelledAt: resumen.cancelledAt || completo.cancelledAt
+    } : {});
+    certificadosCentrales.set(id, rec);
+    openPreview(rec);
+  }catch(e){
+    alert("No fue posible traer el certificado del Servicio:\n\n" + e.message);
+  }finally{
+    if(boton){ boton.disabled = false; boton.textContent = rotulo; }
+  }
+};
+
 window.editRecord=function(id){
   const r=getRecords().find(x=>x.id===id); if(!r||r.status!=="draft")return;
   loadRecordIntoState(r,false); showNewView();

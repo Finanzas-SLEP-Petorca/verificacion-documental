@@ -127,6 +127,17 @@ el certificado y emite el folio siguiente.
 
 Responde `{"ok":true,"folio":"..."}`.
 
+### `obtener`
+
+Entrada: `{"accion":"obtener","idEmision":"..."}`.
+
+Busca el elemento por `IdEmision`. Si no existe, responde `404` con
+`{"ok":false,"error":"El folio no está en el registro del Servicio."}`. Si existe,
+responde `{"ok":true,"registro": <el contenido de la columna Datos, como objeto JSON>}`.
+
+Es lo que permite a un Ministro de Fe abrir e imprimir un certificado emitido en otro
+equipo: `listar` sólo trae el resumen de la tabla, no el certificado completo.
+
 ### `listar`
 
 Entrada: `{"accion":"listar"}`. Devuelve los certificados del año en curso, con
@@ -173,10 +184,11 @@ y el encabezado `Access-Control-Allow-Origin: *`.
 
 ## Cuando termines
 
-Prueba el flujo desde su propio historial de ejecuciones con los cuatro casos: `ping`,
+Prueba el flujo desde su propio historial de ejecuciones con los cinco casos: `ping`,
 dos `emitir` seguidos del mismo ministro (deben dar 001 y 002), un `emitir` repetido con
 el mismo `idEmision` (debe devolver el mismo folio, sin crear un segundo elemento), un
-`anular` y un `listar`.
+`obtener` (debe devolver el certificado completo, no el resumen), un `anular` y un
+`listar`.
 
 Después entrégame este bloque:
 
