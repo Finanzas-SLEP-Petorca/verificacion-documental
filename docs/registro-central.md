@@ -1,7 +1,11 @@
 # Registro central en Microsoft 365
 
 Guía para el Subdepartamento de Finanzas y el área de informática del Servicio.
-Tiempo estimado de montaje: una hora.
+
+**Estado: montado y en producción desde el 14 de septiembre de 2026.** La lista, las
+cinco acciones y la dirección anónima del flujo están funcionando. Este documento
+describe lo que existe; sirve para entenderlo, auditarlo o rehacerlo, no como tarea
+pendiente.
 
 ## Para qué
 
@@ -154,14 +158,34 @@ guarda la columna `Datos`.
 1. **Obtener elementos**, filtro `IdEmision eq '@{outputs('Entrada')?['idEmision']}'`,
    límite 1.
 2. Si no hay resultados, **Respuesta** `404` con
-   `{ "ok": false, "error": "El folio no está en el registro del Servicio." }`.
-3. Si lo hay, **Respuesta** `{ "ok": true, "registro": @{json(first(body('Obtener_por_id')?['value'])?['Datos'])} }`.
+   `{ "ok": false, "error": "El certificado no está en el registro del Servicio." }`.
+3. Si lo hay, **Respuesta** `200` con
+   `{ "ok": true, "registro": <el objeto de Datos con el estado superpuesto> }`.
 
-`Datos` se escribió al emitir, así que no refleja una anulación posterior. La página
-corrige el estado con lo que trae `listar` antes de imprimir, de modo que un
-certificado anulado en otro equipo sale con la marca de agua **ANULADO** aunque
-`Datos` siga diciendo `issued`. Si prefiere que el flujo también quede correcto por sí
-solo, actualice `Datos` en el caso `anular`; no es indispensable.
+**No devuelva `Datos` crudo.** Esa columna se escribe una sola vez, al emitir, y no se
+vuelve a tocar: trae `"folio": null` —la página asigna el folio *después* de recibir la
+respuesta del registro— y sigue diciendo `"status": "issued"` aunque el certificado se
+haya anulado más tarde. Tal cual, un certificado anulado se imprimiría como vigente y
+sin número.
+
+La verdad sobre el estado está en las columnas indexadas. Antes de responder, superponga
+sobre el objeto de `Datos` estos cuatro campos:
+
+| Campo del registro | Columna de origen |
+|---|---|
+| `folio` | `Folio` |
+| `status` | `issued`, o `cancelled` si `Estado` es `Anulado` |
+| `cancelReason` | `MotivoAnulacion` |
+| `cancelledAt` | `FechaAnulacion` |
+
+En Power Automate se arma anidando `setProperty(...)` sobre
+`json(coalesce(<elemento>?['Datos'], '{}'))`, y el resultado se envuelve con
+`addProperty(json('{"ok":true}'), 'registro', ...)`.
+
+La página superpone los mismos cuatro campos por su cuenta, con lo que trajo `listar`.
+No es una duplicación inútil: las dos superposiciones derivan de las mismas columnas, así
+que coinciden, y la página queda correcta aunque algún día se la apunte a un endpoint
+montado de otra manera.
 
 ### Caso `anular`
 
@@ -178,8 +202,15 @@ Así el correlativo nunca reasigna un número y la anulación queda documentada.
    - `FechaAnulacion` → `utcNow()`
 
    No toque `Folio`, `Numero` ni `Anio`: el número sigue ocupado, que es justamente
-   el objetivo.
+   el objetivo. **Tampoco reescriba `Datos`.**
 4. **Respuesta** `{ "ok": true, "folio": "@{outputs('Entrada')?['folio']}" }`.
+
+`Datos` es el contenido de lo que se certificó en el momento de certificarlo, y por eso
+queda inmutable: reescribirlo sería mutar el registro de un acto de fe pública ya
+consumado. Lo que le pasó después al certificado —vigente o anulado, con qué motivo y
+cuándo— es historia posterior y vive en columnas aparte, indexadas y versionadas. Esa
+separación es la que corresponde ante la Contraloría: el documento no cambia, y lo
+ocurrido después queda registrado por separado.
 
 Conviene activar el **historial de versiones** de la lista: deja registro de quién
 anuló y cuándo, sin trabajo adicional.

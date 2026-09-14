@@ -1,5 +1,11 @@
 # Prompt para la sesión de Cowork con acceso a Microsoft 365
 
+> **Estado: ya ejecutado.** El registro central quedó montado y en producción el 14 de
+> septiembre de 2026. Este documento se conserva porque es el contrato entre la página y
+> el flujo: si alguna vez hay que rehacer el flujo, auditarlo o moverlo a otra
+> plataforma, esto es lo que tiene que cumplir. La descripción de lo que quedó montado
+> está en [`registro-central.md`](registro-central.md).
+
 Copie todo lo que sigue a la línea divisoria y péguelo en una sesión de Claude que
 tenga conectado el Microsoft 365 del Servicio. Al terminar, traiga de vuelta el bloque
 "Datos para integrar" que esa sesión debe entregarle.
@@ -44,6 +50,12 @@ sitio del Subdepartamento de Finanzas, con estas columnas:
 | `Datos` | Varias líneas, texto sin formato |
 
 Indexa `CodigoMinistro`, `Anio` e `IdEmision`. Activa el historial de versiones.
+
+`Datos` guarda el certificado completo en JSON como texto plano. Algunos certificados
+(Adquisiciones con muchos ítems en "Otros", o con el detalle de documentos/folios/montos)
+generan un JSON largo. Antes de dar por cerrado el montaje, prueba a guardar ahí uno de
+esos certificados "grandes" de verdad y confirma que la columna no lo trunca — si el
+límite de la lista se queda corto, dímelo antes de seguir.
 
 **2. Un flujo de Power Automate** instantáneo, con desencadenador **Cuando se recibe
 una solicitud HTTP** (método POST, esquema JSON vacío), que implemente el contrato de
@@ -127,17 +139,6 @@ el certificado y emite el folio siguiente.
 
 Responde `{"ok":true,"folio":"..."}`.
 
-### `obtener`
-
-Entrada: `{"accion":"obtener","idEmision":"..."}`.
-
-Busca el elemento por `IdEmision`. Si no existe, responde `404` con
-`{"ok":false,"error":"El folio no está en el registro del Servicio."}`. Si existe,
-responde `{"ok":true,"registro": <el contenido de la columna Datos, como objeto JSON>}`.
-
-Es lo que permite a un Ministro de Fe abrir e imprimir un certificado emitido en otro
-equipo: `listar` sólo trae el resumen de la tabla, no el certificado completo.
-
 ### `listar`
 
 Entrada: `{"accion":"listar"}`. Devuelve los certificados del año en curso, con
@@ -167,6 +168,49 @@ paginación activada, en este formato exacto:
 
 Los nombres de los campos importan: la página los lee tal cual.
 
+### `obtener`
+
+Entrada: `{"accion":"obtener","idEmision":"..."}`.
+
+Busca el elemento por `IdEmision` (mismo filtro indexado que usas en `emitir` y
+`anular`). Si no existe, responde `404` con
+`{"ok":false,"error":"El certificado no está en el registro del Servicio."}`.
+
+Si existe, responde `200` con:
+
+```json
+{ "ok": true, "registro": <el contenido de la columna Datos, con el estado superpuesto> }
+```
+
+**Importante — no devuelvas `Datos` crudo.** Esa columna se escribe una sola vez, al
+emitir, y nunca se vuelve a tocar. Por eso trae `"folio": null` (la página le asigna el
+folio *después* de recibir la respuesta del registro) y sigue diciendo
+`"status": "issued"` aunque el certificado haya sido anulado más tarde. Si lo devuelves
+tal cual, un certificado anulado se imprime como vigente y sin folio.
+
+La verdad sobre el estado está en las columnas indexadas, no en el JSON. Así que antes de
+responder, superpón sobre el objeto de `Datos` estos cuatro campos tomados del elemento:
+
+| Campo del registro | Columna de origen |
+|---|---|
+| `folio` | `Folio` |
+| `status` | `issued`, o `cancelled` si `Estado` es `Anulado` |
+| `cancelReason` | `MotivoAnulacion` |
+| `cancelledAt` | `FechaAnulacion` |
+
+En Power Automate se arma anidando `setProperty(...)` sobre
+`json(coalesce(<item>?['Datos'], '{}'))`, y el resultado se envuelve con
+`addProperty(json('{"ok":true}'), 'registro', ...)`.
+
+`Datos` queda deliberadamente inmutable: es el contenido de lo que se certificó en su
+momento. El estado vive en las columnas. `anular` **no** debe reescribir `Datos`.
+
+Para qué sirve: cuando la página muestra certificados emitidos **desde otro equipo**,
+hoy solo tiene los campos resumidos de `listar` y no puede abrir su vista previa ni
+imprimirlo. Con `obtener` puede traer el certificado completo bajo demanda —solo cuando
+alguien hace clic en "Ver" sobre uno de esos registros—, sin tener que cargar el JSON
+completo de todos los certificados en cada `listar`.
+
 ### Errores
 
 Una Respuesta final configurada para ejecutarse **si falla** cualquier acción anterior,
@@ -184,11 +228,11 @@ y el encabezado `Access-Control-Allow-Origin: *`.
 
 ## Cuando termines
 
-Prueba el flujo desde su propio historial de ejecuciones con los cinco casos: `ping`,
+Prueba el flujo desde su propio historial de ejecuciones con estos seis casos: `ping`,
 dos `emitir` seguidos del mismo ministro (deben dar 001 y 002), un `emitir` repetido con
 el mismo `idEmision` (debe devolver el mismo folio, sin crear un segundo elemento), un
-`obtener` (debe devolver el certificado completo, no el resumen), un `anular` y un
-`listar`.
+`anular`, un `listar` y un `obtener` (uno sobre un `idEmision` existente, que debe traer
+el JSON completo, y uno sobre un `idEmision` inventado, que debe dar 404).
 
 Después entrégame este bloque:
 
@@ -197,9 +241,19 @@ DATOS PARA INTEGRAR
 URL del flujo : <la URL HTTP POST del desencadenador>
 Sitio y lista : <dónde quedó>
 Licencia      : <premium confirmada, o la alternativa que montaste>
-Pruebas       : <resultado de los cuatro casos>
+Pruebas       : <resultado de los seis casos>
 Pendientes    : <lo que no pudiste hacer y por qué>
 ```
 
 Trata la URL del flujo como una credencial: lleva una firma que permite escribir en la
 lista. No la publiques ni la subas a ningún repositorio.
+
+## Si más adelante notan demora al emitir (opcional, no lo hagas ahora)
+
+Con el volumen de certificados de un Servicio como este, buscar "el mayor `Numero` para
+ese Ministro y ese Año" con un filtro sobre columnas indexadas debería responder rápido.
+Si en el futuro el equipo nota que emitir tarda de forma notoria, el cambio que ayuda es
+reemplazar ese filtro+orden por una segunda lista pequeña, `Correlativos Ministro de Fe`,
+con una sola fila por `CodigoMinistro`+`Anio` que guarde el último número usado: se lee y
+actualiza esa fila puntual en vez de ordenar toda la lista de certificados. No es
+necesario montarlo ahora — solo quería dejarlo anotado para cuando haga falta.
