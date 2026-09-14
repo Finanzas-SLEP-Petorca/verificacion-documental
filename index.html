@@ -288,6 +288,13 @@
       margin:5px 0 0;color:var(--navy);font-size:17px;font-weight:900;letter-spacing:1.6px;
       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
     }
+    .aviso-local{
+      margin:0 18px 12px;padding:11px 14px;border-radius:8px;
+      border:1px solid #f0c9a0;background:#fff6ea;color:#7a4a08;
+      font-size:13px;line-height:1.5;display:flex;align-items:center;gap:12px;
+    }
+    .aviso-local strong{display:block;color:#8a5000}
+    .aviso-local .btn{flex:0 0 auto}
     .rc-panel{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:12px;background:#f8fbfd}
     .rc-linea{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
     .rc-linea strong{color:var(--navy);font-size:13px}
@@ -449,6 +456,16 @@
 <div class="tabs">
   <button class="tab active" id="tabNew">Nuevo certificado</button>
   <button class="tab" id="tabRecords">Registro de certificados</button>
+</div>
+
+<div id="avisoLocal" class="aviso-local hidden">
+  <div>
+    <strong>Este equipo no está conectado al registro central del Servicio.</strong>
+    Los folios que emita aquí los numera este navegador y pueden repetir un número ya
+    usado en otro equipo. Pida la dirección del registro al Subdepartamento de Finanzas
+    y configúrela antes de emitir.
+  </div>
+  <button class="btn small" id="avisoLocalBtn">Configurar</button>
 </div>
 
 <main id="newView" class="layout">
@@ -1529,6 +1546,12 @@ let registrosCentrales = [];
    y no en localStorage: son de otro equipo, no del registro de éste. */
 const certificadosCentrales = new Map();
 
+/* Los registros locales traen ministerId; los del Servicio, sólo ministerCode.
+   Sin esto el filtro por ministro escondía todo lo emitido en otros equipos. */
+function esDelMinistro(r, m){
+  return r.ministerId === m.id || (!!r.ministerCode && r.ministerCode === m.code);
+}
+
 /* Local más central, sin repetir: un certificado emitido desde este equipo está
    en las dos partes y manda la copia local, que trae el detalle completo. */
 function registrosVisibles(){
@@ -1550,6 +1573,8 @@ function pintarEstadoRC(texto, clase){
 
 function refrescarPanelRC(){
   const conf = RC.configurado();
+  const aviso = $("avisoLocal");
+  if(aviso) aviso.classList.toggle("hidden", conf || !$("recordsView").classList.contains("hidden"));
   $("rcSyncBtn").disabled = !conf;
   $("rcTestBtn").disabled = !conf;
   pintarEstadoRC(
@@ -1562,6 +1587,9 @@ function refrescarPanelRC(){
 async function sincronizarRC(){
   if(!RC.configurado()) return;
   pintarEstadoRC("Consultando el registro central…", "");
+  /* Un certificado ajeno pudo anularse desde que se abrió: la copia en memoria
+     dejaría de decir la verdad. */
+  certificadosCentrales.clear();
   try{
     registrosCentrales = await RC.listar();
     pintarEstadoRC(`Registro central al día: ${registrosCentrales.length} certificado(s) en el Servicio.`, "ok");
@@ -1569,14 +1597,14 @@ async function sincronizarRC(){
     registrosCentrales = [];
     pintarEstadoRC("No fue posible leer el registro central: " + e.message, "warn");
   }
-  renderRecords();
+  renderRecords(); renderHistory(); updateTopFields();
 }
 
 /* Último folio emitido por este Ministro de Fe en el año en curso. */
 function ultimoFolioDe(minister){
   const year=new Date().getFullYear();
   let mejor=null, mayor=0;
-  getRecords().forEach(r=>{
+  registrosVisibles().forEach(r=>{
     const f=partesFolio(r.folio);
     if(!f || f.codigoMinistro!==minister.code || f.anio!==year) return;
     if(f.numero>=mayor){ mayor=f.numero; mejor=r.folio; }
@@ -1640,17 +1668,18 @@ function statusLabel(s){ return ({draft:"Borrador",issued:"Emitido",cancelled:"A
 function renderHistory(){
   const m=currentMinister();
   // Los anulados también se listan: el folio sigue consumido y debe verse.
-  const rows=getRecords()
-    .filter(r=>r.ministerId===m.id && !!r.folio && (r.status==="issued"||r.status==="cancelled"))
+  const rows=registrosVisibles()
+    .filter(r=>esDelMinistro(r,m) && !!r.folio && (r.status==="issued"||r.status==="cancelled"))
     .sort((a,b)=>(b.issuedAt||"").localeCompare(a.issuedAt||"")).slice(0,5);
   $("historyBody").innerHTML = rows.length ? rows.map(r=>`
     <tr${r.status==="cancelled"?` class="fila-anulada"`:""}>
       <td><strong>${escapeHtml(r.folio)}</strong>${r.status==="cancelled"?`<span class="tag-anulado">anulado</span>`:""}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
       <td><div class="history-actions">
+        ${r.ajeno ? `<button class="btn small" onclick="verRecordCentral('${r.id}', this)">Ver</button>` : `
         <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
         <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
-        ${r.status==="issued"?`<button class="btn small danger" onclick="anularRecord('${r.id}')">Anular</button>`:""}
+        ${r.status==="issued"?`<button class="btn small danger" onclick="anularRecord('${r.id}')">Anular</button>`:""}`}
       </div></td>
     </tr>`).join("") : `<tr><td colspan="3" style="color:var(--muted)">Sin certificados emitidos.</td></tr>`;
 }
@@ -1661,7 +1690,8 @@ function renderRecords(){
   const sf=$("recordStatusFilter").value;
   const rows=registrosVisibles().filter(r=>{
     const hay=[r.folio,r.unit,r.reference,r.natureLabel,r.ministerName].join(" ").toLowerCase();
-    return (!q||hay.includes(q)) && (!mf||r.ministerId===mf) && (!sf||r.status===sf);
+    const m = mf ? MINISTERS.find(x=>x.id===mf) : null;
+    return (!q||hay.includes(q)) && (!m||esDelMinistro(r,m)) && (!sf||r.status===sf);
   }).sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""));
 
   $("recordsBody").innerHTML=rows.length?rows.map(r=>`
@@ -2038,10 +2068,12 @@ function closePreview(){ $("previewModal").classList.add("hidden"); }
 
 function showNewView(){
   $("newView").classList.remove("hidden"); $("recordsView").classList.add("hidden");
+  $("avisoLocal").classList.toggle("hidden", RC.configurado());
   $("tabNew").classList.add("active"); $("tabRecords").classList.remove("active");
 }
 function showRecordsView(){
   $("newView").classList.add("hidden"); $("recordsView").classList.remove("hidden");
+  $("avisoLocal").classList.add("hidden");
   $("tabNew").classList.remove("active"); $("tabRecords").classList.add("active");
   renderRecords();
   refrescarPanelRC();
@@ -2115,6 +2147,7 @@ $("closePreviewBtn").addEventListener("click",closePreview);
 $("printBtn").addEventListener("click",()=>window.print());
 $("tabNew").addEventListener("click",showNewView);
 $("tabRecords").addEventListener("click",showRecordsView);
+$("avisoLocalBtn").addEventListener("click",()=>{ showRecordsView(); configurarRC(); });
 $("rcConfigBtn").addEventListener("click",configurarRC);
 $("rcTestBtn").addEventListener("click",probarRC);
 $("rcSyncBtn").addEventListener("click",sincronizarRC);
@@ -2133,6 +2166,9 @@ renderChecklist();
 renderHistory();
 renderRecords();
 refrescarPanelRC();
+/* Al abrir: si hay registro central, el historial y el último correlativo del
+   Ministro de Fe deben reflejar el Servicio, no sólo lo emitido en este equipo. */
+if(RC.configurado()) sincronizarRC();
 </script>
 </body>
 </html>
