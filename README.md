@@ -120,16 +120,18 @@ abre una lista libre para individualizar qué lo compone.
 5. `II.a` Detalle del ítem "Otros", cuando corresponde.
 6. `II.b` Detalle de documentos, folios y montos, cuando corresponde.
 7. `III.` Declaración con su fundamento normativo.
-8. Identificación de quien certifica, al cierre de la declaración.
+8. Identificación de quien certifica, en una línea: nombre, RUT, cargo y calidad.
 
 Tamaño oficio (216 × 330 mm), con los 50 mm inferiores de cada hoja libres: ahí
 DocDigital estampa su banda de pie al exportar el documento firmado —QR, referencia a
 la ley N° 19.799 y enlace al validador—, medida en y 308,6 → 325,4 mm sobre un
 documento del Servicio ya firmado.
 
-El timbre de la firma no tiene espacio reservado: el documento se firma en DocDigital y
-quien firma lo ubica donde quiera, en lo que queda libre bajo la identificación. La
-fecha y la identificación no se separan entre hojas.
+El documento se firma en DocDigital y quien firma ubica el timbre donde quiera. Bajo la
+identificación quedan siempre al menos 45 mm libres, que es más de lo que ocupa el
+estampado —unos 87 × 37 mm, medidos sobre un documento del Servicio ya firmado—. La
+fecha, la identificación y ese espacio forman un solo bloque: si no caben, pasan juntos
+a la hoja siguiente, en vez de dejar al que firma sin dónde estampar.
 
 La declaración cita
 la Resolución Exenta N° 450, de 2026, del Servicio Local (artículos 5° y 6°), el artículo

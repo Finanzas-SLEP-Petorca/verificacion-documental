@@ -332,10 +332,15 @@
        estampa DocDigital. No lleva línea de firma ni espacio reservado: el documento
        se firma en la plataforma y quien firma ubica el timbre donde quiera, en lo que
        queda libre de la hoja. */
-    .signature-id{margin-top:10mm;font-size:12px;line-height:1.4;text-align:left;
-      display:flex;flex-direction:column}
+    /* Más específico que `.cert-declaration p`, que si no le impone el justificado. */
+    .cert-declaration .signature-id{margin:10mm 0 0;font-size:12px;line-height:1.4;text-align:left}
     .signature-id strong{color:var(--navy)}
-    .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
+    /* Aire garantizado bajo la identificación para que el timbre de DocDigital
+       —unos 87 × 37 mm, medidos sobre un documento del Servicio ya firmado— quepa
+       siempre. Va dentro del cierre, que no se parte: si no cabe, la fecha, la
+       identificación y este espacio pasan juntos a la hoja siguiente, en vez de
+       dejar al que firma sin dónde estampar. */
+    .firma-espacio{height:45mm}
 
     /* Marca de agua para todo lo que no sea un certificado emitido con folio. */
     .cert-watermark{
@@ -2020,20 +2025,18 @@ function certificateHtml(r){
         <p>Esta certificación acredita exclusivamente la existencia, integridad y autenticidad de la documentación de respaldo del set de pago para efectos de su rendición de cuentas ante la Contraloría General de la República. El o la suscrito(a) declara no haber participado en la preparación, elaboración o tramitación del presente set de pago, en resguardo del principio de segregación de funciones establecido en el artículo 2° letra h) de la Resolución Exenta N° 450, de 2026.</p>
         <div class="cert-cierre">
           <p style="text-align:center;margin-top:18px">Petorca, ${escapeHtml(formatDate(r.issuedAt||new Date().toISOString()))}.</p>
-          <div class="signature-id">
-            <strong>${escapeHtml(minister.name)}</strong>
-            <span>${escapeHtml(minister.cargo||"")}</span>
-            <span>${escapeHtml(minister.role||"Ministro de Fe")}</span>
-            <span>Servicio Local de Educación Pública Petorca</span>
-          </div>
+          <p class="signature-id">
+            <strong>${escapeHtml(minister.name)}</strong>${
+              [ minister.rut ? "RUT " + minister.rut : "",
+                minister.cargo || "",
+                minister.role || "Ministro de Fe"
+              ].filter(Boolean).map(t => ` · ${escapeHtml(t)}`).join("")}
+          </p>
+          <div class="firma-espacio"></div>
         </div>
       </div>
     </div>
 
-    <div class="cert-footer">
-      <span>Servicio Local de Educación Pública Petorca</span>
-      <span>Certificado de Ministro de Fe</span>
-    </div>
   </article>`;
 }
 
