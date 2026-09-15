@@ -328,8 +328,11 @@
     /* La declaración es el texto normativo del certificado: va justificada, como
        corresponde a un documento de este tipo. La línea de lugar y fecha no. */
     .cert-declaration p{text-align:justify;text-justify:inter-word;hyphens:none}
-    .signature-zone{min-height:72mm;display:flex;flex-direction:column;justify-content:flex-end;text-align:center}
-    .signature-line{width:90mm;border-top:1px solid #6a839a;margin:0 auto 5px}
+    /* Identificación alineada a la izquierda, para que calce con el timbre que
+       FirmaGob estampa al firmar el documento. */
+    .signature-zone{min-height:72mm;display:flex;flex-direction:column;justify-content:flex-end;
+      align-items:flex-start;text-align:left}
+    .signature-line{width:90mm;border-top:1px solid #6a839a;margin:0 0 5px}
     .signature-zone strong{color:var(--navy)}
     .signature-zone small{color:#7e91a3;margin-top:6px}
     .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
