@@ -120,9 +120,14 @@ abre una lista libre para individualizar qué lo compone.
 5. `II.a` Detalle del ítem "Otros", cuando corresponde.
 6. `II.b` Detalle de documentos, folios y montos, cuando corresponde.
 7. `III.` Declaración con su fundamento normativo.
-8. Pie de firma del Ministro o Ministra de Fe.
+8. Banda en blanco al pie, reservada para la firma electrónica.
 
-Tamaño oficio (216 × 330 mm), con espacio reservado para la firma. La declaración cita
+Tamaño oficio (216 × 330 mm). El pie queda en blanco a propósito: es la banda de unos
+100 × 42 mm que ocupa FirmaGob al firmar, con su sello circular y su propio texto
+—firmante, cargo, fecha y Servicio—. No se imprime ahí ninguna identificación ni línea
+de firma: duplicaría lo que estampa la plataforma, y el documento no debe dar por firmado
+lo que todavía no lo está. Quién certifica consta en el punto I, con nombre, RUT, cargo y
+unidad. La declaración cita
 la Resolución Exenta N° 450, de 2026, del Servicio Local (artículos 5° y 6°), el artículo
 2 N°15 y el artículo 27 de la Resolución N° 2, de 2026, de la Contraloría General de la
 República, y el principio de segregación de funciones del artículo 2° letra h).

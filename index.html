@@ -328,13 +328,14 @@
     /* La declaración es el texto normativo del certificado: va justificada, como
        corresponde a un documento de este tipo. La línea de lugar y fecha no. */
     .cert-declaration p{text-align:justify;text-justify:inter-word;hyphens:none}
-    /* Identificación alineada a la izquierda, para que calce con el timbre que
-       FirmaGob estampa al firmar el documento. */
-    .signature-zone{min-height:72mm;display:flex;flex-direction:column;justify-content:flex-end;
-      align-items:flex-start;text-align:left}
-    .signature-line{width:90mm;border-top:1px solid #6a839a;margin:0 0 5px}
-    .signature-zone strong{color:var(--navy)}
-    .signature-zone small{color:#7e91a3;margin-top:6px}
+    /* El pie queda en blanco: es la banda que FirmaGob ocupa al firmar, con su
+       sello circular y su propio texto (firmante, cargo, fecha y Servicio), unos
+       100 × 42 mm contando ambas cosas. No se imprime aquí ninguna identificación
+       ni línea de firma: duplicaría lo que estampa la plataforma y el documento
+       no debe dar por firmado lo que todavía no lo está. Quién certifica consta
+       en el punto I, con nombre, RUT, cargo y unidad. */
+    .signature-zone{min-height:52mm}
+    .signature-stamp{width:100mm;height:42mm}
     .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
 
     /* Marca de agua para todo lo que no sea un certificado emitido con folio. */
@@ -414,9 +415,9 @@
       }
       .cert-anulacion{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .preview-warning{display:none!important}
-      /* El timbre circular de firma de DocDigital mide unos 38 mm: la zona de firma
-         reserva ese alto para que quepa sin montarse sobre el texto. */
-      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:40mm}
+      /* El estampado de FirmaGob —sello circular más su texto— mide unos
+         100 × 42 mm: la zona reserva ese espacio y no se parte entre hojas. */
+      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:48mm}
     }
 
     @media(max-width:1100px){
@@ -2017,11 +2018,7 @@ function certificateHtml(r){
     </div>
 
     <div class="signature-zone">
-      <div class="signature-line"></div>
-      <strong>${escapeHtml(minister.name)}</strong>
-      <span>${escapeHtml(minister.cargo||"")}</span>
-      <span>${escapeHtml(minister.role||"Ministro de Fe")}</span>
-      <span>Servicio Local de Educación Pública Petorca</span>
+      <div class="signature-stamp"></div>
     </div>
 
     <div class="cert-footer">
