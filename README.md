@@ -120,22 +120,18 @@ abre una lista libre para individualizar qué lo compone.
 5. `II.a` Detalle del ítem "Otros", cuando corresponde.
 6. `II.b` Detalle de documentos, folios y montos, cuando corresponde.
 7. `III.` Declaración con su fundamento normativo.
-8. El pie de cada hoja queda en blanco, reservado para la firma electrónica.
+8. Identificación de quien certifica, al cierre de la declaración.
 
-Tamaño oficio (216 × 330 mm), con los 82 mm inferiores de cada hoja libres. Esa reserva
-no es arbitraria: se midió sobre un documento del Servicio ya firmado.
+Tamaño oficio (216 × 330 mm), con los 50 mm inferiores de cada hoja libres: ahí
+DocDigital estampa su banda de pie al exportar el documento firmado —QR, referencia a
+la ley N° 19.799 y enlace al validador—, medida en y 308,6 → 325,4 mm sobre un
+documento del Servicio ya firmado.
 
-| | Posición en la hoja |
-|---|---|
-| Timbre de FirmaGob (sello y texto del firmante) | y 251,5 → 288,5 mm, desde x 13,6 mm, 87 × 37 mm |
-| Banda de DocDigital (QR, ley N° 19.799, validador) | y 308,6 → 325,4 mm |
+El timbre de la firma no tiene espacio reservado: el documento se firma en DocDigital y
+quien firma lo ubica donde quiera, en lo que queda libre bajo la identificación. La
+fecha y la identificación no se separan entre hojas.
 
-Los dos se estampan al firmar, encima de lo que ya está impreso, así que el texto se
-corta en 248 mm y ninguno de los dos tiene sobre qué montarse.
-
-El certificado no imprime pie de firma. Hacerlo duplicaría el nombre y el cargo que
-estampa la plataforma, y el documento no debe dar por firmado lo que todavía no lo está:
-quién certifica consta en el punto I, con nombre, RUT, cargo y unidad. La declaración cita
+La declaración cita
 la Resolución Exenta N° 450, de 2026, del Servicio Local (artículos 5° y 6°), el artículo
 2 N°15 y el artículo 27 de la Resolución N° 2, de 2026, de la Contraloría General de la
 República, y el principio de segregación de funciones del artículo 2° letra h).

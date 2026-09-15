@@ -271,10 +271,9 @@
       margin:0 auto;
       background:#fff;
       color:#15314b;
-      /* Mismo pie de 82 mm que reserva @page al imprimir, para que la vista previa
-         muestre el espacio real que queda libre para el timbre de FirmaGob y la banda
-         de DocDigital. */
-      padding:13mm 13mm 82mm;
+      /* Mismo pie de 50 mm que reserva @page al imprimir, para que la vista previa
+         muestre el espacio real que queda libre al pie de cada hoja. */
+      padding:13mm 13mm 50mm;
       font-family:Arial,Helvetica,sans-serif;
       position:relative;
     }
@@ -329,12 +328,13 @@
     /* La declaración es el texto normativo del certificado: va justificada, como
        corresponde a un documento de este tipo. La línea de lugar y fecha no. */
     .cert-declaration p{text-align:justify;text-justify:inter-word;hyphens:none}
-    /* El certificado no imprime pie de firma. El timbre de FirmaGob y la banda de
-       DocDigital se estampan en el margen inferior que reserva @page, siempre en el
-       mismo lugar de la hoja. Imprimir ahí una identificación duplicaría lo que
-       estampa la plataforma, y el documento no debe dar por firmado lo que todavía
-       no lo está: quién certifica consta en el punto I, con nombre, RUT, cargo y
-       unidad. */
+    /* Identificación de quien certifica, alineada a la izquierda como el timbre que
+       estampa DocDigital. No lleva línea de firma ni espacio reservado: el documento
+       se firma en la plataforma y quien firma ubica el timbre donde quiera, en lo que
+       queda libre de la hoja. */
+    .signature-id{margin-top:10mm;font-size:12px;line-height:1.4;text-align:left;
+      display:flex;flex-direction:column}
+    .signature-id strong{color:var(--navy)}
     .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
 
     /* Marca de agua para todo lo que no sea un certificado emitido con folio. */
@@ -366,19 +366,17 @@
 
     @page{
       size:8.5in 13in;
-      /* Los 82 mm inferiores quedan libres en TODAS las hojas. Medido sobre un
-         documento del Servicio ya firmado (hoja oficio de 216 × 330 mm):
+      /* Los 50 mm inferiores quedan libres en TODAS las hojas: ahí DocDigital estampa
+         su banda de pie al exportar el documento firmado —QR, referencia a la ley
+         N° 19.799 y enlace al validador—, medida en y = 308,6 → 325,4 mm sobre un
+         documento del Servicio ya firmado.
 
-           · estampado de FirmaGob    y = 251,5 → 288,5 mm, x = 13,6 mm, 87 × 37 mm
-           · banda de pie DocDigital  y = 308,6 → 325,4 mm (QR, ley N° 19.799, validador)
-
-         Ambos se estampan al firmar, encima de lo que ya está impreso. Con 50 mm el
-         texto llegaba hasta y = 280 mm y el timbre se le montaba 28 mm encima. Cortando
-         en 248 mm —tres milímetros antes del timbre— los dos caben sin tocar nada.
+         El timbre de la firma no se reserva: en DocDigital lo ubica quien firma, en el
+         espacio que queda bajo la identificación del pie.
 
          El margen va en @page y no como padding del contenedor, porque el padding solo
          deja aire al final del documento y no al pie de cada hoja. */
-      margin:13mm 13mm 82mm;
+      margin:13mm 13mm 50mm;
     }
     @media print{
       /* Solo se imprime el certificado. Se ocultan por completo (display:none, no
@@ -420,6 +418,10 @@
         color:rgba(180,35,24,.22);border-color:rgba(180,35,24,.22);
       }
       .cert-anulacion{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      /* La fecha y la identificación de quien certifica no se separan: si no caben,
+         pasan juntas a la hoja siguiente. Sueltas, la identificación quedaba sola en
+         una hoja, lejos de la declaración que suscribe. */
+      .cert-cierre{break-inside:avoid;page-break-inside:avoid}
       .preview-warning{display:none!important}
     }
 
@@ -2016,10 +2018,17 @@ function certificateHtml(r){
       <div class="cert-declaration">
         <p>El o la suscrito(a), en su calidad de ministro/a de fe designado(a) por Resolución Exenta N° 450, de 2026, de este Servicio Local, que aprueba el procedimiento de autentificación documental y respaldo de rendición de cuentas del Servicio Local de Educación Pública Petorca, en concordancia con los artículos 5° y 6° de dicho procedimiento y con el artículo 2 N°15 y el artículo 27 de la Resolución N° 2, de 2026, de la Contraloría General de la República, certifica que ha verificado la documentación del set de pago individualizado en el punto I, conforme al detalle señalado en el punto II.</p>
         <p>Esta certificación acredita exclusivamente la existencia, integridad y autenticidad de la documentación de respaldo del set de pago para efectos de su rendición de cuentas ante la Contraloría General de la República. El o la suscrito(a) declara no haber participado en la preparación, elaboración o tramitación del presente set de pago, en resguardo del principio de segregación de funciones establecido en el artículo 2° letra h) de la Resolución Exenta N° 450, de 2026.</p>
-        <p style="text-align:center;margin-top:18px">Petorca, ${escapeHtml(formatDate(r.issuedAt||new Date().toISOString()))}.</p>
+        <div class="cert-cierre">
+          <p style="text-align:center;margin-top:18px">Petorca, ${escapeHtml(formatDate(r.issuedAt||new Date().toISOString()))}.</p>
+          <div class="signature-id">
+            <strong>${escapeHtml(minister.name)}</strong>
+            <span>${escapeHtml(minister.cargo||"")}</span>
+            <span>${escapeHtml(minister.role||"Ministro de Fe")}</span>
+            <span>Servicio Local de Educación Pública Petorca</span>
+          </div>
+        </div>
       </div>
     </div>
-
 
     <div class="cert-footer">
       <span>Servicio Local de Educación Pública Petorca</span>
