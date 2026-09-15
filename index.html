@@ -325,6 +325,9 @@
     .cert-table th,.cert-table td{border:1px solid #d4e0ea;padding:6px 7px}
     .cert-table th{background:#eef5fa;color:var(--navy);text-align:left}
     .cert-declaration{font-size:12.5px;line-height:1.5;margin:10px 7px}
+    /* La declaración es el texto normativo del certificado: va justificada, como
+       corresponde a un documento de este tipo. La línea de lugar y fecha no. */
+    .cert-declaration p{text-align:justify;text-justify:inter-word;hyphens:none}
     .signature-zone{min-height:72mm;display:flex;flex-direction:column;justify-content:flex-end;text-align:center}
     .signature-line{width:90mm;border-top:1px solid #6a839a;margin:0 auto 5px}
     .signature-zone strong{color:var(--navy)}
