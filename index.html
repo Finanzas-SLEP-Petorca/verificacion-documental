@@ -271,9 +271,10 @@
       margin:0 auto;
       background:#fff;
       color:#15314b;
-      /* Mismo pie de 50 mm que reserva @page al imprimir, para que la vista previa
-         muestre el espacio real que queda libre para la firma de DocDigital. */
-      padding:13mm 13mm 50mm;
+      /* Mismo pie de 82 mm que reserva @page al imprimir, para que la vista previa
+         muestre el espacio real que queda libre para el timbre de FirmaGob y la banda
+         de DocDigital. */
+      padding:13mm 13mm 82mm;
       font-family:Arial,Helvetica,sans-serif;
       position:relative;
     }
@@ -328,14 +329,12 @@
     /* La declaración es el texto normativo del certificado: va justificada, como
        corresponde a un documento de este tipo. La línea de lugar y fecha no. */
     .cert-declaration p{text-align:justify;text-justify:inter-word;hyphens:none}
-    /* El pie queda en blanco: es la banda que FirmaGob ocupa al firmar, con su
-       sello circular y su propio texto (firmante, cargo, fecha y Servicio), unos
-       100 × 42 mm contando ambas cosas. No se imprime aquí ninguna identificación
-       ni línea de firma: duplicaría lo que estampa la plataforma y el documento
-       no debe dar por firmado lo que todavía no lo está. Quién certifica consta
-       en el punto I, con nombre, RUT, cargo y unidad. */
-    .signature-zone{min-height:52mm}
-    .signature-stamp{width:100mm;height:42mm}
+    /* El certificado no imprime pie de firma. El timbre de FirmaGob y la banda de
+       DocDigital se estampan en el margen inferior que reserva @page, siempre en el
+       mismo lugar de la hoja. Imprimir ahí una identificación duplicaría lo que
+       estampa la plataforma, y el documento no debe dar por firmado lo que todavía
+       no lo está: quién certifica consta en el punto I, con nombre, RUT, cargo y
+       unidad. */
     .cert-footer{margin-top:7mm;border-top:1px solid #9eb1c2;padding-top:5px;display:flex;justify-content:space-between;color:#71869a;font-size:9px}
 
     /* Marca de agua para todo lo que no sea un certificado emitido con folio. */
@@ -367,19 +366,26 @@
 
     @page{
       size:8.5in 13in;
-      /* Los 50 mm inferiores quedan libres en TODAS las hojas: ahí DocDigital estampa,
-         al exportar el documento firmado, su banda de pie (QR, la referencia a la ley
-         N° 19.799 y el enlace al validador). El margen va en @page y no como padding
-         del contenedor, porque el padding solo deja aire al final del documento y no
-         al pie de cada hoja. */
-      margin:13mm 13mm 50mm;
+      /* Los 82 mm inferiores quedan libres en TODAS las hojas. Medido sobre un
+         documento del Servicio ya firmado (hoja oficio de 216 × 330 mm):
+
+           · estampado de FirmaGob    y = 251,5 → 288,5 mm, x = 13,6 mm, 87 × 37 mm
+           · banda de pie DocDigital  y = 308,6 → 325,4 mm (QR, ley N° 19.799, validador)
+
+         Ambos se estampan al firmar, encima de lo que ya está impreso. Con 50 mm el
+         texto llegaba hasta y = 280 mm y el timbre se le montaba 28 mm encima. Cortando
+         en 248 mm —tres milímetros antes del timbre— los dos caben sin tocar nada.
+
+         El margen va en @page y no como padding del contenedor, porque el padding solo
+         deja aire al final del documento y no al pie de cada hoja. */
+      margin:13mm 13mm 82mm;
     }
     @media print{
       /* Solo se imprime el certificado. Se ocultan por completo (display:none, no
          visibility) las secciones de la aplicación: dejarlas ocupando espacio genera
          páginas en blanco. */
       html,body{height:auto!important;overflow:visible!important;background:#fff!important}
-      .app-header,.tabs,#newView,#recordsView{display:none!important}
+      .app-header,.tabs,#newView,#recordsView,#avisoLocal{display:none!important}
 
       /* El modal es position:fixed y su panel tiene scroll propio: en impresión eso
          recorta el certificado y repite la primera página. Se devuelven al flujo. */
@@ -415,9 +421,6 @@
       }
       .cert-anulacion{-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .preview-warning{display:none!important}
-      /* El estampado de FirmaGob —sello circular más su texto— mide unos
-         100 × 42 mm: la zona reserva ese espacio y no se parte entre hojas. */
-      .signature-zone{break-inside:avoid;page-break-inside:avoid;min-height:48mm}
     }
 
     @media(max-width:1100px){
@@ -2017,9 +2020,6 @@ function certificateHtml(r){
       </div>
     </div>
 
-    <div class="signature-zone">
-      <div class="signature-stamp"></div>
-    </div>
 
     <div class="cert-footer">
       <span>Servicio Local de Educación Pública Petorca</span>
