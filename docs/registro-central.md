@@ -125,6 +125,12 @@ Una acción **Respuesta**:
 3. **Respuesta** con los mismos encabezados del caso `ping` y cuerpo
    `{ "ok": true, "registros": <salida del Seleccionar> }`.
 
+Esos doce campos son exactamente los que la página lee; no consume ninguno más, así
+que la consulta a la lista puede acotarse a las columnas que los alimentan:
+`IdEmision`, `Folio`, `Ministro`, `CodigoMinistro`, `Naturaleza`, `Unidad`,
+`Referencia`, `Estado`, `MotivoAnulacion`, `FechaAnulacion` y `FechaEmision`.
+`Datos` no hace falta en `listar` —sólo en `obtener`— y es la columna más pesada.
+
 ### Caso `emitir`
 
 1. **Obtener elementos**, filtro `IdEmision eq '@{outputs('Entrada')?['idEmision']}'`,
@@ -244,6 +250,33 @@ Confirme con informática que el Servicio tiene la licencia correspondiente ante
 empezar. Si no la tuviera, la alternativa equivalente es una **Azure Function** con
 CORS habilitado escribiendo en la misma lista por Microsoft Graph: cambia el Paso 2,
 no el resto.
+
+## Cuántas veces llama la aplicación
+
+Cada ejecución del flujo cuesta, así que la página no consulta más de lo necesario:
+
+| Acción del Ministro de Fe | Llamadas |
+|---|---|
+| Abrir la aplicación en una pestaña nueva | 1 `listar` |
+| Recargar esa pestaña (F5) | ninguna — la última lectura queda en `sessionStorage` |
+| Entrar al registro | 1 `listar`, y sólo si la última tiene más de 30 segundos |
+| Entrar y salir del registro repetidas veces | ninguna dentro de esos 30 segundos |
+| "Probar conexión" | 1 `ping` |
+| "Actualizar" | 1 `listar`, siempre |
+| Abrir un certificado de otro equipo | 1 `obtener`, y queda en memoria |
+| Volver a abrirlo | ninguna, salvo que haya cambiado de estado |
+
+No hay ninguna llamada por fila del registro: `obtener` se pide al hacer clic en
+"Ver", no al pintar la tabla.
+
+Al salir de la página se abortan las peticiones en curso. Sin eso el navegador las
+mataba igual, pero el `fetch` rechazaba con un error que la página confundía con un
+preflight CORS fallido y disparaba un segundo POST idéntico mientras se iba: dos
+ejecuciones del flujo que nadie iba a leer, ambas registradas como *"the client
+application timed out waiting for a response from service"*.
+
+Si al recargar aparece esa misma falla en el historial del flujo con una sola
+ejecución, es lo esperado: alguien recargó con una consulta legítima en curso.
 
 ## Qué hace la aplicación en cada caso
 

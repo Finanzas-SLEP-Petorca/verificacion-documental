@@ -302,6 +302,8 @@
     .rc-estado{margin-top:8px;font-size:12px;color:var(--muted);line-height:1.45}
     .rc-estado.ok{color:#1d6b3f}
     .rc-estado.warn{color:#a05a00}
+    .rc-estado.error{color:#8a2b21;background:#fff5f4;border:1px solid #f3c9c4;
+      border-radius:6px;padding:8px 10px;margin-top:10px;font-weight:600}
     .fila-anulada td{opacity:.62}
     .tag-anulado{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:10px;
       background:#feeceb;color:#a13028;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
@@ -1461,9 +1463,22 @@ function nextFolio(minister, programa){
 const ENDPOINT_KEY = "slep_ministro_fe_endpoint_v1";
 const RC_TIMEOUT_MS = 20000;
 
+/* Peticiones abiertas, para cortarlas al salir de la página. Si no se cortan, el
+   navegador las mata igual pero el fetch rechaza con TypeError, y RC.llamar lo
+   toma por un fallo de preflight y dispara un segundo POST mientras la página se
+   está yendo: dos ejecuciones del flujo que nadie va a leer. Abortadas a mano,
+   el rechazo es AbortError y RC.llamar no reintenta. */
+const rcEnVuelo = new Set();
+let rcDescargando = false;
+addEventListener("pagehide", () => {
+  rcDescargando = true;
+  rcEnVuelo.forEach(c => c.abort());
+});
+
 async function rcFetch(url, cuerpo, contentType){
   const ctrl = new AbortController();
   const reloj = setTimeout(() => ctrl.abort(), RC_TIMEOUT_MS);
+  rcEnVuelo.add(ctrl);
   try{
     const res = await fetch(url, {
       method: "POST",
@@ -1478,7 +1493,7 @@ async function rcFetch(url, cuerpo, contentType){
     catch(_){ throw new Error("La respuesta del servicio no es JSON válido."); }
     if(datos && datos.ok === false) throw new Error(datos.error || "El servicio rechazó la solicitud.");
     return datos;
-  } finally { clearTimeout(reloj); }
+  } finally { clearTimeout(reloj); rcEnVuelo.delete(ctrl); }
 }
 
 /* Sólo https, salvo en pruebas locales: el certificado lleva datos personales. */
@@ -1501,7 +1516,9 @@ const RC = {
     try{
       return await rcFetch(url, cuerpo, "application/json");
     }catch(e){
-      if(e.name === "AbortError") throw new Error("El registro central no respondió a tiempo.");
+      if(e.name === "AbortError") throw new Error(rcDescargando
+        ? "La página se cerró antes de recibir la respuesta."
+        : "El registro central no respondió a tiempo.");
       /* Un preflight CORS rechazado no deja leer el motivo real del error, así
          que se reintenta como solicitud simple (text/plain), que el navegador
          no preflightea. El reintento es seguro porque el servidor descarta las
@@ -1601,20 +1618,83 @@ function refrescarPanelRC(){
   );
 }
 
-async function sincronizarRC(){
-  if(!RC.configurado()) return;
-  pintarEstadoRC("Consultando el registro central…", "");
-  /* Un certificado ajeno pudo anularse desde que se abrió: la copia en memoria
-     dejaría de decir la verdad. */
-  certificadosCentrales.clear();
+/* Una lectura del registro vale para todo lo que ocurra en esta ventana de tiempo.
+   Sin esto, entrar y salir de la pestaña del registro disparaba un "listar" por
+   cada entrada. */
+const RC_FRESCURA_MS = 30000;
+const RC_CACHE_KEY = "slep_ministro_fe_cache_v1";
+let rcSincronizando = null;
+let rcUltimaLectura = 0;
+let rcHayCache = false;
+
+/* La última lectura se guarda por pestaña (sessionStorage, no localStorage: son
+   certificados de otras personas y no tienen por qué sobrevivir al navegador).
+   Sirve para que recargar no cueste una consulta al Servicio y el historial del
+   Ministro de Fe siga siendo el del Servicio y no solo el de este equipo. */
+function guardarCacheRC(){
   try{
-    registrosCentrales = await RC.listar();
-    pintarEstadoRC(`Registro central al día: ${registrosCentrales.length} certificado(s) en el Servicio.`, "ok");
-  }catch(e){
-    registrosCentrales = [];
-    pintarEstadoRC("No fue posible leer el registro central: " + e.message, "warn");
-  }
-  renderRecords(); renderHistory(); updateTopFields();
+    sessionStorage.setItem(RC_CACHE_KEY, JSON.stringify({
+      url: RC.url(), t: rcUltimaLectura, registros: registrosCentrales
+    }));
+  }catch(_){ /* modo privado o sin espacio: se sigue sin caché */ }
+}
+
+function restaurarCacheRC(){
+  try{
+    const c = JSON.parse(sessionStorage.getItem(RC_CACHE_KEY) || "null");
+    if(!c || c.url !== RC.url() || !Array.isArray(c.registros)) return;
+    registrosCentrales = c.registros;
+    rcUltimaLectura = c.t || 0;
+    rcHayCache = true;
+  }catch(_){ /* caché ilegible: se lee del Servicio */ }
+}
+
+function olvidarCacheRC(){
+  registrosCentrales = [];
+  certificadosCentrales.clear();
+  rcUltimaLectura = 0;
+  rcHayCache = false;
+  try{ sessionStorage.removeItem(RC_CACHE_KEY); }catch(_){}
+}
+
+function repintarTodo(){ renderRecords(); renderHistory(); updateTopFields(); }
+
+async function sincronizarRC(forzar){
+  if(!RC.configurado()) return;
+  if(rcSincronizando) return rcSincronizando;                  // ya hay una en vuelo
+  if(!forzar && Date.now() - rcUltimaLectura < RC_FRESCURA_MS){ repintarTodo(); return; }
+
+  pintarEstadoRC("Consultando el registro central…", "");
+  rcSincronizando = (async () => {
+    try{
+      const nuevos = await RC.listar();
+      /* Sólo se descarta la copia en memoria de los certificados que cambiaron de
+         estado. Vaciar la caché entera obligaba a volver a pedir el mismo
+         certificado ajeno cada vez que se entraba al registro. */
+      certificadosCentrales.forEach((rec, id) => {
+        const fila = nuevos.find(x => x.id === id);
+        if(!fila || fila.status !== rec.status ||
+           (fila.cancelledAt || "") !== (rec.cancelledAt || ""))
+          certificadosCentrales.delete(id);
+      });
+      registrosCentrales = nuevos;
+      rcUltimaLectura = Date.now();
+      rcHayCache = true;
+      guardarCacheRC();
+      pintarEstadoRC(`Registro central al día: ${registrosCentrales.length} certificado(s) en el Servicio.`, "ok");
+    }catch(e){
+      /* No se borra lo ya traído: dejar la lista vacía hacía parecer que el
+         Servicio no tiene esos certificados, que es peor que mostrarlos viejos. */
+      pintarEstadoRC("No fue posible leer el registro central: " + e.message +
+        (registrosCentrales.length
+          ? " Se sigue mostrando la última lectura, que puede estar desactualizada."
+          : ""), "error");
+    }finally{
+      rcSincronizando = null;
+      repintarTodo();
+    }
+  })();
+  return rcSincronizando;
 }
 
 /* Último folio emitido por este Ministro de Fe en el año en curso. */
@@ -2104,20 +2184,21 @@ function configurarRC(){
   if(u === null) return;
   try{ RC.guardarUrl(u); }
   catch(e){ alert(e.message); return; }
-  registrosCentrales = [];
+  olvidarCacheRC();   // otra dirección es otro registro: no sirve nada de lo leído
   refrescarPanelRC();
   renderRecords();
-  if(RC.configurado()) probarRC();
+  if(RC.configurado()) sincronizarRC(true);   // leer ya prueba la conexión
 }
 
+/* "Probar conexión" usa sólo ping, que es para eso. Antes hacía ping y además
+   listar: dos ejecuciones del flujo para responder una pregunta de sí o no. */
 async function probarRC(){
   pintarEstadoRC("Probando la conexión con el registro central…", "");
   try{
     await RC.ping();
     pintarEstadoRC("Conexión correcta. Los correlativos los asigna el Servicio.", "ok");
-    sincronizarRC();
   }catch(e){
-    pintarEstadoRC("No hay conexión con el registro central: " + e.message, "warn");
+    pintarEstadoRC("No hay conexión con el registro central: " + e.message, "error");
   }
 }
 
@@ -2165,7 +2246,7 @@ $("tabRecords").addEventListener("click",showRecordsView);
 $("avisoLocalBtn").addEventListener("click",()=>{ showRecordsView(); configurarRC(); });
 $("rcConfigBtn").addEventListener("click",configurarRC);
 $("rcTestBtn").addEventListener("click",probarRC);
-$("rcSyncBtn").addEventListener("click",sincronizarRC);
+$("rcSyncBtn").addEventListener("click",()=>sincronizarRC(true));
 $("recordSearch").addEventListener("input",renderRecords);
 $("recordMinisterFilter").addEventListener("change",renderRecords);
 $("recordStatusFilter").addEventListener("change",renderRecords);
@@ -2179,11 +2260,17 @@ attachSegments();
 updateTopFields();
 renderChecklist();
 renderHistory();
+restaurarCacheRC();
 renderRecords();
+renderHistory();
+updateTopFields();
 refrescarPanelRC();
-/* Al abrir: si hay registro central, el historial y el último correlativo del
-   Ministro de Fe deben reflejar el Servicio, no sólo lo emitido en este equipo. */
-if(RC.configurado()) sincronizarRC();
+/* Se consulta al Servicio al abrir sólo si esta pestaña no tiene nada que mostrar.
+   Antes se consultaba en cada carga, así que cada F5 era una ejecución del flujo y
+   una recarga rápida la dejaba a medias: el servidor respondiendo a un cliente que
+   ya se había ido. Con la caché de pestaña, recargar no cuesta ninguna consulta y
+   el historial del Ministro de Fe sigue mostrando lo del Servicio. */
+if(RC.configurado() && !rcHayCache) sincronizarRC();
 </script>
 </body>
 </html>
