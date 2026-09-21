@@ -20,12 +20,16 @@ Ministro o Ministra de Fe abre el enlace y lo usa.
    unidad y el cargo.
 2. **Naturaleza del set.** Al elegirla se carga el checklist correspondiente y aparecen
    únicamente los campos pertinentes.
-3. **Unidad o establecimiento.** Las 6 subdirecciones de la Unidad Central y los 68
+3. **Programa presupuestario.** Con el Programa 02 se exige además la **subvención**
+   con que se financia el gasto: define de dónde sale, así que se declara al principio
+   y no documento por documento. Con el extrapresupuestario se pide el nombre del
+   programa.
+4. **Unidad o establecimiento.** Las 6 subdirecciones de la Unidad Central y los 68
    establecimientos del Servicio, agrupados por comuna y con su RBD.
-4. **Documentación.** Se marca cada documento presente y se ingresa solo la numeración
+5. **Documentación.** Se marca cada documento presente y se ingresa solo la numeración
    necesaria. Si algo falta o está incompleto se registra una excepción con su
    observación, en vez de dejarlo en blanco.
-5. **Declaración y emisión.** Al emitir se asigna el folio y se abre la vista previa,
+6. **Declaración y emisión.** Al emitir se asigna el folio y se abre la vista previa,
    desde donde se imprime o se guarda como PDF.
 
 ### Borrador y definitivo
@@ -127,7 +131,8 @@ abre una lista libre para individualizar qué lo compone.
 ## El certificado
 
 1. Encabezado institucional con los logos del Servicio y del Ministerio.
-2. Folio, fecha de emisión, naturaleza, unidad y referencia.
+2. Folio, fecha de emisión, naturaleza, programa, subvención cuando corresponde,
+   unidad y referencia.
 3. `I.` Identificación del set de pago.
 4. `II.` Documentación verificada.
 5. `II.a` Detalle del ítem "Otros", cuando corresponde.

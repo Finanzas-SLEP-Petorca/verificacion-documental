@@ -318,6 +318,7 @@
     .cert-meta > div{padding:10px;border-right:1px solid #d7e2ec}
     .cert-meta > div:nth-child(3){border-right:0}
     .cert-meta .wide{grid-column:span 3;border-top:1px solid #d7e2ec;border-right:0;display:grid;grid-template-columns:.85fr 1.3fr 1.3fr;gap:18px}
+    .cert-meta .wide.con-subvencion{grid-template-columns:1.1fr .55fr 1.15fr 1.2fr;gap:14px}
     .cert-meta small{display:block;color:#71869a;margin-bottom:3px}
     .cert-meta strong{color:var(--navy)}
     .cert-section{margin-top:5mm}
@@ -543,6 +544,11 @@
         <div class="field hidden" id="programaNombreField">
           <label>Nombre del programa *</label>
           <input id="programaNombre" placeholder="Indique el programa extrapresupuestario" />
+        </div>
+
+        <div class="field hidden" id="subvencionField">
+          <label>Subvención *</label>
+          <select id="subvencionSelect"></select>
         </div>
 
         <div class="field">
@@ -834,6 +840,10 @@ const PROGRAMAS = [
 ];
 // Solo el extrapresupuestario pide nombre; los otros dos son fijos.
 const PROGRAMA_CON_NOMBRE = "Programa Extrapresupuestario";
+/* La subvención define de dónde sale el gasto, así que debe declararse al principio
+   y no documento por documento. Sólo el Programa 02 se financia por subvención. */
+const PROGRAMA_CON_SUBVENCION = "Programa 02";
+function programaPideSubvencion(v){ return v === PROGRAMA_CON_SUBVENCION; }
 function programaPideNombre(v){ return v === PROGRAMA_CON_NOMBRE; }
 function programaTexto(r){
   const base = r.programa || "";
@@ -860,7 +870,7 @@ const DOCS = {
     ]},
     {no:"03", name:"CDP", required:true, fields:[
       {key:"number", label:"N.º", type:"text"},
-      {key:"subsidy", label:"Subvención", type:"select", options:SUBSIDIES}
+      {retirado:true, key:"subsidy", label:"Subvención", type:"select", options:SUBSIDIES}
     ]},
     {no:"04", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"05", name:"Orden de Compra", required:true, fields:[{key:"number",label:"N.º OC",type:"text"}]},
@@ -889,7 +899,7 @@ const DOCS = {
     {no:"03", name:"Boleta de honorarios", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"04", name:"CDP", required:true, fields:[
       {key:"number",label:"N.º",type:"text"},
-      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+      {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
     {no:"05", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]}
   ],
@@ -897,7 +907,7 @@ const DOCS = {
     {no:"01", name:"REX que aprueba pago de consumos básicos", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"02", name:"CDP", required:true, fields:[
       {key:"number",label:"N.º",type:"text"},
-      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+      {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
     {no:"03", name:"Requerimiento", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
     /* Retirado: el folio de cada boleta ya va en el detalle de documentos, folios y
@@ -917,12 +927,12 @@ const DOCS = {
     {no:"04", name:"Rendición de gastos de traslado", required:true, fields:[{key:"number",label:"Referencia / folio",type:"text"}]},
     {no:"05", name:"CDP por cometido funcionario", required:true, fields:[
       {key:"number",label:"N.º",type:"text"},
-      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+      {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
     {no:"06", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"07", name:"CDP por concepto de reembolso", required:true, conditional:"refund", fields:[
       {key:"number",label:"N.º",type:"text"},
-      {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
+      {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
     {no:"08", name:"Compromiso Presupuestario por concepto de reembolso", required:true, conditional:"refund", fields:[{key:"number",label:"N.º",type:"text"}]}
   ],
@@ -955,6 +965,7 @@ let state = {
   nature:"",
   programa:"",
   programaNombre:"",
+  subvencion:"",
   unit:"",
   reference:"",
   factoring:false,
@@ -996,6 +1007,12 @@ function populateMinisters(){
 
   $("ministerNameSelect").value = state.ministerId;
   $("ministerCodeSelect").value = state.ministerId;
+}
+
+function populateSubvenciones(){
+  $("subvencionSelect").innerHTML =
+    `<option value="">Seleccione...</option>` +
+    SUBSIDIES.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
 }
 
 function populateProgramas(){
@@ -1040,6 +1057,7 @@ function syncStateFromForm(){
   state.nature = $("natureSelect").value;
   state.programa = $("programaSelect").value;
   state.programaNombre = $("programaNombre").value.trim();
+  state.subvencion = $("subvencionSelect").value;
   state.unit = $("unitSelect").value;
   state.reference = $("referenceInput").value.trim();
   state.period = $("periodInput").value.trim();
@@ -1106,8 +1124,11 @@ function ensureDocState(doc){
 }
 
 function renderFields(doc, ds){
-  if(!doc.fields?.length) return `<span style="color:var(--muted);font-size:12px">Sin datos adicionales</span>`;
-  return doc.fields.map(f=>{
+  /* Un campo retirado ya no se pide aquí, pero lo que se guardó con él se sigue
+     imprimiendo en el certificado: ver docIdentification. */
+  const campos = (doc.fields || []).filter(f => !f.retirado);
+  if(!campos.length) return `<span style="color:var(--muted);font-size:12px">Sin datos adicionales</span>`;
+  return campos.map(f=>{
     const val = ds.fields?.[f.key] || "";
     if(f.type === "select"){
       return `<div class="mini">
@@ -1564,6 +1585,8 @@ function revisarDatos(d){
   if(!d.programa) errors.push("Seleccione el programa presupuestario.");
   if(programaPideNombre(d.programa) && !String(d.programaNombre||"").trim())
     errors.push("Indique el nombre del programa extrapresupuestario.");
+  if(programaPideSubvencion(d.programa) && !String(d.subvencion||"").trim())
+    errors.push("Indique la subvención con que se financia el Programa 02.");
   if(!d.unit) errors.push("Seleccione unidad / establecimiento.");
   if(!d.declaration) errors.push("Debe aceptar la declaración.");
 
@@ -1573,7 +1596,7 @@ function revisarDatos(d){
     if(doc.required && !doc.retirado && !ds.checked && !ds.exceptionType) errors.push(`${rotulo}: debe verificarse o registrar una excepción.`);
     if(ds.checked){
       for(const f of doc.fields||[]){
-        if(f.opt) continue;
+        if(f.opt || f.retirado) continue;
         if(!String(ds.fields?.[f.key]||"").trim()) errors.push(`${rotulo}: falta ${f.label}.`);
       }
       if(doc.otros && !(d.otros||[]).some(t=>String(t||"").trim())){
@@ -1617,6 +1640,7 @@ function makeRecord(status){
     natureLabel:NATURE_LABELS[state.nature]||"",
     programa:state.programa,
     programaNombre:state.programaNombre,
+    subvencion:state.subvencion,
     unit:state.unit,
     reference:state.reference,
     factoring:state.factoring,
@@ -2068,6 +2092,7 @@ function loadRecordIntoState(r, duplicate=false){
     nature:r.nature,
     programa:r.programa||"",
     programaNombre:r.programaNombre||"",
+    subvencion:r.subvencion||"",
     unit:r.unit,
     reference:r.reference||"",
     factoring:!!r.factoring,
@@ -2089,6 +2114,7 @@ function populateFormFromState(){
   $("natureSelect").value=state.nature;
   $("programaSelect").value=state.programa;
   $("programaNombre").value=state.programaNombre||"";
+  $("subvencionSelect").value=state.subvencion||"";
   syncProgramaNombre();
   $("unitSelect").value=state.unit;
   $("referenceInput").value=state.reference;
@@ -2239,7 +2265,7 @@ function docIdentification(doc, ds, rec){
   }
   const f=ds.fields||{};
   if(doc.name==="Datos Bancarios" || doc.name==="Datos Bancarios Factoring") return "Verificados";
-  if(!doc.fields?.length) return "Verificada";
+  if(!(doc.fields||[]).some(f => !f.retirado) && !f.subsidy) return "Verificada";
   const parts=[];
   if(f.docType) parts.push(f.docType);
   if(f.number) parts.push(`N.º ${f.number}`);
@@ -2298,8 +2324,9 @@ function certificateHtml(r){
       <div><small>Folio certificado:</small><strong>${escapeHtml(folio)}</strong></div>
       <div><small>Fecha de emisión:</small><strong>${escapeHtml(shortDate(r.issuedAt||new Date().toISOString()))}</strong></div>
       <div><small>Naturaleza del set:</small><strong>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</strong></div>
-      <div class="wide">
+      <div class="wide${r.subvencion ? " con-subvencion" : ""}">
         <span><small>Programa Presupuestario:</small><strong>${escapeHtml(programaTexto(r))}</strong></span>
+        ${r.subvencion ? `<span><small>Subvención:</small><strong>${escapeHtml(r.subvencion)}</strong></span>` : ""}
         <span><small>Unidad / Establecimiento:</small><strong>${escapeHtml(r.unit||"—")}</strong></span>
         <span><small>Referencia del set:</small><strong>${escapeHtml(r.reference||"—")}</strong></span>
       </div>
@@ -2490,18 +2517,22 @@ $("natureSelect").addEventListener("change",()=>{
   renderChecklist();
 });
 function syncProgramaNombre(){
-  const pide = programaPideNombre(state.programa);
-  $("programaNombreField").classList.toggle("hidden", !pide);
-  // La fila tiene 4 columnas: al aparecer el nombre, la referencia cede una para que
-  // no quede un hueco y no se parta la línea.
-  $("referenceField").classList.toggle("span-2", !pide);
-  if(!pide){ state.programaNombre = ""; $("programaNombre").value = ""; }
+  const pideNombre = programaPideNombre(state.programa);
+  const pideSubv   = programaPideSubvencion(state.programa);
+  $("programaNombreField").classList.toggle("hidden", !pideNombre);
+  $("subvencionField").classList.toggle("hidden", !pideSubv);
+  // La fila tiene 4 columnas: al aparecer un campo extra, la referencia cede una para
+  // que no quede un hueco y no se parta la línea.
+  $("referenceField").classList.toggle("span-2", !pideNombre && !pideSubv);
+  if(!pideNombre){ state.programaNombre = ""; $("programaNombre").value = ""; }
+  if(!pideSubv){ state.subvencion = ""; $("subvencionSelect").value = ""; }
 }
 $("programaSelect").addEventListener("change",()=>{
   state.programa=$("programaSelect").value;
   syncProgramaNombre();
 });
 $("programaNombre").addEventListener("input",()=>state.programaNombre=$("programaNombre").value.trim());
+$("subvencionSelect").addEventListener("change",()=>state.subvencion=$("subvencionSelect").value);
 $("unitSelect").addEventListener("change",()=>state.unit=$("unitSelect").value);
 $("saveDraftBtn").addEventListener("click",saveDraft);
 $("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));
@@ -2522,6 +2553,7 @@ applyLogo();
 probeMineducLogo();
 populateMinisters();
 populateProgramas();
+populateSubvenciones();
 populateUnidades();
 attachSegments();
 updateTopFields();
