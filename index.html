@@ -584,14 +584,6 @@
           </div>
         </div>
 
-        <div class="field span-2 hidden" id="complementarioField">
-          <label>¿Aplica complementario D.1? — participación de estudiantes y/o infraestructura</label>
-          <div class="segmented" id="complementarioSegment">
-            <button type="button" data-value="yes">Sí</button>
-            <button type="button" class="active" data-value="no">No</button>
-          </div>
-        </div>
-
         <div class="field hidden" id="periodField">
           <label>Período</label>
           <input id="periodInput" placeholder="Ej: Agosto 2026" />
@@ -864,6 +856,16 @@ const FINANCIAMIENTO = {
   "Programa Extrapresupuestario": { rotulo:"Financiamiento", opciones:FINANCIAMIENTO_P01, especifica:"Otros Ingresos P01" }
 };
 function financiamientoDe(programa){ return FINANCIAMIENTO[programa] || null; }
+
+/* El complementario D.1 —asistencia, nómina de alumnas y alumnos, informe técnico y
+   respaldo fotográfico— se exige cuando el gasto se financia con una subvención de
+   uso finalizado. Antes se preguntaba con un sí/no que quedaba a criterio de quien
+   llenaba el formulario; ahora se deduce del financiamiento, que ya se declaró. */
+const SUBVENCIONES_CON_COMPLEMENTARIO = ["SEP", "PRORETENCIÓN", "PIE"];
+function aplicaComplementario(d){
+  return d && d.programa === "Programa 02" &&
+    SUBVENCIONES_CON_COMPLEMENTARIO.includes(d.subvencion);
+}
 function rotuloFinanciamiento(programa){ return (financiamientoDe(programa) || {}).rotulo || "Financiamiento"; }
 function pideDetalleFinanciamiento(programa, valor){
   const cfg = financiamientoDe(programa);
@@ -889,11 +891,11 @@ const DOCS = {
       {key:"docType", label:"Modalidad", type:"select", options:["Convenio Marco","Licitación Pública","Trato Directo"]},
       {key:"number", label:"N.º", type:"text"}
     ]},
-    {no:"02", name:"Solicitud de Compra / REX", required:true, hint:"En gasto SEP debe indicar la acción y la dimensión del PME.", fields:[
+    {no:"02", name:"Solicitud de Compra / REX", required:true, hint:"Con subvención SEP debe indicarse la acción y la dimensión del PME.", fields:[
       {key:"docType", label:"Tipo", type:"select", options:["Solicitud de Compra","REX"]},
       {key:"number", label:"N.º", type:"text"},
-      {key:"pmeAccion", label:"Acción PME", type:"text", opt:true},
-      {key:"pmeDimension", label:"Dimensión PME", type:"text", opt:true}
+      {key:"pmeAccion", label:"Acción PME", type:"text", requiereSubvencion:"SEP"},
+      {key:"pmeDimension", label:"Dimensión PME", type:"text", requiereSubvencion:"SEP"}
     ]},
     {no:"03", name:"CDP", required:true, fields:[
       {key:"number", label:"N.º", type:"text"},
@@ -907,7 +909,10 @@ const DOCS = {
     {no:"09", name:"Recepción Conforme (Establecimiento / Director o Directora)", required:true, fields:[]},
     {no:"10", name:"Recepción Conforme Mercado Público", required:true, fields:[]},
     {no:"11", name:"Datos Bancarios", required:true, fields:[]},
-    {no:"12", name:"Documento/s Tributario/s (Factura)", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    /* Retirado: cada factura ya se individualiza en el detalle de documentos, folios y
+       montos. Se conserva la entrada, no se borra, porque su clave "12" es con la que
+       quedaron guardados los certificados ya emitidos. */
+    {no:"12", name:"Documento/s Tributario/s (Factura)", required:true, retirado:true, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"13", name:"Otros", required:false, otros:true, fields:[]},
     {no:"14", name:"Cesión Factoring", required:true, conditional:"factoring", fields:[
       {key:"assignee",label:"Cesionario",type:"text"},
@@ -1093,6 +1098,7 @@ function syncStateFromForm(){
   state.programaNombre = $("programaNombre").value.trim();
   state.subvencion = $("subvencionSelect").value;
   state.subvencionDetalle = $("subvencionDetalle").value.trim();
+  state.complementario = aplicaComplementario(state);
   state.unit = $("unitSelect").value;
   state.reference = $("referenceInput").value.trim();
   state.period = $("periodInput").value.trim();
@@ -1138,12 +1144,6 @@ function attachSegments(){
     setSegment("refundSegment", state.refund ? "yes":"no");
     renderChecklist();
   });
-  $("complementarioSegment").addEventListener("click",e=>{
-    if(e.target.tagName !== "BUTTON") return;
-    state.complementario = e.target.dataset.value === "yes";
-    setSegment("complementarioSegment", state.complementario ? "yes":"no");
-    renderChecklist();
-  });
 }
 
 function conditionVisible(doc){
@@ -1161,7 +1161,7 @@ function ensureDocState(doc){
 function renderFields(doc, ds){
   /* Un campo retirado ya no se pide aquí, pero lo que se guardó con él se sigue
      imprimiendo en el certificado: ver docIdentification. */
-  const campos = (doc.fields || []).filter(f => !f.retirado);
+  const campos = (doc.fields || []).filter(f => campoVisible(f, state));
   if(!campos.length) return `<span style="color:var(--muted);font-size:12px">Sin datos adicionales</span>`;
   return campos.map(f=>{
     const val = ds.fields?.[f.key] || "";
@@ -1527,7 +1527,6 @@ function renderChecklist(){
   $("checklistContainer").classList.toggle("hidden", !nature);
 
   $("factoringField").classList.toggle("hidden", nature !== "adquisiciones");
-  $("complementarioField").classList.toggle("hidden", nature !== "adquisiciones");
   $("refundField").classList.toggle("hidden", nature !== "viaticos");
   $("periodField").classList.toggle("hidden", nature !== "remuneraciones");
   $("amountField").classList.toggle("hidden", nature !== "remuneraciones");
@@ -1634,7 +1633,7 @@ function revisarDatos(d){
     if(doc.required && !doc.retirado && !ds.checked && !ds.exceptionType) errors.push(`${rotulo}: debe verificarse o registrar una excepción.`);
     if(ds.checked){
       for(const f of doc.fields||[]){
-        if(f.opt || f.retirado) continue;
+        if(f.opt || !campoVisible(f, d)) continue;
         if(!String(ds.fields?.[f.key]||"").trim()) errors.push(`${rotulo}: falta ${f.label}.`);
       }
       if(doc.otros && !(d.otros||[]).some(t=>String(t||"").trim())){
@@ -2163,7 +2162,6 @@ function populateFormFromState(){
   $("declarationCheck").checked=state.declaration;
   setSegment("factoringSegment",state.factoring?"yes":"no");
   setSegment("refundSegment",state.refund?"yes":"no");
-  setSegment("complementarioSegment",state.complementario?"yes":"no");
   $("statusBadge").textContent=statusLabel(state.status);
   $("statusBadge").className="badge "+(state.status==="issued"?"badge-issued":state.status==="cancelled"?"badge-cancel":"badge-draft");
   updateTopFields(); renderChecklist(); renderHistory();
@@ -2280,6 +2278,14 @@ function tieneDatos(ds){
    registro trae datos suyos. */
 function docVigente(d, docs){ return !d.retirado || tieneDatos((docs || {})[d.no]); }
 
+/* Hay campos que sólo corresponden con cierto financiamiento: la acción y la
+   dimensión del PME se piden con subvención SEP y con ninguna otra. */
+function campoVisible(f, d){
+  if(f.retirado) return false;
+  if(f.requiereSubvencion) return d && d.subvencion === f.requiereSubvencion;
+  return true;
+}
+
 /* El número que se imprime es la posición en la lista, no la clave con que se guarda
    el antecedente. Así retirar uno renumera lo que se ve sin mover nada de lo
    guardado. */
@@ -2306,10 +2312,13 @@ function docIdentification(doc, ds, rec){
   const f=ds.fields||{};
   if(doc.name==="Datos Bancarios" || doc.name==="Datos Bancarios Factoring") return "Verificados";
   if(!(doc.fields||[]).some(f => !f.retirado) && !f.subsidy) return "Verificada";
+  if(!(doc.fields||[]).length) return "Verificada";
   const parts=[];
   if(f.docType) parts.push(f.docType);
   if(f.number) parts.push(`N.º ${f.number}`);
   if(f.subsidy) parts.push(`Subvención ${f.subsidy}`);
+  if(f.pmeAccion) parts.push(`Acción PME: ${f.pmeAccion}`);
+  if(f.pmeDimension) parts.push(`Dimensión PME: ${f.pmeDimension}`);
   if(f.assignee) parts.push(`Cesionario: ${f.assignee}`);
   if(f.rut) parts.push(`RUT: ${f.rut}`);
   return parts.join(" · ") || "Verificada";
@@ -2553,7 +2562,7 @@ $("natureSelect").addEventListener("change",()=>{
   state.nature=$("natureSelect").value; state.docs={};
   state.factoring=false; state.refund=false; state.complementario=false;
   state.detalle=[]; state.otros=[];
-  setSegment("factoringSegment","no"); setSegment("refundSegment","no"); setSegment("complementarioSegment","no");
+  setSegment("factoringSegment","no"); setSegment("refundSegment","no");
   renderChecklist();
 });
 function syncProgramaNombre(){
@@ -2575,6 +2584,10 @@ function syncProgramaNombre(){
      dos, para que la última línea no quede con un solo campo suelto. */
   const extras = (pideNombre ? 1 : 0) + (pideDetalle ? 1 : 0);
   $("referenceField").classList.toggle("span-2", extras % 2 === 1);
+
+  // El complementario D.1 y los campos del PME dependen de lo que se acaba de elegir.
+  state.complementario = aplicaComplementario(state);
+  renderChecklist();
 }
 $("programaSelect").addEventListener("change",()=>{
   state.programa=$("programaSelect").value;

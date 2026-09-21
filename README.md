@@ -106,15 +106,18 @@ por ministro y por estado.
 | A | Remuneraciones | 7 |
 | B | Honorarios | 5 |
 | C | Servicios Básicos | 6 |
-| D | Adquisiciones | 13, más los condicionales |
+| D | Adquisiciones | 12, más los condicionales |
 | E | Viáticos y cometidos funcionarios | 8 |
 
 Algunos antecedentes aparecen solo cuando corresponden:
 
 - **Factoring** (Adquisiciones): cesión y datos bancarios del cesionario.
 - **Complementario D.1** (Adquisiciones): lista de asistencia, nómina de alumnas y
-  alumnos preferentes o prioritarios, informe técnico y respaldo fotográfico, para
-  prestaciones con participación de estudiantes o intervenciones de infraestructura.
+  alumnos preferentes o prioritarios, informe técnico y respaldo fotográfico. Se exige
+  solo con Programa 02 y subvención SEP, PRORETENCIÓN o PIE — las de uso finalizado—,
+  y se deduce del financiamiento ya declarado en vez de preguntarse.
+- **Acción y dimensión del PME** (Solicitud de Compra / REX, en Adquisiciones): se piden
+  solo con subvención SEP, y entonces son obligatorias.
 - **Reembolso** (Viáticos): CDP y compromiso presupuestario por ese concepto.
 
 Adquisiciones, Honorarios y Servicios Básicos incluyen además una tabla de **detalle de
@@ -128,9 +131,9 @@ en Excel e **Importar planilla** lo incorpora a la tabla. Se leen `.xlsx` y `.cs
 las fechas en cualquiera de los formatos de uso corriente y los montos como se escriben
 en Chile. Antes de agregar nada se muestra cuántos documentos se leyeron, por qué monto
 y qué filas quedaron fuera; las que ya están en la tabla no se repiten, de modo que
-importar dos veces el mismo archivo no duplica montos. En Servicios Básicos, el folio de
-cada boleta va ahí: pedirlo además como antecedente propio era repetirlo, así que ese
-ítem se retiró. Los certificados emitidos cuando sí se pedía se siguen reimprimiendo tal
+importar dos veces el mismo archivo no duplica montos. El folio de cada documento va ahí: pedirlo además como
+antecedente propio era repetirlo, así que se retiraron las **boletas** de Servicios
+Básicos y los **documentos tributarios** de Adquisiciones. Los certificados emitidos cuando sí se pedía se siguen reimprimiendo tal
 como se emitieron, con sus boletas en el lugar que ocupaban. El ítem **Otros** de Adquisiciones
 abre una lista libre para individualizar qué lo compone.
 
