@@ -319,6 +319,8 @@
     .cert-meta > div:nth-child(3){border-right:0}
     .cert-meta .wide{grid-column:span 3;border-top:1px solid #d7e2ec;border-right:0;display:grid;grid-template-columns:.85fr 1.3fr 1.3fr;gap:18px}
     .cert-meta .wide.con-subvencion{grid-template-columns:1.1fr .55fr 1.15fr 1.2fr;gap:14px}
+    /* Con detalle el financiamiento es una frase, no una sigla: necesita el ancho. */
+    .cert-meta .wide.con-detalle{grid-template-columns:.8fr 1.5fr 1.05fr 1.05fr}
     .cert-meta small{display:block;color:#71869a;margin-bottom:3px}
     .cert-meta strong{color:var(--navy)}
     .cert-section{margin-top:5mm}
@@ -547,8 +549,13 @@
         </div>
 
         <div class="field hidden" id="subvencionField">
-          <label>Subvención *</label>
+          <label id="subvencionLabel">Financiamiento *</label>
           <select id="subvencionSelect"></select>
+        </div>
+
+        <div class="field hidden" id="subvencionDetalleField">
+          <label id="subvencionDetalleLabel">Especifique *</label>
+          <input id="subvencionDetalle" placeholder="Indique de qué se trata" />
         </div>
 
         <div class="field">
@@ -840,21 +847,41 @@ const PROGRAMAS = [
 ];
 // Solo el extrapresupuestario pide nombre; los otros dos son fijos.
 const PROGRAMA_CON_NOMBRE = "Programa Extrapresupuestario";
-/* La subvención define de dónde sale el gasto, así que debe declararse al principio
-   y no documento por documento. Sólo el Programa 02 se financia por subvención. */
-const PROGRAMA_CON_SUBVENCION = "Programa 02";
-function programaPideSubvencion(v){ return v === PROGRAMA_CON_SUBVENCION; }
+
+const SUBSIDIES = [
+  "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRORETENCIÓN","RESTO","OTRO"
+];
+
+/* De dónde sale el gasto se declara al principio, junto al programa, y no documento
+   por documento. Cada programa se financia distinto, así que la lista y el rótulo
+   cambian con él: el Programa 02 se financia por subvenciones y los otros dos no,
+   de modo que llamarles "subvención" sería impreciso en el certificado.
+   `especifica` es la opción que obliga a detallar por escrito de qué se trata. */
+const FINANCIAMIENTO_P01 = ["RESTO", "Remuneración P01", "Fondos No Ley", "Otros Ingresos P01"];
+const FINANCIAMIENTO = {
+  "Programa 01":                  { rotulo:"Financiamiento", opciones:FINANCIAMIENTO_P01, especifica:"Otros Ingresos P01" },
+  "Programa 02":                  { rotulo:"Subvención",     opciones:SUBSIDIES,          especifica:"OTRO" },
+  "Programa Extrapresupuestario": { rotulo:"Financiamiento", opciones:FINANCIAMIENTO_P01, especifica:"Otros Ingresos P01" }
+};
+function financiamientoDe(programa){ return FINANCIAMIENTO[programa] || null; }
+function rotuloFinanciamiento(programa){ return (financiamientoDe(programa) || {}).rotulo || "Financiamiento"; }
+function pideDetalleFinanciamiento(programa, valor){
+  const cfg = financiamientoDe(programa);
+  return !!cfg && !!valor && valor === cfg.especifica;
+}
 function programaPideNombre(v){ return v === PROGRAMA_CON_NOMBRE; }
+function financiamientoTexto(r){
+  const base = r.subvencion || "";
+  const detalle = String(r.subvencionDetalle || "").trim();
+  return detalle ? `${base} — ${detalle}` : base;
+}
+
 function programaTexto(r){
   const base = r.programa || "";
   if(!base) return "—";
   const nombre = String(r.programaNombre || "").trim();
   return programaPideNombre(base) && nombre ? `${base} — ${nombre}` : base;
 }
-
-const SUBSIDIES = [
-  "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRORETENCIÓN","RESTO","OTRO"
-];
 
 const DOCS = {
   adquisiciones: [
@@ -966,6 +993,7 @@ let state = {
   programa:"",
   programaNombre:"",
   subvencion:"",
+  subvencionDetalle:"",
   unit:"",
   reference:"",
   factoring:false,
@@ -1009,10 +1037,16 @@ function populateMinisters(){
   $("ministerCodeSelect").value = state.ministerId;
 }
 
-function populateSubvenciones(){
+/* La lista depende del programa. Si lo elegido no existe en la nueva, se descarta:
+   arrastrar "SEP" a un Programa 01 sería declarar un financiamiento que no aplica. */
+function poblarFinanciamiento(){
+  const cfg = financiamientoDe(state.programa);
+  const opciones = cfg ? cfg.opciones : [];
+  if(state.subvencion && !opciones.includes(state.subvencion)) state.subvencion = "";
   $("subvencionSelect").innerHTML =
     `<option value="">Seleccione...</option>` +
-    SUBSIDIES.map(x=>`<option value="${escapeHtml(x)}">${escapeHtml(x)}</option>`).join("");
+    opciones.map(x=>`<option value="${escapeHtml(x)}" ${state.subvencion===x?"selected":""}>${escapeHtml(x)}</option>`).join("");
+  $("subvencionSelect").value = state.subvencion || "";
 }
 
 function populateProgramas(){
@@ -1058,6 +1092,7 @@ function syncStateFromForm(){
   state.programa = $("programaSelect").value;
   state.programaNombre = $("programaNombre").value.trim();
   state.subvencion = $("subvencionSelect").value;
+  state.subvencionDetalle = $("subvencionDetalle").value.trim();
   state.unit = $("unitSelect").value;
   state.reference = $("referenceInput").value.trim();
   state.period = $("periodInput").value.trim();
@@ -1585,8 +1620,11 @@ function revisarDatos(d){
   if(!d.programa) errors.push("Seleccione el programa presupuestario.");
   if(programaPideNombre(d.programa) && !String(d.programaNombre||"").trim())
     errors.push("Indique el nombre del programa extrapresupuestario.");
-  if(programaPideSubvencion(d.programa) && !String(d.subvencion||"").trim())
-    errors.push("Indique la subvención con que se financia el Programa 02.");
+  const cfgFin = financiamientoDe(d.programa);
+  if(cfgFin && !String(d.subvencion||"").trim())
+    errors.push(`Indique ${cfgFin.rotulo === "Subvención" ? "la subvención" : "el financiamiento"} de ${d.programa}.`);
+  if(pideDetalleFinanciamiento(d.programa, d.subvencion) && !String(d.subvencionDetalle||"").trim())
+    errors.push(`Especifique a qué corresponde "${d.subvencion}".`);
   if(!d.unit) errors.push("Seleccione unidad / establecimiento.");
   if(!d.declaration) errors.push("Debe aceptar la declaración.");
 
@@ -1641,6 +1679,7 @@ function makeRecord(status){
     programa:state.programa,
     programaNombre:state.programaNombre,
     subvencion:state.subvencion,
+    subvencionDetalle:state.subvencionDetalle,
     unit:state.unit,
     reference:state.reference,
     factoring:state.factoring,
@@ -2093,6 +2132,7 @@ function loadRecordIntoState(r, duplicate=false){
     programa:r.programa||"",
     programaNombre:r.programaNombre||"",
     subvencion:r.subvencion||"",
+    subvencionDetalle:r.subvencionDetalle||"",
     unit:r.unit,
     reference:r.reference||"",
     factoring:!!r.factoring,
@@ -2114,7 +2154,7 @@ function populateFormFromState(){
   $("natureSelect").value=state.nature;
   $("programaSelect").value=state.programa;
   $("programaNombre").value=state.programaNombre||"";
-  $("subvencionSelect").value=state.subvencion||"";
+  $("subvencionDetalle").value=state.subvencionDetalle||"";
   syncProgramaNombre();
   $("unitSelect").value=state.unit;
   $("referenceInput").value=state.reference;
@@ -2324,9 +2364,9 @@ function certificateHtml(r){
       <div><small>Folio certificado:</small><strong>${escapeHtml(folio)}</strong></div>
       <div><small>Fecha de emisión:</small><strong>${escapeHtml(shortDate(r.issuedAt||new Date().toISOString()))}</strong></div>
       <div><small>Naturaleza del set:</small><strong>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</strong></div>
-      <div class="wide${r.subvencion ? " con-subvencion" : ""}">
+      <div class="wide${r.subvencion ? " con-subvencion" : ""}${r.subvencionDetalle ? " con-detalle" : ""}">
         <span><small>Programa Presupuestario:</small><strong>${escapeHtml(programaTexto(r))}</strong></span>
-        ${r.subvencion ? `<span><small>Subvención:</small><strong>${escapeHtml(r.subvencion)}</strong></span>` : ""}
+        ${r.subvencion ? `<span><small>${escapeHtml(rotuloFinanciamiento(r.programa))}:</small><strong>${escapeHtml(financiamientoTexto(r))}</strong></span>` : ""}
         <span><small>Unidad / Establecimiento:</small><strong>${escapeHtml(r.unit||"—")}</strong></span>
         <span><small>Referencia del set:</small><strong>${escapeHtml(r.reference||"—")}</strong></span>
       </div>
@@ -2517,22 +2557,35 @@ $("natureSelect").addEventListener("change",()=>{
   renderChecklist();
 });
 function syncProgramaNombre(){
-  const pideNombre = programaPideNombre(state.programa);
-  const pideSubv   = programaPideSubvencion(state.programa);
-  $("programaNombreField").classList.toggle("hidden", !pideNombre);
-  $("subvencionField").classList.toggle("hidden", !pideSubv);
-  // La fila tiene 4 columnas: al aparecer un campo extra, la referencia cede una para
-  // que no quede un hueco y no se parta la línea.
-  $("referenceField").classList.toggle("span-2", !pideNombre && !pideSubv);
+  const cfg = financiamientoDe(state.programa);
+  const pideNombre  = programaPideNombre(state.programa);
   if(!pideNombre){ state.programaNombre = ""; $("programaNombre").value = ""; }
-  if(!pideSubv){ state.subvencion = ""; $("subvencionSelect").value = ""; }
+
+  poblarFinanciamiento();
+  const pideDetalle = pideDetalleFinanciamiento(state.programa, state.subvencion);
+  if(!pideDetalle){ state.subvencionDetalle = ""; $("subvencionDetalle").value = ""; }
+
+  $("programaNombreField").classList.toggle("hidden", !pideNombre);
+  $("subvencionField").classList.toggle("hidden", !cfg);
+  $("subvencionDetalleField").classList.toggle("hidden", !pideDetalle);
+  $("subvencionLabel").textContent = (cfg ? cfg.rotulo : "Financiamiento") + " *";
+  $("subvencionDetalleLabel").textContent = cfg ? `Especifique ${cfg.especifica} *` : "Especifique *";
+
+  /* La fila tiene 4 columnas. Con un número impar de campos extra la referencia toma
+     dos, para que la última línea no quede con un solo campo suelto. */
+  const extras = (pideNombre ? 1 : 0) + (pideDetalle ? 1 : 0);
+  $("referenceField").classList.toggle("span-2", extras % 2 === 1);
 }
 $("programaSelect").addEventListener("change",()=>{
   state.programa=$("programaSelect").value;
   syncProgramaNombre();
 });
 $("programaNombre").addEventListener("input",()=>state.programaNombre=$("programaNombre").value.trim());
-$("subvencionSelect").addEventListener("change",()=>state.subvencion=$("subvencionSelect").value);
+$("subvencionSelect").addEventListener("change",()=>{
+  state.subvencion=$("subvencionSelect").value;
+  syncProgramaNombre();          // la opción "otros" abre el detalle
+});
+$("subvencionDetalle").addEventListener("input",()=>state.subvencionDetalle=$("subvencionDetalle").value);
 $("unitSelect").addEventListener("change",()=>state.unit=$("unitSelect").value);
 $("saveDraftBtn").addEventListener("click",saveDraft);
 $("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));
@@ -2553,7 +2606,6 @@ applyLogo();
 probeMineducLogo();
 populateMinisters();
 populateProgramas();
-populateSubvenciones();
 populateUnidades();
 attachSegments();
 updateTopFields();

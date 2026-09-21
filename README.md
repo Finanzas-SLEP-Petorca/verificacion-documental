@@ -20,10 +20,18 @@ Ministro o Ministra de Fe abre el enlace y lo usa.
    unidad y el cargo.
 2. **Naturaleza del set.** Al elegirla se carga el checklist correspondiente y aparecen
    únicamente los campos pertinentes.
-3. **Programa presupuestario.** Con el Programa 02 se exige además la **subvención**
-   con que se financia el gasto: define de dónde sale, así que se declara al principio
-   y no documento por documento. Con el extrapresupuestario se pide el nombre del
-   programa.
+3. **Programa presupuestario y financiamiento.** De dónde sale el gasto se declara al
+   principio, junto al programa, y no documento por documento. La lista y el rótulo
+   cambian con el programa, porque sólo el 02 se financia por subvenciones:
+
+   | Programa | Rótulo | Opciones |
+   |---|---|---|
+   | 01 y Extrapresupuestario | Financiamiento | RESTO · Remuneración P01 · Fondos No Ley · Otros Ingresos P01 |
+   | 02 | Subvención | SUBV. GENERAL · PIE · SEP · FAEP · JUNJI · MANTENIMIENTO · PRORETENCIÓN · RESTO · OTRO |
+
+   Es obligatorio en los tres. La opción abierta de cada lista —*Otros Ingresos P01* y
+   *OTRO*— exige además describir por escrito de qué se trata. Con el extrapresupuestario
+   se pide también el nombre del programa.
 4. **Unidad o establecimiento.** Las 6 subdirecciones de la Unidad Central y los 68
    establecimientos del Servicio, agrupados por comuna y con su RBD.
 5. **Documentación.** Se marca cada documento presente y se ingresa solo la numeración
@@ -131,8 +139,7 @@ abre una lista libre para individualizar qué lo compone.
 ## El certificado
 
 1. Encabezado institucional con los logos del Servicio y del Ministerio.
-2. Folio, fecha de emisión, naturaleza, programa, subvención cuando corresponde,
-   unidad y referencia.
+2. Folio, fecha de emisión, naturaleza, programa, financiamiento, unidad y referencia.
 3. `I.` Identificación del set de pago.
 4. `II.` Documentación verificada.
 5. `II.a` Detalle del ítem "Otros", cuando corresponde.
