@@ -108,8 +108,9 @@ Algunos antecedentes aparecen solo cuando corresponden:
 Adquisiciones, Honorarios y Servicios Básicos incluyen además una tabla de **detalle de
 documentos, folios y montos**, con total automático.
 
-El tipo de documento ofrece los cuatro más usados —factura electrónica, factura exenta
-electrónica, boleta y nota de crédito— y acepta cualquier otro texto. Cuando los
+El tipo de documento ofrece los cinco más usados —factura electrónica, factura exenta
+electrónica, boleta, boleta de honorarios y nota de crédito— y acepta cualquier otro
+texto. Cuando los
 documentos son muchos, el botón **Descargar plantilla** entrega un archivo para llenar
 en Excel e **Importar planilla** lo incorpora a la tabla. Se leen `.xlsx` y `.csv`, con
 las fechas en cualquiera de los formatos de uso corriente y los montos como se escriben
