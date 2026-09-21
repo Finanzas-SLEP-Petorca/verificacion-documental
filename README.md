@@ -106,7 +106,16 @@ Algunos antecedentes aparecen solo cuando corresponden:
 - **Reembolso** (Viáticos): CDP y compromiso presupuestario por ese concepto.
 
 Adquisiciones, Honorarios y Servicios Básicos incluyen además una tabla de **detalle de
-documentos, folios y montos**, con total automático. En Servicios Básicos, el folio de
+documentos, folios y montos**, con total automático.
+
+El tipo de documento ofrece los cuatro más usados —factura electrónica, factura exenta
+electrónica, boleta y nota de crédito— y acepta cualquier otro texto. Cuando los
+documentos son muchos, el botón **Descargar plantilla** entrega un archivo para llenar
+en Excel e **Importar planilla** lo incorpora a la tabla. Se leen `.xlsx` y `.csv`, con
+las fechas en cualquiera de los formatos de uso corriente y los montos como se escriben
+en Chile. Antes de agregar nada se muestra cuántos documentos se leyeron, por qué monto
+y qué filas quedaron fuera; las que ya están en la tabla no se repiten, de modo que
+importar dos veces el mismo archivo no duplica montos. En Servicios Básicos, el folio de
 cada boleta va ahí: pedirlo además como antecedente propio era repetirlo, así que ese
 ítem se retiró. Los certificados emitidos cuando sí se pedía se siguen reimprimiendo tal
 como se emitieron, con sus boletas en el lugar que ocupaban. El ítem **Otros** de Adquisiciones
