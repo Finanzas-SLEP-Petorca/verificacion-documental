@@ -93,7 +93,7 @@ por ministro y por estado.
 |---|---|---|
 | A | Remuneraciones | 7 |
 | B | Honorarios | 5 |
-| C | Servicios Básicos | 7 |
+| C | Servicios Básicos | 6 |
 | D | Adquisiciones | 13, más los condicionales |
 | E | Viáticos y cometidos funcionarios | 8 |
 
@@ -106,7 +106,10 @@ Algunos antecedentes aparecen solo cuando corresponden:
 - **Reembolso** (Viáticos): CDP y compromiso presupuestario por ese concepto.
 
 Adquisiciones, Honorarios y Servicios Básicos incluyen además una tabla de **detalle de
-documentos, folios y montos**, con total automático. El ítem **Otros** de Adquisiciones
+documentos, folios y montos**, con total automático. En Servicios Básicos, el folio de
+cada boleta va ahí: pedirlo además como antecedente propio era repetirlo, así que ese
+ítem se retiró. Los certificados emitidos cuando sí se pedía se siguen reimprimiendo tal
+como se emitieron, con sus boletas en el lugar que ocupaban. El ítem **Otros** de Adquisiciones
 abre una lista libre para individualizar qué lo compone.
 
 ---

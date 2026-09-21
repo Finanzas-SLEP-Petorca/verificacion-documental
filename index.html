@@ -898,7 +898,12 @@ const DOCS = {
       {key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
     {no:"03", name:"Requerimiento", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
-    {no:"04", name:"Boletas", required:true, fields:[{key:"number",label:"Folio(s)",type:"text"}]},
+    /* Retirado: el folio de cada boleta ya va en el detalle de documentos, folios y
+       montos, así que pedirlo aquí era repetirlo. No se borra de la lista porque su
+       clave "04" es con la que quedaron guardados los certificados ya emitidos: si
+       desapareciera, al reimprimirlos los datos se correrían de fila. Sigue
+       apareciendo sólo en los registros que traen datos suyos. */
+    {no:"04", name:"Boletas", required:true, retirado:true, fields:[{key:"number",label:"Folio(s)",type:"text"}]},
     {no:"05", name:"Cupones de pago, cuando aplique", required:false, fields:[]},
     {no:"06", name:"Resolución de intereses, cuando corresponda", required:false, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"07", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]}
@@ -1232,13 +1237,15 @@ function renderChecklist(){
   if(!nature){ $("docList").innerHTML=""; return; }
 
   const docs = DOCS[nature] || [];
-  const visible = docs.filter(conditionVisible);
-  $("docList").innerHTML = visible.map(doc=>{
+  const visible = docs.filter(conditionVisible).filter(d => docVigente(d, state.docs));
+  $("docList").innerHTML = visible.map((doc,i)=>{
     const ds = ensureDocState(doc);
     const hasEx = !!ds.exceptionType;
     return `<div class="doc-row" data-row="${doc.no}">
-      <div class="doc-no">${doc.no}</div>
-      <div class="doc-name">${escapeHtml(doc.name)} ${doc.required ? "" : '<span style="color:var(--muted);font-weight:600">(opcional)</span>'}
+      <div class="doc-no">${numeroDoc(i)}</div>
+      <div class="doc-name">${escapeHtml(doc.name)} ${
+        doc.retirado ? '<span style="color:var(--muted);font-weight:600">(ya no se solicita)</span>'
+        : doc.required ? "" : '<span style="color:var(--muted);font-weight:600">(opcional)</span>'}
         ${doc.hint ? `<span class="doc-hint">${escapeHtml(doc.hint)}</span>` : ""}</div>
       <div class="inline-fields">${renderFields(doc,ds)}</div>
       <div class="check-wrap"><input type="checkbox" data-check="${doc.no}" ${ds.checked?"checked":""} /></div>
@@ -1261,7 +1268,7 @@ function renderChecklist(){
     $("optionalBox").innerHTML =
       `<div class="optional-title">
          <span>Antecedentes que no aplican según la selección actual (${escapeHtml(motivos.join(" · "))})</span>
-         <span class="muted-pill">${hiddenConditionals.map(d=>d.no).join(" · ")}</span>
+         <span class="muted-pill">${escapeHtml(hiddenConditionals.map(d=>d.name).join(" · "))}</span>
        </div>`;
   } else {
     $("optionalBox").classList.add("hidden");
@@ -1318,29 +1325,31 @@ function revisarDatos(d){
   if(!d.unit) errors.push("Seleccione unidad / establecimiento.");
   if(!d.declaration) errors.push("Debe aceptar la declaración.");
 
-  for(const doc of visibleDocsForRecord(d)){
+  visibleDocsForRecord(d).forEach((doc,i)=>{
     const ds=(d.docs||{})[doc.no]||{};
-    if(doc.required && !ds.checked && !ds.exceptionType) errors.push(`${doc.no} ${doc.name}: debe verificarse o registrar una excepción.`);
+    const rotulo=`${numeroDoc(i)} ${doc.name}`;
+    if(doc.required && !doc.retirado && !ds.checked && !ds.exceptionType) errors.push(`${rotulo}: debe verificarse o registrar una excepción.`);
     if(ds.checked){
       for(const f of doc.fields||[]){
         if(f.opt) continue;
-        if(!String(ds.fields?.[f.key]||"").trim()) errors.push(`${doc.no} ${doc.name}: falta ${f.label}.`);
+        if(!String(ds.fields?.[f.key]||"").trim()) errors.push(`${rotulo}: falta ${f.label}.`);
       }
       if(doc.otros && !(d.otros||[]).some(t=>String(t||"").trim())){
-        errors.push(`${doc.no} ${doc.name}: detalle al menos un documento del ítem "Otros".`);
+        errors.push(`${rotulo}: detalle al menos un documento del ítem "Otros".`);
       }
     }
     if(ds.exceptionType && ds.exceptionType!=="No aplica" && !String(ds.exceptionNote||"").trim()){
-      errors.push(`${doc.no} ${doc.name}: agregue una observación para la excepción.`);
+      errors.push(`${rotulo}: agregue una observación para la excepción.`);
     }
-  }
+  });
   return errors;
 }
 
 function validate(){
   syncStateFromForm();
   // ensureDocState normaliza las entradas del checklist antes de revisar.
-  (DOCS[state.nature]||[]).filter(conditionVisible).forEach(ensureDocState);
+  (DOCS[state.nature]||[]).filter(conditionVisible)
+    .filter(d => docVigente(d, state.docs)).forEach(ensureDocState);
   return revisarDatos(state);
 }
 
@@ -1953,9 +1962,25 @@ window.deleteRecord=function(id){
   saveRecords(getRecords().filter(x=>x.id!==id)); renderRecords(); renderHistory();
 }
 
+function tieneDatos(ds){
+  return !!ds && (!!ds.checked || !!ds.exceptionType ||
+    Object.values(ds.fields || {}).some(v => String(v || "").trim()));
+}
+
+/* Un antecedente retirado ya no se pide, pero los certificados emitidos cuando sí se
+   pedía tienen que reimprimirse tal como se emitieron. Por eso reaparece cuando el
+   registro trae datos suyos. */
+function docVigente(d, docs){ return !d.retirado || tieneDatos((docs || {})[d.no]); }
+
+/* El número que se imprime es la posición en la lista, no la clave con que se guarda
+   el antecedente. Así retirar uno renumera lo que se ve sin mover nada de lo
+   guardado. */
+function numeroDoc(i){ return String(i + 1).padStart(2, "0"); }
+
 function visibleDocsForRecord(r){
   const docs=DOCS[r.nature]||[];
   return docs.filter(d=>{
+    if(!docVigente(d, r.docs)) return false;
     if(d.conditional==="factoring") return !!r.factoring;
     if(d.conditional==="refund") return !!r.refund;
     if(d.conditional==="complementario") return !!r.complementario;
@@ -2055,9 +2080,9 @@ function certificateHtml(r){
       <table class="cert-table">
         <thead><tr><th style="width:11%">N.º</th><th style="width:47%">Documento</th><th>Identificación</th></tr></thead>
         <tbody>
-          ${docs.map(doc=>{
+          ${docs.map((doc,i)=>{
             const ds=r.docs?.[doc.no]||{};
-            return `<tr><td>${doc.no}</td><td>${escapeHtml(doc.name)}</td><td>${escapeHtml(docIdentification(doc,ds,r))}</td></tr>`;
+            return `<tr><td>${numeroDoc(i)}</td><td>${escapeHtml(doc.name)}</td><td>${escapeHtml(docIdentification(doc,ds,r))}</td></tr>`;
           }).join("")}
         </tbody>
       </table>
