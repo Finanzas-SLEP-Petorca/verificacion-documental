@@ -9,6 +9,11 @@ Es un sitio estático: `index.html` con todo el HTML, CSS y JavaScript, más el 
 institucional en `assets/`. No requiere servidor, instalación ni autenticación: cualquier
 Ministro o Ministra de Fe abre el enlace y lo usa.
 
+La propia aplicación trae la guía completa: el botón **Cómo se usa**, en la barra de
+pestañas, abre paso a paso cómo emitir, qué distingue un borrador de un definitivo, cómo
+anular y rehacer, cómo cargar muchos documentos desde Excel, cómo firmar en DocDigital y
+qué hacer con el aviso de "sin registro central".
+
 ---
 
 ## Cómo funciona

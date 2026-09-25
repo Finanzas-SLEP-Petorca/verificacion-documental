@@ -264,6 +264,33 @@
     .modal-top h3{margin:0;color:var(--navy)}
     .modal-actions{display:flex;gap:8px}
 
+    /* GUÍA DE USO */
+    .tab.ayuda{margin-left:auto;border-bottom-color:transparent;color:var(--blue)}
+    .tab.ayuda::before{content:"?";display:inline-grid;place-items:center;width:17px;height:17px;
+      margin-right:7px;border-radius:50%;background:var(--blue);color:#fff;font-size:12px;
+      font-weight:900;vertical-align:-3px}
+    .guia{padding:0 22px 26px;font-size:14px;line-height:1.62;color:#2c4257;max-height:74vh;overflow:auto}
+    .guia h4{margin:24px 0 8px;color:var(--navy);font-size:15.5px;
+      border-bottom:1px solid var(--line);padding-bottom:5px}
+    .guia h4:first-child{margin-top:18px}
+    .guia p{margin:8px 0}
+    .guia ol,.guia ul{margin:8px 0;padding-left:22px}
+    .guia li{margin:5px 0}
+    .guia code{background:#eef3f8;border-radius:4px;padding:1px 6px;font-size:12.5px;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--navy)}
+    .guia strong{color:var(--navy)}
+    .guia .nota{border-left:3px solid #f0c9a0;background:#fff8ef;padding:9px 13px;margin:12px 0;
+      border-radius:0 6px 6px 0;font-size:13.3px}
+    .guia .ojo{border-left:3px solid #b42318;background:#fff5f4;padding:9px 13px;margin:12px 0;
+      border-radius:0 6px 6px 0;font-size:13.3px}
+    .guia .indice{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 6px}
+    .guia .indice a{font-size:12.5px;text-decoration:none;color:var(--blue);background:#eef3f8;
+      border-radius:20px;padding:5px 12px;font-weight:600}
+    .guia .indice a:hover{background:#dfeaf5}
+    .guia table{width:100%;border-collapse:collapse;margin:10px 0;font-size:13px}
+    .guia th,.guia td{border:1px solid var(--line);padding:6px 9px;text-align:left;vertical-align:top}
+    .guia th{background:#f4f8fb;color:var(--navy)}
+
     /* CERTIFICADO */
     .certificate{
       width:216mm;
@@ -435,6 +462,7 @@
          una hoja, lejos de la declaración que suscribe. */
       .cert-cierre{break-inside:avoid;page-break-inside:avoid}
       .preview-warning{display:none!important}
+      #ayudaModal{display:none!important}
     }
 
     @media(max-width:1100px){
@@ -480,6 +508,7 @@
 <div class="tabs">
   <button class="tab active" id="tabNew">Nuevo certificado</button>
   <button class="tab" id="tabRecords">Registro de certificados</button>
+  <button class="tab ayuda" id="tabAyuda" title="Guía de uso del certificado">Cómo se usa</button>
 </div>
 
 <div id="avisoLocal" class="aviso-local hidden">
@@ -692,6 +721,172 @@
     </div>
   </div>
 </section>
+
+<div id="ayudaModal" class="modal hidden">
+  <div class="modal-panel">
+    <div class="modal-top">
+      <h3>Cómo se usa el Certificado de Ministro de Fe</h3>
+      <div class="modal-actions">
+        <button class="btn" id="cerrarAyudaBtn">Cerrar</button>
+      </div>
+    </div>
+    <div class="guia">
+
+      <p>Esta aplicación deja constancia de que un Ministro o Ministra de Fe revisó la
+      documentación de un set de pago antes de su rendición ante la Contraloría General de
+      la República. Produce un certificado en tamaño oficio que se firma en DocDigital y se
+      adjunta al set.</p>
+
+      <div class="indice">
+        <a href="#g1">1. Emitir</a>
+        <a href="#g2">2. Borrador y definitivo</a>
+        <a href="#g3">3. El folio</a>
+        <a href="#g4">4. Corregir un error</a>
+        <a href="#g5">5. Cargar muchos documentos</a>
+        <a href="#g6">6. Qué se pide solo</a>
+        <a href="#g7">7. Firmar</a>
+        <a href="#g8">8. Registro del Servicio</a>
+        <a href="#g9">9. Dudas frecuentes</a>
+      </div>
+
+      <h4 id="g1">1. Emitir un certificado</h4>
+      <ol>
+        <li><strong>Ministro de Fe.</strong> Se elige por nombre o por código, da lo mismo
+        cuál: RUT, unidad y cargo se completan solos.</li>
+        <li><strong>Naturaleza del set.</strong> Al elegirla aparece el checklist que
+        corresponde y se ocultan los campos que no vienen al caso.</li>
+        <li><strong>Programa presupuestario y financiamiento.</strong> De dónde sale el
+        gasto se declara aquí, al principio. La lista cambia según el programa; con el
+        Programa 02 se llama <em>subvención</em>. Si elige la opción abierta
+        —<code>OTRO</code> o <code>Otros Ingresos P01</code>— hay que describir de qué se
+        trata.</li>
+        <li><strong>Unidad o establecimiento.</strong> Las seis subdirecciones de la Unidad
+        Central y los 68 establecimientos, agrupados por comuna y con su RBD.</li>
+        <li><strong>Documentación.</strong> Marque cada antecedente que tuvo <em>a la
+        vista</em> e ingrese su numeración. Si algo falta o está incompleto, registre una
+        excepción con el botón <code>⋯</code> y escriba la observación, en vez de dejarlo
+        en blanco.</li>
+        <li><strong>Detalle de documentos, folios y montos.</strong> Individualice las
+        facturas, boletas y notas de crédito del set. El total se calcula solo.</li>
+        <li><strong>Declaración y emisión.</strong> Marque la declaración y pulse
+        <strong>Emitir certificado</strong>. Ahí se asigna el folio y se abre la vista
+        previa para imprimir o guardar como PDF.</li>
+      </ol>
+      <p>Si no le deja emitir, el aviso enumera exactamente qué falta. Nada se pierde:
+      puede <strong>Guardar borrador</strong> y retomarlo después.</p>
+
+      <h4 id="g2">2. Borrador y definitivo</h4>
+      <p>Son dos cosas distintas y conviene tenerlo claro:</p>
+      <table>
+        <tr><th>Botón</th><th>Qué hace</th></tr>
+        <tr><td><strong>Vista previa PDF</strong></td>
+            <td>Muestra cómo va quedando. <strong>No valida nada</strong>, así que todo lo
+            que se imprima desde ahí sale con la marca de agua <strong>BORRADOR</strong> en
+            diagonal y sin folio.</td></tr>
+        <tr><td><strong>Emitir certificado</strong></td>
+            <td>Revisa que esté todo, asigna el folio y produce el documento válido. Es el
+            único que sirve para adjuntar al set de pago.</td></tr>
+      </table>
+      <div class="ojo">Un borrador impreso <strong>no</strong> es un certificado. La marca de
+      agua está justamente para que no se confunda ni se adjunte por error.</div>
+
+      <h4 id="g3">3. El folio</h4>
+      <p>Se asigna <strong>al emitir</strong>, nunca antes, de modo que un formulario
+      abandonado no consuma un número.</p>
+      <p style="text-align:center;font-size:17px;letter-spacing:1px"><code>CMF-2026-P01-GAB700-001</code></p>
+      <table>
+        <tr><th><code>CMF</code></th><td>Certificado de Ministro de Fe</td></tr>
+        <tr><th><code>2026</code></th><td>Año</td></tr>
+        <tr><th><code>P01</code></th><td>Programa presupuestario (<code>P01</code>, <code>P02</code> o <code>EXT</code>)</td></tr>
+        <tr><th><code>GAB700</code></th><td>Código del Ministro de Fe</td></tr>
+        <tr><th><code>001</code></th><td>Correlativo</td></tr>
+      </table>
+      <p>La numeración corre <strong>por Ministro de Fe y por año</strong>, no por programa:
+      usted tendrá 001, 002, 003… en el año, sea cual sea el programa de cada certificado.</p>
+
+      <h4 id="g4">4. Si se equivocó: anular y rehacer</h4>
+      <p>Un certificado emitido no se edita ni se borra. Se <strong>anula</strong>, y para
+      eso hay que indicar un motivo, que queda impreso en el documento y guardado en el
+      registro.</p>
+      <p>El folio <strong>queda consumido</strong>: no se reasigna. Para rehacer el trabajo
+      use <strong>Duplicar</strong>, que conserva todos los antecedentes ya cargados en un
+      borrador nuevo. El ciclo completo es:</p>
+      <p style="text-align:center"><code>emitir → anular → duplicar → emitir</code></p>
+      <p>No se pierde nada de lo hecho, y el certificado anulado se imprime con la marca
+      <strong>ANULADO</strong> y la constancia de su anulación.</p>
+
+      <h4 id="g5">5. Cargar muchos documentos de una vez</h4>
+      <p>Si el set trae cincuenta facturas, no las escriba una por una:</p>
+      <ol>
+        <li>Pulse <strong>Descargar plantilla</strong>.</li>
+        <li>Ábrala en Excel y complete las columnas: tipo de documento, folio, fecha y monto.</li>
+        <li>Guárdela y pulse <strong>Importar planilla</strong>. Se aceptan
+        <code>.xlsx</code> y <code>.csv</code>.</li>
+      </ol>
+      <p>Antes de agregar nada se le muestra cuántos documentos se leyeron, por qué monto y
+      qué filas quedaron fuera y por qué. Importar dos veces el mismo archivo no duplica
+      montos: las filas repetidas se omiten.</p>
+      <p>El tipo de documento ofrece los más usados —factura electrónica, factura exenta,
+      boleta, boleta de honorarios y nota de crédito— y acepta cualquier otro texto.</p>
+
+      <h4 id="g6">6. Lo que la aplicación pide sola</h4>
+      <p>Hay antecedentes que aparecen o desaparecen según lo que usted ya declaró, para no
+      preguntar dos veces lo mismo:</p>
+      <table>
+        <tr><th>Aparece</th><th>Cuándo</th></tr>
+        <tr><td>Acción y dimensión del PME</td><td>Subvención <code>SEP</code></td></tr>
+        <tr><td>Complementario D.1 — asistencia, nómina, informe técnico y respaldo fotográfico</td>
+            <td>Programa 02 con <code>SEP</code>, <code>PRO-RETENCIÓN</code> o <code>PIE</code></td></tr>
+        <tr><td>Cesión y datos bancarios del cesionario</td><td>Factura cedida a factoring</td></tr>
+        <tr><td>CDP y compromiso por reembolso</td><td>Viáticos con reembolso</td></tr>
+      </table>
+      <p>Cuando algo no aplica, aparece listado abajo del checklist para que quede claro que
+      se omitió a propósito y no por olvido.</p>
+
+      <h4 id="g7">7. Imprimir y firmar</h4>
+      <ol>
+        <li>Desde la vista previa, <strong>Imprimir / Guardar PDF</strong>.</li>
+        <li>Suba ese PDF a <strong>DocDigital</strong> y fírmelo.</li>
+        <li>Ubique el timbre en el espacio libre que queda bajo su identificación, al final
+        del certificado. Está reservado para eso.</li>
+      </ol>
+      <div class="nota">El pie del certificado lleva su nombre, RUT, cargo y calidad en una
+      línea, sin raya de firma: la firma la pone la plataforma, no el papel.</div>
+
+      <h4 id="g8">8. El registro del Servicio</h4>
+      <p>La pestaña <strong>Registro de certificados</strong> guarda lo suyo y, si el equipo
+      está conectado al registro central, muestra también lo emitido en otros equipos,
+      marcado <code>OTRO EQUIPO</code>. Esos se pueden abrir e imprimir, pero los administra
+      quien los emitió.</p>
+      <div class="ojo"><strong>Si ve un aviso naranja</strong> que dice que este equipo no
+      está conectado al registro central, avísele al Subdepartamento de Finanzas antes de
+      emitir. Sin conexión, los folios los numera su navegador y pueden repetir un número
+      ya usado en otro computador.</div>
+      <p>Para conectarlo: <strong>Registro de certificados → Configurar</strong>, y pegue la
+      dirección que entrega Finanzas. Se pega una sola vez por equipo.</p>
+      <p>Si el registro central no responde, la aplicación <strong>no emite</strong> y se lo
+      dice. Es a propósito: un folio repetido en un documento que va a la Contraloría es
+      peor que esperar unos minutos. Guarde el borrador y reintente.</p>
+
+      <h4 id="g9">9. Dudas frecuentes</h4>
+      <p><strong>No me deja emitir y no sé qué falta.</strong> El aviso los enumera uno por
+      uno. También puede abrir la vista previa: arriba aparece la lista de lo pendiente.</p>
+      <p><strong>¿Puedo corregir un certificado ya emitido?</strong> No. Se anula y se
+      duplica. Así queda trazabilidad de lo que se emitió y de por qué se dejó sin efecto.</p>
+      <p><strong>¿Dónde quedan guardados los borradores?</strong> En este navegador y en este
+      computador. Si borra los datos del navegador, se pierden. Los certificados
+      <em>emitidos</em>, en cambio, quedan en el registro del Servicio.</p>
+      <p><strong>El total del detalle no cuadra.</strong> Revise que los montos no traigan
+      texto. Se aceptan <code>1250000</code>, <code>1.250.000</code> y <code>$1.250.000</code>:
+      los tres valen lo mismo.</p>
+      <p><strong>Me equivoqué de Ministro de Fe.</strong> Si es un borrador, cámbielo y listo.
+      Si ya lo emitió, anúlelo y duplíquelo con el ministro correcto.</p>
+      <p><strong>El certificado no imprime los datos bancarios.</strong> Es deliberado: solo
+      deja constancia de que fueron verificados. No se imprimen números de cuenta.</p>
+
+    </div>
+  </div>
+</div>
 
 <div id="previewModal" class="modal hidden">
   <div class="modal-panel">
@@ -2614,6 +2809,17 @@ $("closePreviewBtn").addEventListener("click",closePreview);
 $("printBtn").addEventListener("click",()=>window.print());
 $("tabNew").addEventListener("click",showNewView);
 $("tabRecords").addEventListener("click",showRecordsView);
+$("tabAyuda").addEventListener("click",()=>{
+  $("ayudaModal").classList.remove("hidden");
+  $("ayudaModal").querySelector(".guia").scrollTop = 0;
+});
+$("cerrarAyudaBtn").addEventListener("click",()=>$("ayudaModal").classList.add("hidden"));
+$("ayudaModal").addEventListener("click",e=>{                 // cerrar al pinchar fuera
+  if(e.target === $("ayudaModal")) $("ayudaModal").classList.add("hidden");
+});
+addEventListener("keydown",e=>{
+  if(e.key === "Escape") $("ayudaModal").classList.add("hidden");
+});
 $("avisoLocalBtn").addEventListener("click",()=>{ showRecordsView(); configurarRC(); });
 $("rcConfigBtn").addEventListener("click",configurarRC);
 $("rcTestBtn").addEventListener("click",probarRC);
