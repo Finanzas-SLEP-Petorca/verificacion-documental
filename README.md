@@ -27,7 +27,7 @@ Ministro o Ministra de Fe abre el enlace y lo usa.
    | Programa | Rótulo | Opciones |
    |---|---|---|
    | 01 y Extrapresupuestario | Financiamiento | RESTO · Remuneración P01 · Fondos No Ley · Otros Ingresos P01 |
-   | 02 | Subvención | SUBV. GENERAL · PIE · SEP · FAEP · JUNJI · MANTENIMIENTO · PRORETENCIÓN · RESTO · OTRO |
+   | 02 | Subvención | SUBV. GENERAL · PIE · SEP · FAEP · JUNJI · MANTENIMIENTO · PRO-RETENCIÓN · RESTO · OTRO |
 
    Es obligatorio en los tres. La opción abierta de cada lista —*Otros Ingresos P01* y
    *OTRO*— exige además describir por escrito de qué se trata. Con el extrapresupuestario
@@ -114,7 +114,7 @@ Algunos antecedentes aparecen solo cuando corresponden:
 - **Factoring** (Adquisiciones): cesión y datos bancarios del cesionario.
 - **Complementario D.1** (Adquisiciones): lista de asistencia, nómina de alumnas y
   alumnos preferentes o prioritarios, informe técnico y respaldo fotográfico. Se exige
-  solo con Programa 02 y subvención SEP, PRORETENCIÓN o PIE — las de uso finalizado—,
+  solo con Programa 02 y subvención SEP, PRO-RETENCIÓN o PIE — las de uso finalizado—,
   y se deduce del financiamiento ya declarado en vez de preguntarse.
 - **Acción y dimensión del PME** (Solicitud de Compra / REX, en Adquisiciones): se piden
   solo con subvención SEP, y entonces son obligatorias.

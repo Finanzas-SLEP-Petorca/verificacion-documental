@@ -841,7 +841,7 @@ const PROGRAMAS = [
 const PROGRAMA_CON_NOMBRE = "Programa Extrapresupuestario";
 
 const SUBSIDIES = [
-  "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRORETENCIÓN","RESTO","OTRO"
+  "SUBV. GENERAL","PIE","SEP","FAEP","JUNJI","MANTENIMIENTO","PRO-RETENCIÓN","RESTO","OTRO"
 ];
 
 /* De dónde sale el gasto se declara al principio, junto al programa, y no documento
@@ -857,11 +857,18 @@ const FINANCIAMIENTO = {
 };
 function financiamientoDe(programa){ return FINANCIAMIENTO[programa] || null; }
 
+/* Los certificados ya emitidos conservan el texto con que se firmaron; esto sólo
+   corrige lo que se vuelve a abrir en el formulario. */
+const SUBVENCIONES_RENOMBRADAS = { "PRORETENCIÓN": "PRO-RETENCIÓN" };
+function normalizarSubvencion(v){ return SUBVENCIONES_RENOMBRADAS[v] || v || ""; }
+
 /* El complementario D.1 —asistencia, nómina de alumnas y alumnos, informe técnico y
    respaldo fotográfico— se exige cuando el gasto se financia con una subvención de
    uso finalizado. Antes se preguntaba con un sí/no que quedaba a criterio de quien
    llenaba el formulario; ahora se deduce del financiamiento, que ya se declaró. */
-const SUBVENCIONES_CON_COMPLEMENTARIO = ["SEP", "PRORETENCIÓN", "PIE"];
+/* "PRORETENCIÓN" es la grafía con que quedaron guardados los primeros certificados;
+   se reconoce para que un borrador de esa época siga exigiendo el complementario. */
+const SUBVENCIONES_CON_COMPLEMENTARIO = ["SEP", "PRO-RETENCIÓN", "PRORETENCIÓN", "PIE"];
 function aplicaComplementario(d){
   return d && d.programa === "Programa 02" &&
     SUBVENCIONES_CON_COMPLEMENTARIO.includes(d.subvencion);
@@ -2130,7 +2137,7 @@ function loadRecordIntoState(r, duplicate=false){
     nature:r.nature,
     programa:r.programa||"",
     programaNombre:r.programaNombre||"",
-    subvencion:r.subvencion||"",
+    subvencion:normalizarSubvencion(r.subvencion),
     subvencionDetalle:r.subvencionDetalle||"",
     unit:r.unit,
     reference:r.reference||"",
