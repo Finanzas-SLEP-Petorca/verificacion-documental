@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<title>Guía de uso — Certificado de Ministro de Fe</title>
+<style>
+  @page{ size:216mm 279mm; margin:16mm 16mm 18mm; }
+  *{box-sizing:border-box}
+  body{
+    margin:0; font-family:Arial,Helvetica,sans-serif; color:#243b52;
+    font-size:10.6pt; line-height:1.55;
+  }
+  .hoja{max-width:184mm;margin:0 auto}
+
+  /* Portada */
+  .portada{display:flex;align-items:center;justify-content:space-between;gap:16mm;
+    padding-bottom:6mm;border-bottom:2px solid #123a5f}
+  .portada img.petorca{width:52mm}
+  .portada img.mineduc{width:20mm}
+  h1{font-size:19pt;color:#123a5f;margin:9mm 0 2mm;line-height:1.2}
+  .bajada{font-size:11pt;color:#5b7186;margin:0 0 2mm}
+  .marco{border:1px solid #cfdceb;background:#f7fafd;border-radius:6px;padding:4mm 5mm;margin:5mm 0}
+  .marco p:last-child{margin-bottom:0}
+  .marco p:first-child{margin-top:0}
+
+  h2{font-size:13pt;color:#123a5f;margin:8mm 0 2mm;padding-bottom:1.5mm;
+    border-bottom:1px solid #d7e2ec;break-after:avoid}
+  h3{font-size:11pt;color:#123a5f;margin:5mm 0 1mm;break-after:avoid}
+  p{margin:2mm 0}
+  ol,ul{margin:2mm 0;padding-left:7mm}
+  li{margin:1.5mm 0}
+  code{background:#eef3f8;border-radius:3px;padding:0 1.5mm;
+    font-family:"Courier New",monospace;font-size:9.6pt;color:#123a5f}
+  strong{color:#123a5f}
+  table{width:100%;border-collapse:collapse;margin:3mm 0;font-size:9.8pt;break-inside:avoid}
+  th,td{border:1px solid #d7e2ec;padding:2mm 2.5mm;text-align:left;vertical-align:top}
+  th{background:#f0f5fa;color:#123a5f}
+
+  .paso0{border:2px solid #123a5f;border-radius:7px;padding:5mm 6mm;margin:5mm 0;background:#f7fafd}
+  .paso0 h2{margin-top:0;border:0;padding:0;font-size:13.5pt}
+  .etiqueta{display:inline-block;background:#123a5f;color:#fff;font-size:8.5pt;font-weight:bold;
+    letter-spacing:.5px;border-radius:3px;padding:1mm 2.5mm;margin-bottom:2mm}
+  .ojo{border-left:3px solid #b42318;background:#fff5f4;padding:2.5mm 4mm;margin:3mm 0;
+    border-radius:0 4px 4px 0;font-size:10pt}
+  .nota{border-left:3px solid #e0a34a;background:#fffaf2;padding:2.5mm 4mm;margin:3mm 0;
+    border-radius:0 4px 4px 0;font-size:10pt}
+  .folio{text-align:center;font-family:"Courier New",monospace;font-size:15pt;
+    letter-spacing:1.5px;color:#123a5f;font-weight:bold;margin:3mm 0}
+  .pie{margin-top:7mm;padding-top:2.5mm;border-top:1px solid #d7e2ec;
+    font-size:8.6pt;color:#7b8fa3;display:flex;justify-content:space-between}
+  .marco,.paso0,.ojo,.nota,.flujo{break-inside:avoid}
+  .flujo{display:flex;align-items:center;justify-content:center;gap:3mm;margin:4mm 0;flex-wrap:wrap}
+  .flujo span{border:1px solid #cfdceb;background:#f7fafd;border-radius:4px;padding:2mm 3.5mm;
+    font-size:9.6pt;color:#123a5f;font-weight:bold}
+  .flujo i{color:#8aa2b8;font-style:normal;font-size:11pt}
+</style>
+</head>
+<body>
+<div class="hoja">
+
+  <div class="portada">
+    <img class="petorca" src="../assets/logo-petorca.png" alt="SLEP Petorca" />
+    <img class="mineduc" src="../assets/logo-mineduc.png" alt="Ministerio de Educación" />
+  </div>
+
+  <h1>Certificado de Ministro de Fe<br />Guía de uso</h1>
+  <p class="bajada">Verificación documental de sets de pago para rendición de cuentas ante la
+  Contraloría General de la República.</p>
+
+  <div class="marco">
+    <p><strong>Para qué sirve.</strong> En el marco de la Resolución Exenta N° 450, de 2026, que
+    aprueba el Procedimiento de Autentificación Documental y Respaldo de Rendición de Cuentas,
+    todo set de pago que se remita al Subdepartamento de Finanzas debe venir acompañado del
+    certificado emitido por el Ministro o Ministra de Fe que lo revisó, con su firma electrónica
+    estampada.</p>
+    <p><strong>Dónde se emite.</strong>
+    <code>https://finanzas-slep-petorca.github.io/verificacion-documental/</code></p>
+    <p>No necesita usuario ni contraseña. Conviene guardar el enlace en favoritos.</p>
+  </div>
+
+  <div class="paso0">
+    <span class="etiqueta">SE HACE UNA SOLA VEZ, POR COMPUTADOR</span>
+    <h2>Paso 0 · Conectar el equipo al registro del Servicio</h2>
+    <p>Antes de emitir su primer certificado, conecte el computador al registro central. Sin esto
+    la aplicación funciona igual, pero <strong>numera los folios por su cuenta</strong> y puede
+    repetir un número ya usado por otro Ministro de Fe en otro equipo.</p>
+    <ol>
+      <li>Abra el enlace y entre a la pestaña <strong>Registro de certificados</strong>.</li>
+      <li>Pulse <strong>Configurar</strong>.</li>
+      <li>Pegue la dirección que le entregó el Subdepartamento de Finanzas y acepte.</li>
+      <li>Debe aparecer, en verde: <em>"Registro central al día"</em>.</li>
+    </ol>
+    <p>Si en la pantalla principal ve un <strong>recuadro naranja</strong> que dice que este equipo
+    no está conectado, es que falta este paso. Avise a Finanzas antes de emitir.</p>
+    <div class="ojo"><strong>La dirección es una credencial.</strong> No la publique, no la comparta
+    fuera del Servicio y no la suba a ningún sitio. Si cambia de computador, hay que repetir el
+    paso 0 en el equipo nuevo.</div>
+  </div>
+
+  <h2>1 · Qué certificados le corresponde emitir</h2>
+  <p>Durante el pilotaje en la Subdirección de Gestión y Desarrollo de Personas, requieren
+  certificado los sets de pago de:</p>
+  <table>
+    <tr><th style="width:42%">Set de pago</th><th>Qué elegir en <em>Naturaleza del set</em></th></tr>
+    <tr><td>Adquisiciones</td><td>Adquisiciones</td></tr>
+    <tr><td>Remuneraciones</td><td>Remuneraciones</td></tr>
+    <tr><td>Honorarios</td><td>Honorarios</td></tr>
+    <tr><td>Viáticos</td><td>Viáticos y cometidos funcionarios</td></tr>
+    <tr><td><strong>Reembolsos</strong></td>
+        <td><strong>Viáticos y cometidos funcionarios</strong>, y luego marcar
+        <em>¿Existe reembolso?</em> → <strong>Sí</strong>. No hay una naturaleza llamada
+        "Reembolsos": al marcar esa opción se agregan los antecedentes que le corresponden.</td></tr>
+  </table>
+
+  <h2>2 · Cómo emitir un certificado</h2>
+  <ol>
+    <li><strong>Ministro de Fe.</strong> Elíjase por nombre o por código, da lo mismo cuál: su RUT,
+    unidad y cargo se completan solos.</li>
+    <li><strong>Naturaleza del set.</strong> Al elegirla aparece el listado de antecedentes que
+    corresponde a ese tipo de set.</li>
+    <li><strong>Programa presupuestario y financiamiento.</strong> De dónde sale el gasto se
+    declara aquí, al principio. Con el Programa 02 el campo se llama <em>Subvención</em>. Si elige
+    la opción abierta (<code>OTRO</code> u <code>Otros Ingresos P01</code>), hay que describir de
+    qué se trata.</li>
+    <li><strong>Unidad o establecimiento.</strong> La subdirección o el establecimiento que origina
+    el gasto.</li>
+    <li><strong>Documentación.</strong> Marque cada antecedente que tuvo <em>a la vista</em> e
+    ingrese su numeración. Si algo falta o está incompleto, registre una excepción con el botón
+    <code>⋯</code> y escriba la observación. <strong>No lo deje en blanco:</strong> la excepción
+    deja constancia de qué faltaba, que es justamente lo que el certificado debe acreditar.</li>
+    <li><strong>Detalle de documentos, folios y montos.</strong> Individualice las facturas,
+    boletas y notas de crédito del set. El total se calcula solo.</li>
+    <li><strong>Declaración y emisión.</strong> Marque la declaración y pulse
+    <strong>Emitir certificado</strong>.</li>
+  </ol>
+  <p>Si no le deja emitir, el aviso enumera exactamente qué falta. Nada se pierde: puede
+  <strong>Guardar borrador</strong> y retomarlo cuando tenga el antecedente.</p>
+
+  <div class="nota">La aplicación pide sola los antecedentes que correspondan: la acción y la
+  dimensión del PME aparecen con subvención SEP; el complementario D.1 —asistencia, nómina,
+  informe técnico y respaldo fotográfico— con Programa 02 y subvención SEP, PRO-RETENCIÓN o PIE;
+  la cesión de factoring, al indicar que la factura fue cedida. Lo que no aplica se lista al pie
+  del checklist, para que conste que se omitió a propósito.</div>
+
+  <h2>3 · El correlativo</h2>
+  <p>El folio se asigna <strong>al emitir</strong>, nunca antes, de modo que un formulario que se
+  abandona no consuma un número.</p>
+  <div class="folio">CMF-2026-P01-GAB700-001</div>
+  <table>
+    <tr><th style="width:26%"><code>CMF</code></th><td>Certificado de Ministro de Fe</td></tr>
+    <tr><th><code>2026</code></th><td>Año de emisión</td></tr>
+    <tr><th><code>P01</code></th><td>Programa presupuestario: <code>P01</code>, <code>P02</code> o
+      <code>EXT</code> para el extrapresupuestario</td></tr>
+    <tr><th><code>GAB700</code></th><td>Código del Ministro o Ministra de Fe que emite</td></tr>
+    <tr><th><code>001</code></th><td>Número correlativo</td></tr>
+  </table>
+  <p>La numeración corre <strong>por Ministro de Fe y por año</strong>, no por programa: usted
+  tendrá 001, 002, 003… a lo largo del año, sea cual sea el programa de cada certificado. Dos
+  Ministros de Fe distintos tienen cada uno su propia serie.</p>
+  <h3>Por qué importa el paso 0</h3>
+  <p>El número lo entrega el registro central del Servicio, no su computador. Así, si dos personas
+  emiten al mismo tiempo desde equipos distintos, cada una recibe un número diferente. Si el equipo
+  no está conectado, el número lo pone el navegador y puede chocar con uno ya usado: dos
+  certificados distintos con el mismo folio, en documentos que van a la Contraloría.</p>
+  <p>Si el registro central no responde en el momento de emitir, la aplicación <strong>no
+  emite</strong> y se lo dice. Es deliberado: guarde el borrador y reintente en unos minutos.</p>
+
+  <h2>4 · Borrador y definitivo</h2>
+  <table>
+    <tr><th style="width:32%">Botón</th><th>Qué produce</th></tr>
+    <tr><td><strong>Vista previa PDF</strong></td>
+        <td>Muestra cómo va quedando. <strong>No revisa nada</strong>: todo lo que se imprima desde
+        ahí sale con la marca de agua <strong>BORRADOR</strong> en diagonal y sin folio.</td></tr>
+    <tr><td><strong>Emitir certificado</strong></td>
+        <td>Revisa que esté completo, asigna el folio y produce el documento válido. Es el único
+        que sirve para adjuntar al set de pago.</td></tr>
+  </table>
+  <div class="ojo">Un borrador impreso <strong>no</strong> es un certificado. La marca de agua está
+  para que no se confunda ni se adjunte por error.</div>
+
+  <h2>5 · Imprimir y firmar</h2>
+  <ol>
+    <li>Desde la vista previa del certificado emitido, pulse
+    <strong>Imprimir / Guardar PDF</strong>.</li>
+    <li>Suba ese PDF a <strong>DocDigital</strong> y fírmelo con su FirmaGob.</li>
+    <li>Ubique el timbre en el espacio libre que queda bajo su identificación, al final del
+    certificado. Está reservado para eso.</li>
+    <li>Adjunte el PDF firmado al set de pago.</li>
+  </ol>
+  <p>El pie del certificado lleva su nombre, RUT, cargo y calidad en una línea, sin raya de firma:
+  la firma la estampa la plataforma.</p>
+
+  <h2>6 · Si se equivocó</h2>
+  <p>Un certificado emitido no se edita ni se borra. Se <strong>anula</strong>, indicando el motivo,
+  que queda impreso en el documento y guardado en el registro.</p>
+  <div class="flujo">
+    <span>Emitir</span><i>→</i><span>Anular</span><i>→</i><span>Duplicar</span><i>→</i><span>Emitir</span>
+  </div>
+  <p>El folio anulado <strong>queda consumido</strong> y no se reasigna. <strong>Duplicar</strong>
+  conserva todos los antecedentes ya cargados en un borrador nuevo, así que no hay que rehacer el
+  trabajo. El certificado anulado se imprime con la marca <strong>ANULADO</strong> y la constancia
+  de su anulación, de modo que no pueda adjuntarse por error.</p>
+
+  <h2>7 · Cuando el set trae muchos documentos</h2>
+  <p>Si hay que individualizar decenas de facturas, no las escriba una por una:</p>
+  <ol>
+    <li>Pulse <strong>Descargar plantilla</strong> en el detalle de documentos.</li>
+    <li>Complete en Excel las columnas: tipo de documento, folio, fecha y monto.</li>
+    <li>Pulse <strong>Importar planilla</strong>. Se aceptan archivos <code>.xlsx</code> y
+    <code>.csv</code>.</li>
+  </ol>
+  <p>Antes de agregar nada se le muestra cuántos documentos se leyeron, por qué monto total y qué
+  filas quedaron fuera. Importar dos veces el mismo archivo no duplica montos.</p>
+
+  <h2>8 · Dudas frecuentes</h2>
+  <h3>No me deja emitir y no sé qué falta</h3>
+  <p>El aviso los enumera uno por uno. También puede abrir la vista previa: arriba aparece la lista
+  de lo pendiente.</p>
+  <h3>¿Puedo corregir un certificado ya emitido?</h3>
+  <p>No. Se anula y se duplica, de modo que quede trazabilidad de lo emitido y de por qué se dejó
+  sin efecto.</p>
+  <h3>¿Dónde quedan guardados mis borradores?</h3>
+  <p>En ese navegador y en ese computador. Si borra los datos del navegador, se pierden. Los
+  certificados <em>emitidos</em>, en cambio, quedan en el registro del Servicio y se pueden
+  consultar desde cualquier equipo conectado.</p>
+  <h3>Veo certificados que no emití yo</h3>
+  <p>Son los de otros equipos del Servicio, marcados <code>OTRO EQUIPO</code>. Se pueden abrir e
+  imprimir, pero los administra quien los emitió.</p>
+  <h3>El total del detalle no me cuadra</h3>
+  <p>Revise que los montos no traigan texto. <code>1250000</code>, <code>1.250.000</code> y
+  <code>$1.250.000</code> valen lo mismo.</p>
+  <h3>El certificado no muestra los datos bancarios</h3>
+  <p>Es deliberado: solo deja constancia de que fueron verificados. No se imprimen números de
+  cuenta.</p>
+
+  <div class="marco">
+    <p><strong>¿Dudas o problemas?</strong> Escriba al Subdepartamento de Finanzas. Si aún no tiene
+    FirmaGob activa, avísenos a la brevedad para apoyarle en su regularización.</p>
+    <p>La aplicación trae esta misma guía en el botón <strong>Cómo se usa</strong>, arriba a la
+    derecha, siempre al día.</p>
+  </div>
+
+  <div class="pie">
+    <span>Servicio Local de Educación Pública Petorca · Subdepartamento de Finanzas</span>
+    <span>REX N° 450, de 2026</span>
+  </div>
+
+</div>
+</body>
+</html>

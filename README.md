@@ -14,6 +14,10 @@ pestañas, abre paso a paso cómo emitir, qué distingue un borrador de un defin
 anular y rehacer, cómo cargar muchos documentos desde Excel, cómo firmar en DocDigital y
 qué hacer con el aviso de "sin registro central".
 
+La misma guía en PDF, para adjuntar a un correo o repartir impresa:
+[Guía de uso](https://finanzas-slep-petorca.github.io/verificacion-documental/guia/Guia-Certificado-Ministro-de-Fe.pdf).
+Se regenera desde `guia/guia-uso.html`.
+
 ---
 
 ## Cómo funciona
