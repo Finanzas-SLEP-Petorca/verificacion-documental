@@ -546,7 +546,8 @@
     <strong>Este equipo no está conectado al registro central del Servicio.</strong>
     <strong>No es posible emitir certificados</strong> hasta configurarlo: el folio lo
     asigna el Servicio, no este computador. Puede llenar el formulario, guardar borradores
-    y usar la vista previa. Pida la dirección al Subdepartamento de Finanzas.
+    y usar la vista previa. La dirección está en la biblioteca de SharePoint que indicó
+    el Subdepartamento de Finanzas.
   </div>
   <button class="btn small" id="avisoLocalBtn">Configurar</button>
 </div>
@@ -2154,10 +2155,27 @@ function esDelMinistro(r, m){
   return r.ministerId === m.id || (!!r.ministerCode && r.ministerCode === m.code);
 }
 
+/* El estado de un certificado lo manda el Servicio, no este navegador. Si el registro
+   central lo tiene anulado y aquí figura vigente, gana la anulación: pudo anularse desde
+   otro equipo, o pudo registrarse allá y perderse la respuesta de vuelta. Al revés no —
+   una lectura vieja del Servicio no resucita un certificado anulado aquí—, porque en un
+   documento de fe pública el error caro es imprimir como válido algo que el Servicio
+   tiene anulado, no al contrario. */
+function conEstadoDelServicio(r){
+  if(!r || r.status === "cancelled") return r;
+  const fila = registrosCentrales.find(x => x.id === r.id || (r.folio && x.folio === r.folio));
+  if(!fila || fila.status !== "cancelled") return r;
+  return Object.assign({}, r, {
+    status: "cancelled",
+    cancelReason: fila.cancelReason || r.cancelReason,
+    cancelledAt: fila.cancelledAt || r.cancelledAt
+  });
+}
+
 /* Local más central, sin repetir: un certificado emitido desde este equipo está
    en las dos partes y manda la copia local, que trae el detalle completo. */
 function registrosVisibles(){
-  const locales = getRecords();
+  const locales = getRecords().map(conEstadoDelServicio);
   const folios = new Set(locales.map(r => r.folio).filter(Boolean));
   const ids = new Set(locales.map(r => r.id));
   const ajenos = registrosCentrales
@@ -2595,7 +2613,7 @@ function populateFormFromState(){
 
 window.viewRecord=function(id){
   const r=getRecords().find(x=>x.id===id); if(!r)return;
-  openPreview(r);
+  openPreview(conEstadoDelServicio(r));   // si el Servicio lo anuló, se imprime anulado
 }
 /* Un certificado emitido en otro equipo se puede ver e imprimir, pero no está en
    este navegador: `listar` sólo trae el resumen que llena la tabla, así que el
