@@ -860,7 +860,9 @@
         <tr><th><code>001</code></th><td>Correlativo</td></tr>
       </table>
       <p>La numeración corre <strong>por Ministro de Fe y por año</strong>, no por programa:
-      usted tendrá 001, 002, 003… en el año, sea cual sea el programa de cada certificado.</p>
+      cada uno lleva su propia cuenta a lo largo del año, sea cual sea el programa de cada
+      certificado. Las series definitivas de 2026 arrancan en el <code>010</code>: los números
+      anteriores quedaron consumidos por la etapa de pilotaje y no se reasignan.</p>
 
       <h4 id="g4">4. Si se equivocó: anular y rehacer</h4>
       <p>Un certificado emitido no se edita ni se borra. Se <strong>anula</strong>, y para
@@ -1261,7 +1263,6 @@ const NATURE_LABELS = {
 };
 
 const STORAGE_KEY = "slep_ministro_fe_records_v1";
-const COUNTERS_KEY = "slep_ministro_fe_counters_v1";
 
 let state = {
   recordId:null,
@@ -1293,8 +1294,6 @@ const escapeHtml = s => String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','
 
 function getRecords(){ return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]"); }
 function saveRecords(arr){ localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); }
-function getCounters(){ return JSON.parse(localStorage.getItem(COUNTERS_KEY) || "{}"); }
-function saveCounters(obj){ localStorage.setItem(COUNTERS_KEY, JSON.stringify(obj)); }
 
 function currentMinister(){ return MINISTERS.find(m => m.id === state.ministerId) || MINISTERS[0]; }
 
@@ -2016,26 +2015,6 @@ function partesFolio(folio){
   return null;
 }
 
-function nextFolio(minister, programa){
-  const counters=getCounters();
-  const year=new Date().getFullYear();
-  const key=`${minister.id}-${year}`;
-  // Números que este ministro ya usó en el año según el propio registro: si el contador
-  // quedó desfasado (por ejemplo, si se limpió) no se repite un correlativo ya emitido
-  // en este navegador. Entre equipos distintos esto no alcanza: ver README.
-  const usados=new Set(
-    getRecords()
-      .map(r=>partesFolio(r.folio))
-      .filter(f=>f && f.codigoMinistro===minister.code && f.anio===year)
-      .map(f=>f.numero)
-  );
-  let next=(counters[key]||0)+1;
-  while(usados.has(next)) next++;
-  counters[key]=next;
-  saveCounters(counters);
-  return folioDe(minister, year, programa, next);
-}
-
 /* ── Registro central ─────────────────────────────────────────────────────────
    El certificado es un documento de fe pública: su correlativo tiene que ser
    único en todo el Servicio, no sólo en el navegador de quien lo emite. Para
@@ -2289,6 +2268,16 @@ async function sincronizarRC(forzar){
    importa: que ningún folio se repita, que las series no tengan huecos y que todo
    lo emitido desde este equipo haya quedado registrado. Sirve para responder "¿está
    funcionando bien?" sin tener que entrar a Power Automate. */
+/* Las series definitivas de 2026 arrancan en el 010. Los números 001 a 009 quedaron
+   consumidos por la etapa de pilotaje, cuando la aplicación todavía numeraba sola, y no
+   se reasignan. El arranque lo impone el flujo de Power Automate; aquí sólo se respeta
+   para no reportar como faltantes números que nadie va a usar. */
+const SERIE_DESDE = 10;
+function esDePilotaje(folio){
+  const f = partesFolio(folio);
+  return !!f && f.numero < SERIE_DESDE;
+}
+
 function nombreMinistro(codigo){
   const m = MINISTERS.find(x => x.code === codigo);
   return m ? m.name : "(código " + codigo + ")";
@@ -2328,8 +2317,11 @@ async function verificarRegistro(){
     return;
   }
 
-  const conFolio = registros.filter(r => r.folio);
-  const sinFolio = registros.length - conFolio.length;
+  const todos = registros.filter(r => r.folio);
+  const sinFolio = registros.length - todos.length;
+  // Los del pilotaje no se mezclan con los definitivos en ninguna comprobación.
+  const conFolio = todos.filter(r => !esDePilotaje(r.folio));
+  const pruebas  = todos.filter(r =>  esDePilotaje(r.folio));
 
   // 1. Ningún folio repetido. Es la prueba que justifica todo el registro central.
   const cuenta = {};
@@ -2355,7 +2347,7 @@ async function verificarRegistro(){
     const [codigo, anio] = clave.split("|");
     nums.sort((a, b) => a - b);
     const faltan = [];
-    for(let i = 1; i <= nums[nums.length - 1]; i++) if(!nums.includes(i)) faltan.push(i);
+    for(let i = SERIE_DESDE; i <= nums[nums.length - 1]; i++) if(!nums.includes(i)) faltan.push(i);
     if(faltan.length) conHuecos.push(`${codigo}: falta${faltan.length > 1 ? "n" : ""} el ${faltan.join(", ")}`);
     filas.push(`<tr><td>${escapeHtml(nombreMinistro(codigo))}</td><td><code>${escapeHtml(codigo)}</code></td>
       <td>${anio}</td><td>${nums.length}</td><td>${String(nums[nums.length-1]).padStart(3,"0")}</td>
@@ -2372,8 +2364,9 @@ async function verificarRegistro(){
                      : "Todavía no hay certificados emitidos en el Servicio."));
 
   // 3. Lo emitido desde este equipo tiene que estar en el Servicio.
-  const mios = getRecords().filter(r => r.folio && r.status !== "draft");
-  const enServicio = new Set(conFolio.map(r => r.folio));
+  const mios = getRecords().filter(r => r.folio && r.status !== "draft" && !esDePilotaje(r.folio));
+  const miosPrueba = getRecords().filter(r => r.folio && esDePilotaje(r.folio));
+  const enServicio = new Set(todos.map(r => r.folio));
   const ausentes = mios.filter(r => !enServicio.has(r.folio));
   partes.push(!mios.length
     ? bloqueChk("ok", "Sin certificados emitidos desde este equipo", "No hay nada que comparar todavía.")
@@ -2387,11 +2380,25 @@ async function verificarRegistro(){
   if(sinFolio) partes.push(bloqueChk("aviso", "Hay registros sin folio en el Servicio",
     `${sinFolio} fila(s) llegaron sin número. Conviene revisar el flujo con informática.`));
 
+  // Los del pilotaje, aparte y sin valor de certificado.
+  if(pruebas.length || miosPrueba.length){
+    const lista = [...new Set([...pruebas.map(r => r.folio), ...miosPrueba.map(r => r.folio)])].sort();
+    partes.push(bloqueChk("aviso", "Certificados de la etapa de pilotaje",
+      `Estos llevan un número menor a ${String(SERIE_DESDE).padStart(3,"0")} y son de la etapa de ` +
+      `prueba, anterior a que el folio lo asignara el Servicio: <strong>no tienen validez como ` +
+      `certificado</strong> y no se cargan al registro central. ` +
+      `${miosPrueba.length ? `${miosPrueba.length} está(n) guardado(s) en este navegador. ` : ""}` +
+      `Los números 001 a ${String(SERIE_DESDE - 1).padStart(3,"0")} quedan consumidos y no se ` +
+      `reasignan: las series definitivas de ${new Date().getFullYear()} arrancan en el ` +
+      `${String(SERIE_DESDE).padStart(3,"0")}.<br />` +
+      lista.map(f => `<code>${escapeHtml(f)}</code>`).join(" · ")));
+  }
+
   const anulados = conFolio.filter(r => r.status === "cancelled").length;
   partes.push(bloqueChk("ok", "Resumen",
-    `${conFolio.length} certificado(s) en el Servicio: ${conFolio.length - anulados} vigente(s) y ` +
-    `${anulados} anulado(s). Los folios anulados siguen ocupados y no se reasignan, así que un número ` +
-    `anulado no deja hueco.`));
+    `${conFolio.length} certificado(s) definitivo(s) en el Servicio: ${conFolio.length - anulados} ` +
+    `vigente(s) y ${anulados} anulado(s). Los folios anulados siguen ocupados y no se reasignan, ` +
+    `así que un número anulado no deja hueco.`));
 
   caja.innerHTML = `<p style="margin:14px 0 4px">Revisión hecha el ${escapeHtml(formatDate(new Date().toISOString()))}
     contra el registro central del Servicio.</p>` + partes.join("");
@@ -2421,31 +2428,44 @@ async function issueCertificate(){
   rec.issuedAt = new Date().toISOString();
   rec.createdAt = old?.createdAt || rec.createdAt;
 
+  /* El folio lo asigna el registro central del Servicio y NADA MÁS. No hay
+     numeración local ni camino alternativo: sin folio confirmado no se emite.
+
+     Hubo uno hasta el 29-09-2026 y costó caro. Si el equipo no tenía la dirección
+     configurada, la aplicación ni siquiera llamaba al Servicio: numeraba con un
+     contador del navegador y emitía igual. Ocho certificados salieron así, con
+     números que el Servicio nunca vio —uno de ellos partió en 003 siendo el primero
+     de ese Ministro de Fe— y en el historial del flujo no hay rastro de ellos,
+     porque nunca hubo llamada. Era exactamente lo que el registro central existe
+     para impedir. */
   if(old?.folio){
-    rec.folio = old.folio;
-    rec.origen = old.origen || "local";
-  } else if(RC.configurado()){
-    /* Con registro central el número lo asigna el Servicio, no el navegador.
-       Si no responde no se emite: un folio repetido en un documento que va a
-       la Contraloría es peor que esperar. El borrador no se pierde. */
+    rec.folio = old.folio;                       // ya tenía folio: se reimprime, no se renumera
+    rec.origen = old.origen || "central";
+  } else {
+    if(!RC.configurado()){
+      alert("No es posible emitir: este equipo no está conectado al registro central " +
+        "del Servicio.\n\n" +
+        "El folio lo asigna el Servicio, no este computador. Vaya a " +
+        "Registro de certificados → Configurar, o avise al Subdepartamento de Finanzas.\n\n" +
+        "Sus datos quedan intactos: puede guardar el borrador y emitir cuando esté conectado.");
+      return;
+    }
     const btn=$("issueBtn"), rotulo=btn.textContent;
     btn.disabled=true; btn.textContent="Emitiendo…";
     try{
       const resp = await RC.emitir(rec);
+      if(!resp || !resp.folio) throw new Error("El Servicio no devolvió un folio.");
       rec.folio = resp.folio;
       rec.origen = "central";
     }catch(e){
-      alert("No fue posible obtener el correlativo del registro central:\n\n"
-        + e.message
-        + "\n\nEl certificado NO se emitió, para no arriesgar un folio repetido. "
-        + "Guarde el borrador y reintente en unos minutos.");
+      alert("No se pudo conectar al registro central del Servicio. No es posible emitir.\n\n" +
+        e.message + "\n\n" +
+        "Avise al Subdepartamento de Finanzas. Sus datos quedan intactos: guarde el " +
+        "borrador y reintente.");
       return;
     }finally{
       btn.disabled=false; btn.textContent=rotulo;
     }
-  } else {
-    rec.folio = nextFolio(m, rec.programa);
-    rec.origen = "local";
   }
 
   const idx=records.findIndex(r=>r.id===rec.id);

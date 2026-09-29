@@ -208,9 +208,18 @@ emitidos, en cambio, dependen de si hay registro central configurado.
 
 ### Sin registro central
 
-Cada navegador mantiene su propio registro y sus propios correlativos. Sirve para uso
-individual, pero **no** es un sistema institucional: dos equipos pueden emitir el mismo
-folio y nadie ve el registro completo. La aplicación lo advierte en pantalla.
+**No se puede emitir.** El folio lo asigna el registro del Servicio y sólo él: no hay
+numeración local ni camino alternativo. La aplicación lo advierte en pantalla y, al
+intentar emitir, explica que hay que conectar el equipo.
+
+Sí se puede seguir llenando el formulario, guardar borradores y usar la vista previa, que
+sale con la marca de agua **BORRADOR** y sin folio.
+
+Hasta el 29 de septiembre de 2026 no era así: si el equipo no tenía la dirección
+configurada, la aplicación ni siquiera llamaba al Servicio, numeraba con un contador del
+navegador y emitía igual. Ocho certificados salieron de esa forma, con números que el
+Servicio nunca vio. Quedaron como pruebas del pilotaje y las series definitivas de 2026
+arrancan en el **010**; los números 001 a 009 están consumidos y no se reasignan.
 
 ### Con registro central
 
