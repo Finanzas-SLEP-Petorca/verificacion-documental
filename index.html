@@ -789,9 +789,9 @@
         <p>Antes de emitir su primer certificado: <strong>Registro de certificados →
         Configurar</strong>, y pegue la dirección que le entregó el Subdepartamento de
         Finanzas. Debe aparecer en verde <em>"Registro central al día"</em>.</p>
-        <p>Sin esto la aplicación funciona igual, pero numera los folios por su cuenta y
-        puede repetir un número ya usado por otro Ministro de Fe en otro equipo. Si ve el
-        recuadro naranja en la pantalla principal, es que falta este paso.</p>
+        <p><strong>Sin esto no se puede emitir:</strong> el folio lo asigna el Servicio, no
+        su computador. Sí puede llenar el formulario, guardar borradores y usar la vista
+        previa. Si ve el recuadro naranja en la pantalla principal, es que falta este paso.</p>
         <p>Hágalo <strong>sólo en su computador de trabajo</strong>: la dirección queda
         guardada en ese navegador, así que en un equipo compartido cualquiera podría emitir
         certificados con el registro del Servicio.</p>
@@ -2026,7 +2026,7 @@ function partesFolio(folio){
 
    El endpoint no viaja en el repositorio, que es público: cada Ministro de Fe
    lo pega una vez y queda guardado en su navegador. Sin endpoint configurado
-   la aplicación funciona igual que antes, con correlativos locales. */
+   sin dirección configurada no se puede emitir: el folio lo asigna el Servicio. */
 const ENDPOINT_KEY = "slep_ministro_fe_endpoint_v1";
 const RC_TIMEOUT_MS = 20000;
 
