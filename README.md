@@ -83,10 +83,26 @@ CMF-2026-P01-SAF103-001
 El folio se asigna **al emitir**, no al abrir el formulario, para que un formulario
 abandonado no consuma un número.
 
+### Certificados de la etapa de pilotaje
+
+Los emitidos antes del 29 de septiembre de 2026 llevan un número menor a `010` y no están
+en el registro del Servicio: salieron cuando la aplicación todavía numeraba sola. No
+tienen validez. La aplicación los reconoce por el número y los trata en consecuencia:
+
+- se imprimen con la marca de agua **PILOTAJE** y una constancia en el encabezado;
+- aparecen etiquetados en el registro y en el historial;
+- la verificación los lista aparte, nunca como faltantes;
+- se pueden anular sólo en el equipo, porque el Servicio nunca los tuvo;
+- desde la verificación se pueden eliminar del navegador, con doble confirmación.
+
 ### Anulación
 
 Un certificado emitido no se edita ni se elimina: se **anula**. La anulación pide un
 motivo, que queda impreso en el certificado y guardado en el registro.
+
+Anular exige lo mismo que emitir: si el Servicio no se entera, su registro y el del equipo
+dirían cosas distintas sobre un documento de fe pública. Sin conexión no se anula. La
+excepción son los del pilotaje, que nunca estuvieron allá.
 
 El folio **sigue consumido**: no se reasigna a otro certificado. Es lo que corresponde
 en un correlativo de fe pública — si el número volviera a la fila, dos documentos

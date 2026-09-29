@@ -355,6 +355,8 @@
       background:#feeceb;color:#a13028;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
     .detalle-acciones{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:10px}
     .detalle-ayuda{font-size:11.5px;color:var(--muted)}
+    .tag-pilotaje{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:10px;
+      background:#fff0d6;color:#8a5000;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
     .tag-central{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:10px;
       background:#e7eef6;color:#4a6a86;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
     .cert-meta{
@@ -542,9 +544,9 @@
 <div id="avisoLocal" class="aviso-local hidden">
   <div>
     <strong>Este equipo no está conectado al registro central del Servicio.</strong>
-    Los folios que emita aquí los numera este navegador y pueden repetir un número ya
-    usado en otro equipo. Pida la dirección del registro al Subdepartamento de Finanzas
-    y configúrela antes de emitir.
+    <strong>No es posible emitir certificados</strong> hasta configurarlo: el folio lo
+    asigna el Servicio, no este computador. Puede llenar el formulario, guardar borradores
+    y usar la vista previa. Pida la dirección al Subdepartamento de Finanzas.
   </div>
   <button class="btn small" id="avisoLocalBtn">Configurar</button>
 </div>
@@ -1929,7 +1931,7 @@ function validate(){
 
 /* Solo un certificado emitido y con folio es definitivo. Cualquier otra cosa que se
    imprima lleva marca de agua. */
-function esDefinitivo(r){ return r && r.status === "issued" && !!r.folio; }
+function esDefinitivo(r){ return r && r.status === "issued" && !!r.folio && !esDePilotaje(r.folio); }
 function esAnulado(r){ return r && r.status === "cancelled" && !!r.folio; }
 
 function makeRecord(status){
@@ -2179,7 +2181,7 @@ function refrescarPanelRC(){
   $("rcVerificarBtn").disabled = !conf;
   pintarEstadoRC(
     conf ? "Registro central configurado. Los correlativos los asigna el Servicio."
-         : "Sin registro central: los correlativos son de este navegador y pueden repetirse entre equipos.",
+         : "Sin registro central no se puede emitir: el folio lo asigna el Servicio. Use Configurar.",
     conf ? "ok" : "warn"
   );
 }
@@ -2387,11 +2389,16 @@ async function verificarRegistro(){
       `Estos llevan un número menor a ${String(SERIE_DESDE).padStart(3,"0")} y son de la etapa de ` +
       `prueba, anterior a que el folio lo asignara el Servicio: <strong>no tienen validez como ` +
       `certificado</strong> y no se cargan al registro central. ` +
-      `${miosPrueba.length ? `${miosPrueba.length} está(n) guardado(s) en este navegador. ` : ""}` +
+      `${miosPrueba.length ? `${miosPrueba.length} está(n) guardado(s) en este navegador, ` +
+        `y se imprimen con la marca <strong>PILOTAJE</strong> para que no se confundan. ` : ""}` +
       `Los números 001 a ${String(SERIE_DESDE - 1).padStart(3,"0")} quedan consumidos y no se ` +
       `reasignan: las series definitivas de ${new Date().getFullYear()} arrancan en el ` +
       `${String(SERIE_DESDE).padStart(3,"0")}.<br />` +
-      lista.map(f => `<code>${escapeHtml(f)}</code>`).join(" · ")));
+      lista.map(f => `<code>${escapeHtml(f)}</code>`).join(" · ") +
+      (miosPrueba.length
+        ? `<div style="margin-top:10px"><button class="btn small danger" id="limpiarPruebasBtn">` +
+          `Eliminar de este equipo los ${miosPrueba.length} de prueba</button></div>`
+        : "")));
   }
 
   const anulados = conFolio.filter(r => r.status === "cancelled").length;
@@ -2402,6 +2409,29 @@ async function verificarRegistro(){
 
   caja.innerHTML = `<p style="margin:14px 0 4px">Revisión hecha el ${escapeHtml(formatDate(new Date().toISOString()))}
     contra el registro central del Servicio.</p>` + partes.join("");
+
+  const btnLimpiar = $("limpiarPruebasBtn");
+  if(btnLimpiar) btnLimpiar.addEventListener("click", () => limpiarPruebasLocales(miosPrueba));
+}
+
+/* Borra de este navegador los certificados del pilotaje. No toca nada del Servicio —los de
+   prueba nunca llegaron allá— ni ningún certificado definitivo. Sólo corre si la persona lo
+   confirma dos veces: es un borrado y no tiene vuelta atrás. */
+function limpiarPruebasLocales(pruebas){
+  if(!pruebas.length) return;
+  const folios = pruebas.map(r => r.folio);
+  if(!confirm(
+    `Se eliminarán de ESTE equipo ${folios.length} certificado(s) de la etapa de pilotaje:\n\n` +
+    folios.join("\n") +
+    "\n\nNo tienen validez y no están en el registro del Servicio, así que no se pierde " +
+    "nada que el Servicio tenga. Los certificados definitivos no se tocan.\n\n¿Continuar?")) return;
+  if(!confirm("Esto no se puede deshacer. ¿Eliminar los certificados de prueba de este equipo?")) return;
+
+  const aBorrar = new Set(pruebas.map(r => r.id));
+  saveRecords(getRecords().filter(r => !aBorrar.has(r.id)));
+  renderRecords(); renderHistory(); updateTopFields();
+  alert(`Se eliminaron ${folios.length} certificado(s) de prueba de este equipo.`);
+  verificarRegistro();
 }
 
 /* Último folio emitido por este Ministro de Fe en el año en curso. */
@@ -2490,7 +2520,9 @@ function renderHistory(){
     .sort((a,b)=>(b.issuedAt||"").localeCompare(a.issuedAt||"")).slice(0,5);
   $("historyBody").innerHTML = rows.length ? rows.map(r=>`
     <tr${r.status==="cancelled"?` class="fila-anulada"`:""}>
-      <td><strong>${escapeHtml(r.folio)}</strong>${r.status==="cancelled"?`<span class="tag-anulado">anulado</span>`:""}</td>
+      <td><strong>${escapeHtml(r.folio)}</strong>${
+        esDePilotaje(r.folio)?`<span class="tag-pilotaje">pilotaje</span>`:""}${
+        r.status==="cancelled"?`<span class="tag-anulado">anulado</span>`:""}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
       <td><div class="history-actions">
         ${r.ajeno ? `<button class="btn small" onclick="verRecordCentral('${r.id}', this)">Ver</button>` : `
@@ -2513,7 +2545,9 @@ function renderRecords(){
 
   $("recordsBody").innerHTML=rows.length?rows.map(r=>`
     <tr>
-      <td><strong>${escapeHtml(r.folio||"Borrador")}</strong>${r.ajeno?`<span class="tag-central" title="Emitido en otro equipo del Servicio">otro equipo</span>`:""}</td>
+      <td><strong>${escapeHtml(r.folio||"Borrador")}</strong>${
+        esDePilotaje(r.folio)?`<span class="tag-pilotaje" title="Etapa de prueba: sin validez como certificado">pilotaje</span>`:""}${
+        r.ajeno?`<span class="tag-central" title="Emitido en otro equipo del Servicio">otro equipo</span>`:""}</td>
       <td>${escapeHtml(r.ministerName)}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
       <td>${escapeHtml(r.unit)}</td>
@@ -2639,11 +2673,26 @@ window.anularRecord=async function(id){
 
   const cancelledAt=new Date().toISOString();
 
-  if(RC.configurado()){
+  /* Anular tiene el mismo requisito que emitir: si el Servicio no se entera, su registro
+     y el de este equipo dicen cosas distintas sobre un documento de fe pública.
+     La excepción son los certificados del pilotaje: nunca estuvieron en el Servicio, así
+     que pedírselo devolvería 404 y el Ministro de Fe no podría anular ni los suyos. */
+  if(esDePilotaje(r.folio)){
+    if(!confirm(`${r.folio} es de la etapa de pilotaje: nunca estuvo en el registro del ` +
+      "Servicio y no tiene validez como certificado.\n\nSe anulará sólo en este equipo. " +
+      "¿Continuar?")) return;
+  }else if(!RC.configurado()){
+    alert("No es posible anular: este equipo no está conectado al registro central " +
+      "del Servicio.\n\n" +
+      "Si se anulara sólo aquí, el Servicio seguiría teniendo el certificado como vigente. " +
+      "Configure la conexión en Registro de certificados → Configurar, o avise al " +
+      "Subdepartamento de Finanzas.");
+    return;
+  }else{
     try{
       await RC.anular(r, motivo, cancelledAt);
     }catch(e){
-      alert("No fue posible anular en el registro central:\n\n" + e.message +
+      alert("No fue posible anular en el registro central del Servicio:\n\n" + e.message +
         "\n\nEl certificado NO se anuló, para que el registro de este equipo no quede " +
         "diciendo algo distinto del registro del Servicio. Reintente en unos minutos.");
       return;
@@ -2749,9 +2798,19 @@ function certificateHtml(r){
     String(d.tipo||"").trim() || String(d.folio||"").trim() || String(d.monto||"").trim());
   return `
   <article class="certificate" id="certificatePrint">
-    ${esAnulado(r)
+    ${esDePilotaje(r.folio)
+      ? `<div class="cert-watermark"><span>PILOTAJE</span></div>`
+      : esAnulado(r)
       ? `<div class="cert-watermark anulado"><span>ANULADO</span></div>`
       : esDefinitivo(r) ? "" : `<div class="cert-watermark"><span>BORRADOR</span></div>`}
+    ${esDePilotaje(r.folio) ? `
+    <div class="cert-anulacion">
+      <strong>CERTIFICADO DE PRUEBA — ETAPA DE PILOTAJE</strong>
+      Emitido antes de que el folio lo asignara el registro central del Servicio, de modo que
+      este número nunca quedó registrado. <strong>No tiene validez como certificado</strong> y
+      no debe adjuntarse a un set de pago.
+      ${esAnulado(r) && r.cancelReason ? `<span>Anulado. Motivo: ${escapeHtml(r.cancelReason)}</span>` : ""}
+    </div>` : ""}
     ${esAnulado(r) ? `
     <div class="cert-anulacion">
       <strong>CERTIFICADO ANULADO</strong>
@@ -2888,6 +2947,13 @@ function openPreview(rec){
   if(esDefinitivo(rec)){
     aviso.classList.add("hidden");
     aviso.innerHTML = "";
+  } else if(esDePilotaje(rec.folio)){
+    aviso.innerHTML =
+      `<b>Certificado de prueba — no adjuntar al set de pago.</b>` +
+      `Se emitió durante el pilotaje, antes de que el folio lo asignara el registro central ` +
+      `del Servicio, así que ${escapeHtml(rec.folio)} nunca quedó registrado. Para certificar ` +
+      `este set, duplíquelo y emítalo de nuevo con el equipo conectado.`;
+    aviso.classList.remove("hidden");
   } else if(esAnulado(rec)){
     aviso.innerHTML =
       `<b>Certificado anulado — no adjuntar al set de pago.</b>` +
