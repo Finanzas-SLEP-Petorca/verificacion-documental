@@ -113,6 +113,12 @@ Un certificado anulado se imprime con la marca de agua **ANULADO** y con la cons
 de su anulación en el encabezado, de modo que no pueda adjuntarse al set de pago por
 error.
 
+**El estado lo manda el Servicio.** Si el registro central tiene un certificado anulado
+y el equipo lo tiene como vigente, se imprime anulado: la anulación pudo hacerse desde
+otro equipo, o quedar registrada allá sin que la respuesta volviera. Al revés no ocurre —
+una lectura vieja del Servicio no resucita un certificado anulado en el equipo—, porque
+el error caro es imprimir como válido algo que el Servicio tiene anulado.
+
 Para rehacer el trabajo se usa **Duplicar**: los antecedentes ya cargados se conservan
 en un borrador nuevo, que al emitirse toma el folio siguiente. El ciclo completo es
 *emitir → anular → duplicar → emitir*, y no se pierde nada de lo hecho.
@@ -250,9 +256,14 @@ Si el registro central está configurado y no responde, la aplicación **no emit
 avisa el motivo y sugiere guardar el borrador y reintentar. Un folio repetido en un
 documento que va a la Contraloría es peor que esperar.
 
+**Reintentar no gasta otro folio.** La emisión lleva un identificador que se fija antes
+de llamar, así que si la respuesta se pierde después de que el Servicio anotó la fila,
+el reintento devuelve el mismo número en vez de crear una segunda fila y dejar la
+primera huérfana en el correlativo.
+
 La dirección del servicio no viaja en este repositorio, que es público: cada Ministro de
-Fe la pega una vez en **Registro de certificados → Configurar** y queda guardada en su
-navegador.
+Fe la copia de la biblioteca de SharePoint del Servicio y la pega una vez en
+**Registro de certificados → Configurar**, donde queda guardada en su navegador.
 
 El montaje está en [`docs/registro-central.md`](docs/registro-central.md).
 

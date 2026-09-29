@@ -139,7 +139,10 @@ que la consulta a la lista puede acotarse a las columnas que los alimentan:
 
 1. **Obtener elementos**, filtro `IdEmision eq '@{outputs('Entrada')?['idEmision']}'`,
    límite 1. Es el control de idempotencia: si la página reintenta por un corte de red,
-   no se consume un segundo número.
+   no se consume un segundo número. Cubre los dos reintentos: el que hace el navegador
+   solo cuando el preflight CORS falla, y el de la persona que vuelve a pulsar *Emitir*
+   —la aplicación fija el identificador antes de llamar, de modo que el segundo intento
+   llega con el mismo `idEmision` y recibe el folio ya asignado.
 2. **Condición**: ¿la longitud del resultado es mayor que 0?
    - **Sí** → **Respuesta** con el folio ya existente.
    - **No** → continúe.
