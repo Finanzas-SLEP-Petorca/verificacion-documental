@@ -289,6 +289,19 @@
     .guia .paso0 p:last-child{margin-bottom:0}
     .guia .etiqueta{display:inline-block;background:var(--navy);color:#fff;font-size:10.5px;
       font-weight:800;letter-spacing:.4px;text-transform:uppercase;border-radius:4px;padding:3px 8px}
+    /* Resultado de la verificación */
+    .chk{display:flex;gap:11px;align-items:flex-start;padding:11px 13px;border-radius:8px;
+      border:1px solid var(--line);margin:9px 0;background:#fbfdff}
+    .chk .marca{flex:0 0 22px;height:22px;border-radius:50%;display:grid;place-items:center;
+      font-size:13px;font-weight:900;color:#fff;margin-top:1px}
+    .chk.ok .marca{background:#1d6b3f}
+    .chk.aviso .marca{background:#b8860b}
+    .chk.mal .marca{background:#b42318}
+    .chk.ok{border-color:#bfe0cc;background:#f4fbf6}
+    .chk.aviso{border-color:#f0dca0;background:#fffcf2}
+    .chk.mal{border-color:#f3c9c4;background:#fff5f4}
+    .chk b{display:block;color:var(--navy);margin-bottom:2px}
+    .chk .detalle{font-size:12.8px;color:#526d85}
     .guia .indice{display:flex;flex-wrap:wrap;gap:7px;margin:4px 0 6px}
     .guia .indice a{font-size:12.5px;text-decoration:none;color:var(--blue);background:#eef3f8;
       border-radius:20px;padding:5px 12px;font-weight:600}
@@ -468,7 +481,7 @@
          una hoja, lejos de la declaración que suscribe. */
       .cert-cierre{break-inside:avoid;page-break-inside:avoid}
       .preview-warning{display:none!important}
-      #ayudaModal{display:none!important}
+      #ayudaModal,#verificacionModal{display:none!important}
     }
 
     @media(max-width:1100px){
@@ -703,6 +716,7 @@
             <button class="btn small" id="rcConfigBtn">Configurar</button>
             <button class="btn small" id="rcTestBtn">Probar conexión</button>
             <button class="btn small" id="rcSyncBtn">Actualizar</button>
+            <button class="btn small" id="rcVerificarBtn">Verificar correlativos</button>
           </div>
         </div>
         <div id="rcEstado" class="rc-estado"></div>
@@ -727,6 +741,19 @@
     </div>
   </div>
 </section>
+
+<div id="verificacionModal" class="modal hidden">
+  <div class="modal-panel">
+    <div class="modal-top">
+      <h3>Verificación del registro central</h3>
+      <div class="modal-actions">
+        <button class="btn" id="reVerificarBtn">Volver a revisar</button>
+        <button class="btn" id="cerrarVerificacionBtn">Cerrar</button>
+      </div>
+    </div>
+    <div class="guia" id="verificacionCuerpo"></div>
+  </div>
+</div>
 
 <div id="ayudaModal" class="modal hidden">
   <div class="modal-panel">
@@ -2148,6 +2175,7 @@ function refrescarPanelRC(){
   if(aviso) aviso.classList.toggle("hidden", conf || !$("recordsView").classList.contains("hidden"));
   $("rcSyncBtn").disabled = !conf;
   $("rcTestBtn").disabled = !conf;
+  $("rcVerificarBtn").disabled = !conf;
   pintarEstadoRC(
     conf ? "Registro central configurado. Los correlativos los asigna el Servicio."
          : "Sin registro central: los correlativos son de este navegador y pueden repetirse entre equipos.",
@@ -2232,6 +2260,119 @@ async function sincronizarRC(forzar){
     }
   })();
   return rcSincronizando;
+}
+
+/* ----- Verificación del correlativo ------------------------------------------
+   Comprueba, contra el propio registro del Servicio, lo único que de verdad
+   importa: que ningún folio se repita, que las series no tengan huecos y que todo
+   lo emitido desde este equipo haya quedado registrado. Sirve para responder "¿está
+   funcionando bien?" sin tener que entrar a Power Automate. */
+function nombreMinistro(codigo){
+  const m = MINISTERS.find(x => x.code === codigo);
+  return m ? m.name : "(código " + codigo + ")";
+}
+
+function bloqueChk(estado, titulo, detalle){
+  const marca = estado === "ok" ? "✓" : estado === "aviso" ? "!" : "✕";
+  return `<div class="chk ${estado}"><div class="marca">${marca}</div>
+    <div><b>${escapeHtml(titulo)}</b><div class="detalle">${detalle}</div></div></div>`;
+}
+
+async function verificarRegistro(){
+  const caja = $("verificacionCuerpo");
+  $("verificacionModal").classList.remove("hidden");
+  caja.innerHTML = `<p style="padding:18px 0">Revisando el registro del Servicio…</p>`;
+
+  if(!RC.configurado()){
+    caja.innerHTML = bloqueChk("mal", "Este equipo no está conectado al registro central",
+      "Sin conexión no hay nada que verificar: los folios los numera este navegador. " +
+      "Use <strong>Configurar</strong> y pegue la dirección que entrega el Subdepartamento de Finanzas.");
+    return;
+  }
+
+  const partes = [];
+  const t0 = Date.now();
+  let registros = null;
+  try{
+    registros = await RC.listar();
+    const ms = Date.now() - t0;
+    partes.push(bloqueChk(ms < 5000 ? "ok" : "aviso", "El registro del Servicio responde",
+      `Respondió en ${ms} ms y devolvió ${registros.length} certificado(s).` +
+      (ms >= 5000 ? " Está lento; si se repite, avise a informática." : "")));
+  }catch(e){
+    caja.innerHTML = bloqueChk("mal", "El registro del Servicio no responde", escapeHtml(e.message) +
+      "<br />Mientras no responda, la aplicación no emite: no hay riesgo de folios repetidos, " +
+      "pero tampoco se puede certificar. Reintente en unos minutos.");
+    return;
+  }
+
+  const conFolio = registros.filter(r => r.folio);
+  const sinFolio = registros.length - conFolio.length;
+
+  // 1. Ningún folio repetido. Es la prueba que justifica todo el registro central.
+  const cuenta = {};
+  conFolio.forEach(r => cuenta[r.folio] = (cuenta[r.folio] || 0) + 1);
+  const repetidos = Object.entries(cuenta).filter(([, n]) => n > 1);
+  partes.push(repetidos.length
+    ? bloqueChk("mal", "Hay folios repetidos", "Estos números están asignados a más de un certificado: " +
+        repetidos.map(([f, n]) => `<code>${escapeHtml(f)}</code> (${n} veces)`).join(", ") +
+        ". Avise de inmediato al Subdepartamento de Finanzas.")
+    : bloqueChk("ok", "Ningún folio repetido",
+        `Los ${conFolio.length} folios del Servicio son distintos entre sí.`));
+
+  // 2. Series por Ministro de Fe: sin huecos.
+  const series = {};
+  conFolio.forEach(r => {
+    const f = partesFolio(r.folio);
+    if(!f) return;
+    const clave = `${f.codigoMinistro}|${f.anio}`;
+    (series[clave] = series[clave] || []).push(f.numero);
+  });
+  const filas = [], conHuecos = [];
+  Object.entries(series).sort().forEach(([clave, nums]) => {
+    const [codigo, anio] = clave.split("|");
+    nums.sort((a, b) => a - b);
+    const faltan = [];
+    for(let i = 1; i <= nums[nums.length - 1]; i++) if(!nums.includes(i)) faltan.push(i);
+    if(faltan.length) conHuecos.push(`${codigo}: falta${faltan.length > 1 ? "n" : ""} el ${faltan.join(", ")}`);
+    filas.push(`<tr><td>${escapeHtml(nombreMinistro(codigo))}</td><td><code>${escapeHtml(codigo)}</code></td>
+      <td>${anio}</td><td>${nums.length}</td><td>${String(nums[nums.length-1]).padStart(3,"0")}</td>
+      <td>${faltan.length ? "<strong>" + faltan.join(", ") + "</strong>" : "—"}</td></tr>`);
+  });
+  const tabla = filas.length ? `<table style="margin-top:8px"><tr><th>Ministro de Fe</th><th>Código</th>
+      <th>Año</th><th>Emitidos</th><th>Último</th><th>Números faltantes</th></tr>${filas.join("")}</table>` : "";
+  partes.push(conHuecos.length
+    ? bloqueChk("aviso", "Hay números saltados en alguna serie",
+        "Un número que no aparece suele significar que la emisión se interrumpió a medio camino. " +
+        "No impide seguir trabajando, pero conviene revisarlo: " + escapeHtml(conHuecos.join(" · ")) + tabla)
+    : bloqueChk("ok", "Las series corren correlativas, sin saltos",
+        filas.length ? "Cada Ministro de Fe lleva su propia numeración:" + tabla
+                     : "Todavía no hay certificados emitidos en el Servicio."));
+
+  // 3. Lo emitido desde este equipo tiene que estar en el Servicio.
+  const mios = getRecords().filter(r => r.folio && r.status !== "draft");
+  const enServicio = new Set(conFolio.map(r => r.folio));
+  const ausentes = mios.filter(r => !enServicio.has(r.folio));
+  partes.push(!mios.length
+    ? bloqueChk("ok", "Sin certificados emitidos desde este equipo", "No hay nada que comparar todavía.")
+    : ausentes.length
+      ? bloqueChk("mal", "Hay certificados de este equipo que el Servicio no tiene",
+          ausentes.map(r => `<code>${escapeHtml(r.folio)}</code>`).join(", ") +
+          ". Se emitieron aquí pero no quedaron registrados. Avise al Subdepartamento de Finanzas.")
+      : bloqueChk("ok", "Todo lo emitido desde este equipo está en el Servicio",
+          `Los ${mios.length} certificado(s) de este navegador aparecen en el registro central.`));
+
+  if(sinFolio) partes.push(bloqueChk("aviso", "Hay registros sin folio en el Servicio",
+    `${sinFolio} fila(s) llegaron sin número. Conviene revisar el flujo con informática.`));
+
+  const anulados = conFolio.filter(r => r.status === "cancelled").length;
+  partes.push(bloqueChk("ok", "Resumen",
+    `${conFolio.length} certificado(s) en el Servicio: ${conFolio.length - anulados} vigente(s) y ` +
+    `${anulados} anulado(s). Los folios anulados siguen ocupados y no se reasignan, así que un número ` +
+    `anulado no deja hueco.`));
+
+  caja.innerHTML = `<p style="margin:14px 0 4px">Revisión hecha el ${escapeHtml(formatDate(new Date().toISOString()))}
+    contra el registro central del Servicio.</p>` + partes.join("");
 }
 
 /* Último folio emitido por este Ministro de Fe en el año en curso. */
@@ -2840,12 +2981,21 @@ $("ayudaModal").addEventListener("click",e=>{                 // cerrar al pinch
   if(e.target === $("ayudaModal")) $("ayudaModal").classList.add("hidden");
 });
 addEventListener("keydown",e=>{
-  if(e.key === "Escape") $("ayudaModal").classList.add("hidden");
+  if(e.key === "Escape"){
+    $("ayudaModal").classList.add("hidden");
+    $("verificacionModal").classList.add("hidden");
+  }
 });
 $("avisoLocalBtn").addEventListener("click",()=>{ showRecordsView(); configurarRC(); });
 $("rcConfigBtn").addEventListener("click",configurarRC);
 $("rcTestBtn").addEventListener("click",probarRC);
 $("rcSyncBtn").addEventListener("click",()=>sincronizarRC(true));
+$("rcVerificarBtn").addEventListener("click",verificarRegistro);
+$("reVerificarBtn").addEventListener("click",verificarRegistro);
+$("cerrarVerificacionBtn").addEventListener("click",()=>$("verificacionModal").classList.add("hidden"));
+$("verificacionModal").addEventListener("click",e=>{
+  if(e.target === $("verificacionModal")) $("verificacionModal").classList.add("hidden");
+});
 $("recordSearch").addEventListener("input",renderRecords);
 $("recordMinisterFilter").addEventListener("change",renderRecords);
 $("recordStatusFilter").addEventListener("change",renderRecords);

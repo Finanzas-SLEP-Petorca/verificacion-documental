@@ -278,6 +278,36 @@ application timed out waiting for a response from service"*.
 Si al recargar aparece esa misma falla en el historial del flujo con una sola
 ejecución, es lo esperado: alguien recargó con una consulta legítima en curso.
 
+## Cómo comprobar que el correlativo está bien
+
+La aplicación trae la comprobación incorporada: **Registro de certificados → Verificar
+correlativos**. Revisa, contra el propio registro, lo único que de verdad importa:
+
+| Revisa | Qué significa si falla |
+|---|---|
+| El registro responde, y en cuánto tiempo | El flujo está caído o lento |
+| Ningún folio repetido | El control de simultaneidad no está en 1, o hay dos flujos escribiendo |
+| Las series corren sin saltos | Una emisión se interrumpió entre asignar el número y crear el elemento |
+| Todo lo emitido desde este equipo está en el Servicio | El certificado se emitió pero no quedó registrado |
+
+Un Ministro de Fe puede correrla solo, sin entrar a Power Automate ni a SharePoint.
+
+### Del lado de Microsoft
+
+Cuando la comprobación anterior marque algo, o para una revisión periódica:
+
+- **Historial de ejecuciones del flujo** (Power Automate → el flujo → *Ejecuciones*,
+  guarda 28 días). Cada emisión debe aparecer como una ejecución correcta. Las fallas con
+  *"the client application timed out waiting for a response from service"* son del lado del
+  navegador —alguien recargó con una consulta en curso— y no afectan lo ya escrito.
+- **Concurrencia**: en la configuración del desencadenador, *Control de simultaneidad*
+  debe seguir en **1**. Si alguien lo desactiva, dos emisiones simultáneas pueden tomar el
+  mismo número, y es la única forma conocida de producir un folio repetido.
+- **La lista**, ordenada por `Numero` dentro de cada `CodigoMinistro` y `Anio`: debe ir
+  1, 2, 3… sin repeticiones ni huecos.
+- **Historial de versiones de la lista**: muestra quién cambió qué y cuándo, incluidas las
+  anulaciones.
+
 ## Qué hace la aplicación en cada caso
 
 | Situación | Comportamiento |
