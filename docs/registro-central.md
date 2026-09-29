@@ -30,7 +30,9 @@ Página en GitHub Pages  ──POST──▶  Flujo de Power Automate  ──▶
 
 La página es pública, pero la dirección del flujo **no** va en el repositorio: cada
 Ministro de Fe la pega una vez en su navegador (botón **Configurar**) y queda guardada
-ahí. La dirección se entrega por correo interno, no se publica.
+ahí. El lugar canónico de esa dirección es una **biblioteca de SharePoint restringida**
+a quienes ejercen como Ministro de Fe: de ahí se copia, y ahí se actualiza si cambia.
+No se publica.
 
 Los datos —incluidos nombre, RUT y cargo del Ministro de Fe— quedan en SharePoint del
 Servicio. No salen a ningún proveedor externo.
@@ -235,15 +237,25 @@ motivo del error y el Ministro de Fe queda sin saber qué pasó.
 
 Al guardar el flujo, el desencadenador muestra la **URL HTTP POST**. Esa dirección
 lleva una firma (`sig=`) que funciona como llave: quien la tenga puede escribir en la
-lista. Trátela como una credencial — envíela por correo interno a cada Ministro de Fe,
-no la publique ni la suba al repositorio.
+lista. Trátela como una credencial. Déjela en una **biblioteca de SharePoint restringida**
+a quienes ejercen como Ministro de Fe, y entregue el enlace a esa biblioteca, no la
+dirección suelta por correo: así hay un solo lugar donde está, con permisos y con
+registro de quién la abrió. No la publique ni la suba al repositorio.
 
 Cada persona abre la aplicación → **Registro de certificados** → **Configurar**, pega la
 dirección y presiona **Probar conexión**. Debe aparecer, en verde,
 *"Conexión correcta. Los correlativos los asigna el Servicio."*
 
-Si alguna vez hay que revocarla, basta con regenerar el flujo y repartir la nueva
-dirección.
+No hace falta perseguir a nadie para confirmar que lo hizo: sin dirección configurada
+la aplicación **no emite** y lo dice en pantalla. Quien no haya hecho este paso se topa
+con el aviso la primera vez que intente emitir, no después.
+
+Sobre revocarla: Power Automate **no ofrece regenerar la firma** del desencadenador.
+Cambiar la dirección obliga a recrear el disparador y a reconectar el esquema de entrada
+y todas las acciones que dependen de él —cirugía sobre un flujo en producción—. Por eso
+la dirección se cambia sólo si hay motivo real: que haya salido de la institución, o
+que alguien externo la tenga. Mientras viva en buzones y bibliotecas internas, el riesgo
+que corrige el cambio es menor que el que introduce.
 
 ## Licenciamiento
 
