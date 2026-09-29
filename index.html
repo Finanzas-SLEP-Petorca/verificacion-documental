@@ -2458,6 +2458,13 @@ async function issueCertificate(){
         "Sus datos quedan intactos: puede guardar el borrador y emitir cuando esté conectado.");
       return;
     }
+    /* Fijar el id ANTES de llamar. Si la respuesta se pierde a mitad de camino —se cae
+       la red, se cierra la pestaña— el Servicio pudo haber creado la fila igual. Al
+       reintentar, el mismo idEmision hace que devuelva el folio ya asignado en vez de
+       gastar otro y dejar una fila huérfana en el correlativo. Sin esto, cada reintento
+       era una emisión nueva: makeRecord() inventaba un UUID distinto cada vez. */
+    state.recordId = rec.id;
+
     const btn=$("issueBtn"), rotulo=btn.textContent;
     btn.disabled=true; btn.textContent="Emitiendo…";
     try{
