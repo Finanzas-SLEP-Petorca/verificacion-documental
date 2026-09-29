@@ -476,6 +476,15 @@
         color:rgba(180,35,24,.22);border-color:rgba(180,35,24,.22);
       }
       .cert-anulacion{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+
+      /* El certificado se imprime igual con "Gráficos de fondo" marcado o no. Sin esto,
+         los títulos de sección —texto blanco sobre azul— quedaban casi ilegibles y el
+         encabezado perdía su recuadro: el documento salía desvaído según una casilla del
+         diálogo de impresión que nadie tiene por qué conocer. */
+      .cert-section-title,.cert-meta,.cert-table th,.cert-table thead tr,
+      .cert-anulacion,.cert-meta .wide{
+        -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;
+      }
       /* La fecha y la identificación de quien certifica no se separan: si no caben,
          pasan juntas a la hoja siguiente. Sueltas, la identificación quedaba sola en
          una hoja, lejos de la declaración que suscribe. */
@@ -638,6 +647,7 @@
         </div>
         <div class="field hidden" id="amountField">
           <label>Monto total (opcional)</label>
+          <!-- Se imprime con separador de miles: 2626961901 sale $2.626.961.901 -->
           <input id="amountInput" inputmode="numeric" placeholder="$ 0" />
         </div>
       </div>
@@ -889,6 +899,15 @@
       se omitió a propósito y no por olvido.</p>
 
       <h4 id="g7">7. Imprimir y firmar</h4>
+      <p>En el cuadro de impresión, dos ajustes antes de guardar:</p>
+      <ul>
+        <li><strong>Tamaño de papel: Oficio</strong> (21,6 × 33 cm), que es la medida para la
+        que está hecho el certificado. Si sale en carta igual sirve, pero quedan distintos
+        entre sí.</li>
+        <li>En <em>Más configuraciones</em>, <strong>desmarque "Encabezados y pies de
+        página"</strong>. Si queda marcado, el PDF sale con la dirección web y la hora de
+        impresión encima del certificado, que no son parte del documento.</li>
+      </ul>
       <ol>
         <li>Desde la vista previa, <strong>Imprimir / Guardar PDF</strong>.</li>
         <li>Suba ese PDF a <strong>DocDigital</strong> y fírmelo.</li>
@@ -2754,7 +2773,7 @@ function certificateHtml(r){
         <tr><th>Unidad del Ministro de Fe</th><td colspan="3">${escapeHtml(minister.unit||"—")}</td></tr>
         <tr><th>Naturaleza del set</th><td>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</td><th>Unidad / Establecimiento del set</th><td>${escapeHtml(r.unit||"—")}</td></tr>
         <tr><th>Estado del certificado</th><td>${escapeHtml(statusLabel(r.status))}</td><th>Correlativo personal</th><td>${escapeHtml(folio)}</td></tr>
-        ${r.nature==="remuneraciones" ? `<tr><th>Período</th><td>${escapeHtml(r.period||"—")}</td><th>Monto total</th><td>${escapeHtml(r.amount||"—")}</td></tr>`:""}
+        ${r.nature==="remuneraciones" ? `<tr><th>Período</th><td>${escapeHtml(r.period||"—")}</td><th>Monto total</th><td>${r.amount ? escapeHtml(fmtMonto(parseMonto(r.amount))) : "—"}</td></tr>`:""}
       </table>
     </div>
 
