@@ -63,9 +63,14 @@ más abajo.
 
 Dos cosas que no son opcionales:
 
-- En la configuración del desencadenador, activa **Control de simultaneidad** con grado
-  de paralelismo **1**. Sin eso, dos emisiones simultáneas pueden obtener el mismo
-  número, que es precisamente el problema que vinimos a resolver.
+- Crea la columna `ClaveCorrelativo` (texto, por ejemplo `GAB700-2026-010`) con
+  **EnforceUniqueValues = true**. Ése es el candado contra folios duplicados: si dos
+  emisiones intentan el mismo número, SharePoint rechaza la segunda escritura.
+- Activa además **Control de simultaneidad** con grado de paralelismo **1** en la
+  configuración del desencadenador. Reduce la contención, pero la garantía es la columna
+  única, no esto.
+- En `listar`, **no actives paginación** y deja `$top` en 500. Con paginación y umbral
+  5000 sobre una lista pequeña la acción tarda minutos y el cliente recibe 504.
 - **Toda** acción de Respuesta debe llevar los encabezados
   `Content-Type: application/json` y `Access-Control-Allow-Origin: *`, incluida la
   respuesta de error. Sin el segundo, el navegador no puede leer la respuesta y el
@@ -112,7 +117,12 @@ Pasos:
    (filtro `CodigoMinistro eq '...' and Anio eq ...`, orden `Numero desc`, límite 1) y
    súmale 1. Si no hay ninguno, parte en 1.
 3. Arma el folio: `prefijo-anio-programaCodigo-ministroCodigo-NNN`, con `NNN` de tres
-   dígitos y ceros a la izquierda. Ejemplo: `CMF-2026-P01-GAB700-001`.
+   dígitos y ceros a la izquierda. Ejemplo: `CMF-2026-P01-GAB700-010`.
+
+   **El número nunca baja de 10.** Los correlativos 001 a 009 quedaron consumidos por la
+   etapa de pilotaje y no se reasignan, así que el cálculo va envuelto en un piso:
+   `max(add(int(coalesce(...Numero, 0)), 1), 10)`. El piso aplica a todos los Ministros de
+   Fe por igual, incluidos los que ya tienen números bajos en la lista.
 4. Crea el elemento con todas las columnas, `Estado` = `Emitido`, `FechaEmision` =
    `utcNow()` (la hora la pone el servidor, no el equipo de quien emite) y `Datos` =
    el objeto `registro` serializado como texto.

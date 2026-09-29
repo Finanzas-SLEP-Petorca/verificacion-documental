@@ -2396,8 +2396,8 @@ async function verificarRegistro(){
       `${String(SERIE_DESDE).padStart(3,"0")}.<br />` +
       lista.map(f => `<code>${escapeHtml(f)}</code>`).join(" · ") +
       (miosPrueba.length
-        ? `<div style="margin-top:10px"><button class="btn small danger" id="limpiarPruebasBtn">` +
-          `Eliminar de este equipo los ${miosPrueba.length} de prueba</button></div>`
+        ? `<div style="margin-top:10px">Estos registros <strong>no se borran</strong>: son el ` +
+          `único rastro de qué se emitió durante el pilotaje. Quedan marcados y se conservan.</div>`
         : "")));
   }
 
@@ -2409,29 +2409,6 @@ async function verificarRegistro(){
 
   caja.innerHTML = `<p style="margin:14px 0 4px">Revisión hecha el ${escapeHtml(formatDate(new Date().toISOString()))}
     contra el registro central del Servicio.</p>` + partes.join("");
-
-  const btnLimpiar = $("limpiarPruebasBtn");
-  if(btnLimpiar) btnLimpiar.addEventListener("click", () => limpiarPruebasLocales(miosPrueba));
-}
-
-/* Borra de este navegador los certificados del pilotaje. No toca nada del Servicio —los de
-   prueba nunca llegaron allá— ni ningún certificado definitivo. Sólo corre si la persona lo
-   confirma dos veces: es un borrado y no tiene vuelta atrás. */
-function limpiarPruebasLocales(pruebas){
-  if(!pruebas.length) return;
-  const folios = pruebas.map(r => r.folio);
-  if(!confirm(
-    `Se eliminarán de ESTE equipo ${folios.length} certificado(s) de la etapa de pilotaje:\n\n` +
-    folios.join("\n") +
-    "\n\nNo tienen validez y no están en el registro del Servicio, así que no se pierde " +
-    "nada que el Servicio tenga. Los certificados definitivos no se tocan.\n\n¿Continuar?")) return;
-  if(!confirm("Esto no se puede deshacer. ¿Eliminar los certificados de prueba de este equipo?")) return;
-
-  const aBorrar = new Set(pruebas.map(r => r.id));
-  saveRecords(getRecords().filter(r => !aBorrar.has(r.id)));
-  renderRecords(); renderHistory(); updateTopFields();
-  alert(`Se eliminaron ${folios.length} certificado(s) de prueba de este equipo.`);
-  verificarRegistro();
 }
 
 /* Último folio emitido por este Ministro de Fe en el año en curso. */

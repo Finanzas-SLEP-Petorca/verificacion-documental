@@ -76,8 +76,10 @@ En Power Automate, flujo **instantáneo** con el desencadenador
 1. Método: `POST`. Deje el **esquema JSON vacío**: el cuerpo se interpreta dentro del
    flujo, para aceptar tanto `application/json` como `text/plain`.
 2. En **Configuración** del desencadenador, active **Control de simultaneidad** con
-   grado de paralelismo **1**. Esto es indispensable: serializa las emisiones y evita
-   que dos solicitudes simultáneas obtengan el mismo número.
+   grado de paralelismo **1**. Serializa las emisiones y reduce la contención, pero no es
+   la garantía: la garantía es la columna `ClaveCorrelativo` con
+   **EnforceUniqueValues = true**, que hace que SharePoint rechace la segunda escritura si
+   dos emisiones intentan el mismo número.
 3. Primera acción, **Redactar**, nombre `Entrada`, valor:
 
    ```
@@ -297,12 +299,21 @@ Un Ministro de Fe puede correrla solo, sin entrar a Power Automate ni a SharePoi
 Cuando la comprobación anterior marque algo, o para una revisión periódica:
 
 - **Historial de ejecuciones del flujo** (Power Automate → el flujo → *Ejecuciones*,
-  guarda 28 días). Cada emisión debe aparecer como una ejecución correcta. Las fallas con
+  guarda 28 días). Cada emisión debe aparecer como una ejecución correcta. Si un
+  certificado existe y no hay ejecución a esa hora, no es que la llamada fallara: no hubo
+  llamada.
+- **Paginación de `listar`**: debe estar desactivada y `$top` acotado (500 basta). Con
+  paginación y umbral 5000 sobre una lista pequeña, la acción tardaba cinco minutos y medio
+  y el cliente recibía 504. Las fallas con
   *"the client application timed out waiting for a response from service"* son del lado del
   navegador —alguien recargó con una consulta en curso— y no afectan lo ya escrito.
-- **Concurrencia**: en la configuración del desencadenador, *Control de simultaneidad*
-  debe seguir en **1**. Si alguien lo desactiva, dos emisiones simultáneas pueden tomar el
-  mismo número, y es la única forma conocida de producir un folio repetido.
+- **El candado real** es la columna `ClaveCorrelativo` con *EnforceUniqueValues*: si dos
+  emisiones intentan el mismo número, SharePoint rechaza la segunda. Verifique que siga
+  activa. El *Control de simultaneidad* en 1 ayuda, pero no es lo que garantiza la
+  unicidad.
+- **Si aparece un folio repetido**, lo primero a revisar no es la concurrencia sino si
+  hubo un *Crear elemento* fallido y la aplicación emitió igual. El historial del flujo lo
+  muestra de inmediato.
 - **La lista**, ordenada por `Numero` dentro de cada `CodigoMinistro` y `Anio`: debe ir
   1, 2, 3… sin repeticiones ni huecos.
 - **Historial de versiones de la lista**: muestra quién cambió qué y cuándo, incluidas las

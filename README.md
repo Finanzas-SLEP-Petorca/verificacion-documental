@@ -93,7 +93,8 @@ tienen validez. La aplicación los reconoce por el número y los trata en consec
 - aparecen etiquetados en el registro y en el historial;
 - la verificación los lista aparte, nunca como faltantes;
 - se pueden anular sólo en el equipo, porque el Servicio nunca los tuvo;
-- desde la verificación se pueden eliminar del navegador, con doble confirmación.
+- **no se borran del navegador**: son el único rastro de qué se emitió durante el
+  pilotaje, así que quedan marcados y se conservan.
 
 ### Anulación
 
