@@ -2016,6 +2016,12 @@ function partesFolio(folio){
   if(m) return { prefijo:m[1], anio:+m[2], programa:m[3], codigoMinistro:m[4], numero:+m[5] };
   m = /^([A-Z]+)-(\d{4})-([A-Z0-9]+)-(\d+)$/.exec(s);   // folios anteriores, sin programa
   if(m) return { prefijo:m[1], anio:+m[2], programa:null, codigoMinistro:m[3], numero:+m[4] };
+  /* Los primeros de todos, de la primera versión: CÓDIGO-AÑO-NÚMERO, sin prefijo.
+     Reconocerlos importa: si no se parsean, la verificación los toma por
+     definitivos y los denuncia como certificados que el Servicio no tiene,
+     cuando en realidad son anteriores a que existiera el registro central. */
+  m = /^([A-Z0-9]+)-(\d{4})-(\d+)$/.exec(s);
+  if(m) return { prefijo:"", anio:+m[2], programa:null, codigoMinistro:m[1], numero:+m[3] };
   return null;
 }
 

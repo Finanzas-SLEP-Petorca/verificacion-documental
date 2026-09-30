@@ -96,6 +96,11 @@ tienen validez. La aplicación los reconoce por el número y los trata en consec
 - **no se borran del navegador**: son el único rastro de qué se emitió durante el
   pilotaje, así que quedan marcados y se conservan.
 
+Se reconocen los tres formatos de folio que ha tenido la aplicación: el actual
+`CMF-2026-P01-GAB700-001`, el anterior sin programa `CMF-2026-GAB700-001` y el primero
+de todos, `GAB700-2026-001`, sin prefijo. Un folio que no se sepa leer se tomaría por
+definitivo y la verificación lo denunciaría como un certificado que el Servicio no tiene.
+
 ### Anulación
 
 Un certificado emitido no se edita ni se elimina: se **anula**. La anulación pide un
