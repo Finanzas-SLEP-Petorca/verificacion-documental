@@ -18,8 +18,10 @@ El registro central resuelve las dos cosas: el número lo asigna el Servicio, no
 navegador, y todas las emisiones quedan en una lista de Microsoft 365 que sirve de
 respaldo y de fuente para auditoría.
 
-La aplicación sigue funcionando sin él. Mientras no se configure, se comporta como
-hasta ahora y lo advierte en la pestaña **Registro de certificados**.
+Sin él no se emite. Desde el 29 de septiembre de 2026 el folio lo asigna sólo el
+registro central: un equipo sin la dirección configurada puede llenar el formulario,
+guardar borradores e imprimir la vista previa con la marca **BORRADOR**, pero no emitir
+ni anular, y lo advierte en pantalla.
 
 ## Cómo queda armado
 
@@ -338,7 +340,7 @@ Cuando la comprobación anterior marque algo, o para una revisión periódica:
 
 | Situación | Comportamiento |
 |---|---|
-| Sin dirección configurada | Correlativos locales, como hasta ahora. Lo advierte en pantalla. |
+| Sin dirección configurada | **No emite ni anula.** Lo advierte en pantalla; se pueden guardar borradores y ver la vista previa con la marca BORRADOR. |
 | Configurada y respondiendo | El folio lo asigna el Servicio. El registro muestra también lo emitido en otros equipos: se pueden abrir e imprimir, pero no editar, duplicar ni anular desde ahí. |
 | Configurada y sin respuesta | **No emite ni anula.** Avisa el motivo y sugiere reintentar. El borrador no se pierde. |
 

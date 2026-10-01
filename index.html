@@ -1973,11 +1973,22 @@ function makeRecord(status){
   };
 }
 
+/* Un certificado emitido o anulado no vuelve a ser borrador. Después de emitir, el
+   formulario sigue apuntando al certificado: sin este control, "Guardar borrador" lo
+   pisaba con estado "draft" y folio, y desde el registro se podía editar y eliminar. */
+function noEsEditable(r){ return !!r && (r.status !== "draft" || !!r.folio); }
+
 function saveDraft(){
   syncStateFromForm();
   const rec=makeRecord("draft");
   const records=getRecords();
   const idx=records.findIndex(r=>r.id===rec.id);
+  if(idx>=0 && noEsEditable(records[idx])){
+    alert(`El certificado ${records[idx].folio || ""} ya fue emitido y no se edita.\n\n` +
+      "Para rehacer el trabajo use Duplicar en el registro de certificados: los " +
+      "antecedentes cargados se conservan en un borrador nuevo.");
+    return;
+  }
   if(idx>=0){
     rec.createdAt=records[idx].createdAt;
     rec.folio=records[idx].folio;
@@ -2323,8 +2334,9 @@ async function verificarRegistro(){
 
   if(!RC.configurado()){
     caja.innerHTML = bloqueChk("mal", "Este equipo no está conectado al registro central",
-      "Sin conexión no hay nada que verificar: los folios los numera este navegador. " +
-      "Use <strong>Configurar</strong> y pegue la dirección que entrega el Subdepartamento de Finanzas.");
+      "Sin conexión no hay nada que verificar, y tampoco se puede emitir: el folio lo asigna " +
+      "el Servicio, no este navegador. Use <strong>Configurar</strong> y pegue la dirección " +
+      "que entrega el Subdepartamento de Finanzas.");
     return;
   }
 
@@ -2457,6 +2469,15 @@ async function issueCertificate(){
   const records=getRecords();
   const old=records.find(r=>r.id===rec.id);
 
+  /* Emitir sobre un anulado lo revivía: el folio ya estaba, así que se "reimprimía"
+     como vigente sin preguntarle al Servicio, que lo sigue teniendo anulado. */
+  if(old?.status === "cancelled"){
+    alert(`El certificado ${old.folio} está anulado y no puede volver a emitirse.\n\n` +
+      "Para emitir el reemplazo use Duplicar en el registro de certificados: toma el " +
+      "folio siguiente y conserva los antecedentes ya cargados.");
+    return;
+  }
+
   rec.issuedAt = new Date().toISOString();
   rec.createdAt = old?.createdAt || rec.createdAt;
 
@@ -2564,10 +2585,10 @@ function renderRecords(){
       <td>
         ${r.ajeno ? `<button class="btn small" onclick="verRecordCentral('${r.id}', this)">Ver</button>` : `
         <button class="btn small" onclick="viewRecord('${r.id}')">Ver</button>
-        ${r.status==="draft"?`<button class="btn small" onclick="editRecord('${r.id}')">Editar</button>`:""}
+        ${!noEsEditable(r)?`<button class="btn small" onclick="editRecord('${r.id}')">Editar</button>`:""}
         <button class="btn small" onclick="duplicateRecord('${r.id}')">Duplicar</button>
         ${r.status==="issued"?`<button class="btn small danger" onclick="anularRecord('${r.id}')">Anular</button>`:""}
-        ${r.status==="draft"?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}`}
+        ${!noEsEditable(r)?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}`}
       </td>
     </tr>`).join(""):`<tr><td colspan="6" style="color:var(--muted)">No hay registros.</td></tr>`;
 }
@@ -2652,7 +2673,7 @@ window.verRecordCentral=async function(id, boton){
 };
 
 window.editRecord=function(id){
-  const r=getRecords().find(x=>x.id===id); if(!r||r.status!=="draft")return;
+  const r=getRecords().find(x=>x.id===id); if(!r||noEsEditable(r))return;
   loadRecordIntoState(r,false); showNewView();
 }
 window.duplicateRecord=function(id){
@@ -2728,7 +2749,11 @@ window.anularRecord=async function(id){
     duplicateRecord(id);
 };
 
+/* Sólo se elimina un borrador que nunca tuvo folio. Lo que tuvo folio —emitido,
+   anulado o del pilotaje— se conserva siempre: es el rastro de lo que se certificó. */
 window.deleteRecord=function(id){
+  const r=getRecords().find(x=>x.id===id);
+  if(!r || noEsEditable(r)) return;
   if(!confirm("¿Eliminar este borrador?"))return;
   saveRecords(getRecords().filter(x=>x.id!==id)); renderRecords(); renderHistory();
 }
@@ -3004,7 +3029,7 @@ function configurarRC(){
   const actual = RC.url();
   const u = prompt(
     "Dirección del registro central del Servicio (la entrega el Subdepartamento de Finanzas).\n\n" +
-    "Déjela en blanco para volver a trabajar sólo en este equipo.",
+    "Si la deja en blanco, este equipo queda desconectado y no podrá emitir ni anular.",
     actual);
   if(u === null) return;
   try{ RC.guardarUrl(u); }
