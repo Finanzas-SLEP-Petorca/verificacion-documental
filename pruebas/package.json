@@ -1,0 +1,11 @@
+{
+  "name": "pruebas-certificado-ministro-de-fe",
+  "private": true,
+  "description": "Pruebas de la página y del registro central simulado. El sitio no las necesita para funcionar.",
+  "scripts": {
+    "test": "./correr.sh"
+  },
+  "devDependencies": {
+    "playwright": "1.56.1"
+  }
+}

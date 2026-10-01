@@ -215,10 +215,21 @@ constancia de que los datos bancarios fueron verificados.
 ├── index.html          Aplicación (versión vigente)
 ├── assets/
 │   └── logo-mineduc.png
+├── docs/               Montaje del registro central
+├── guia/               Guía de uso, en HTML y PDF
+├── pruebas/            Pruebas automatizadas y registro central simulado
 ├── v1/                 Versión anterior, conservada (ver más abajo)
 ├── v2/                 Prototipo intermedio
 └── v3/                 Redirige a la raíz
 ```
+
+### Pruebas
+
+`pruebas/correr.sh` comprueba lo que no puede romperse: que sin conexión no se emita,
+que reintentar no gaste otro folio, que el estado lo mande el Servicio, que los
+certificados del pilotaje se conserven y que la dirección del flujo no esté en el
+repositorio. Corre contra un registro central simulado, sin tocar el de verdad. Cómo
+instalarlas y qué cubre cada una: [`pruebas/README.md`](pruebas/README.md).
 
 ### Sobre `/v1/`
 
