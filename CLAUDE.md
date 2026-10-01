@@ -36,6 +36,27 @@ ese panel, dilo y no lo toques desde aquí.
   son el único rastro de lo que se emitió entonces.
 - La dirección del flujo de Power Automate es una credencial: no va en el
   repositorio, ni en un archivo versionado, ni en la salida.
+- Un certificado emitido o anulado **no vuelve a ser borrador, no se revive y no
+  se elimina**: sólo se edita o borra un borrador que nunca tuvo folio.
 - Prueba los cambios de verdad antes de decir que funcionan. El `README.md`
   explica el modelo de datos, la anulación y la verificación; `docs/` tiene el
   montaje del registro central.
+
+## Pruebas
+
+Las pruebas automatizadas viven en `pruebas/` y van **versionadas en el
+repositorio**, nunca en un directorio temporal de la sesión: las anteriores se
+perdieron así.
+
+- `pruebas/correr.sh` corre todo (unos 20 segundos) y debe terminar sin fallas
+  antes de cada commit que toque `index.html`.
+- Corre contra `pruebas/registro_simulado.py`, un registro central simulado con
+  sus cinco simulacros de falla. **Nunca** apuntes las pruebas al registro de
+  verdad ni uses su dirección.
+- Si cambias un comportamiento, cambia o agrega la prueba que lo cubre en el
+  mismo commit. Si una prueba falla, se corrige la causa: no se salta, no se
+  desactiva y no se afloja para que pase.
+- Si cambias el protocolo con el flujo (`docs/registro-central.md`), actualiza
+  también el simulador y `pruebas/test_registro_simulado.py`.
+- Qué cubre cada archivo y cómo instalar Playwright fuera de la nube:
+  `pruebas/README.md`.
