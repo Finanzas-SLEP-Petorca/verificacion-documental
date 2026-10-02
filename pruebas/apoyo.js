@@ -101,8 +101,12 @@ const CLAVES = {
 /* Abre la aplicación en un contexto limpio. `conectado` deja guardada la dirección
    del registro simulado, como si el Ministro de Fe la hubiera pegado en Configurar;
    `registros` siembra el localStorage antes de que cargue la página. */
+/* El navegador corre en hora de Chile, como el de los Ministros de Fe. El contenedor de
+   las pruebas está en UTC, y ahí no se ven los errores que corren la fecha un día. */
+const ZONA_HORARIA = "America/Santiago";
+
 async function abrir(ent, { conectado = true, registros = null, reloj = false } = {}){
-  const contexto = await ent.navegador.newContext();
+  const contexto = await ent.navegador.newContext({ timezoneId: ZONA_HORARIA, locale: "es-CL" });
   const pagina = await contexto.newPage();
   const errores = [];
   pagina.on("pageerror", e => errores.push(e.message));

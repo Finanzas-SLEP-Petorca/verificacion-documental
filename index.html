@@ -2814,13 +2814,20 @@ function docIdentification(doc, ds, rec){
   return parts.join(" · ") || "Verificada";
 }
 
+/* Una fecha sola ("2026-10-01", la del detalle de documentos) es un día del calendario,
+   no un instante. new Date() la toma como medianoche UTC, que en Chile todavía es el día
+   anterior: el certificado imprimía 30-09-2026 para una factura del 01-10-2026. Se arma
+   como medianoche local. Los instantes completos (issuedAt, cancelledAt) siguen igual. */
+function aFecha(iso){
+  if(!iso) return new Date();
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso));
+  return m ? new Date(+m[1], +m[2]-1, +m[3]) : new Date(iso);
+}
 function formatDate(iso){
-  const d=iso?new Date(iso):new Date();
-  return new Intl.DateTimeFormat("es-CL",{day:"2-digit",month:"long",year:"numeric"}).format(d);
+  return new Intl.DateTimeFormat("es-CL",{day:"2-digit",month:"long",year:"numeric"}).format(aFecha(iso));
 }
 function shortDate(iso){
-  const d=iso?new Date(iso):new Date();
-  return new Intl.DateTimeFormat("es-CL",{day:"2-digit",month:"2-digit",year:"numeric"}).format(d);
+  return new Intl.DateTimeFormat("es-CL",{day:"2-digit",month:"2-digit",year:"numeric"}).format(aFecha(iso));
 }
 
 function certificateHtml(r){

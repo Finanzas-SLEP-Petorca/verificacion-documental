@@ -24,6 +24,10 @@ Tarda unos 20 segundos y sale con código distinto de 0 si algo falla.
 
 Nada de esto toca el registro central de verdad ni necesita su dirección.
 
+El navegador de las pruebas corre en hora de Chile (`America/Santiago`), como el de los
+Ministros de Fe, aunque el equipo que las corra esté en otra zona: en UTC no se ven los
+errores que corren una fecha al día anterior.
+
 ## Qué hay
 
 | Archivo | Qué es |
@@ -46,7 +50,7 @@ Nada de esto toca el registro central de verdad ni necesita su dirección.
 | `pilotaje.test.js` | Los certificados del pilotaje, en los tres formatos de folio, se reconocen, se marcan, se imprimen con **PILOTAJE** y nunca se borran. |
 | `verificacion.test.js` | *Verificar correlativos*: folios repetidos, números saltados desde el 010, lo emitido aquí que el Servicio no tiene, filas sin folio. |
 | `llamadas.test.js` | La tabla *Cuántas veces llama la aplicación*: abrir, recargar, entrar al registro, Actualizar, Probar conexión, y que salir de la página no dispare un segundo POST. |
-| `formulario.test.js` | Financiamiento según programa, complementario D.1, campos del PME, aviso del borrador e importación de planilla sin duplicar montos. |
+| `formulario.test.js` | Financiamiento según programa, complementario D.1, campos del PME, aviso del borrador, importación de planilla sin duplicar montos y fechas del detalle impresas sin correrse un día. |
 
 ### Los simulacros
 

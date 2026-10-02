@@ -105,3 +105,24 @@ test("importar la misma planilla dos veces no duplica montos", async () => {
   assert.equal(await pagina.evaluate(() => state.detalle.length), 2);
   await pagina.context().close();
 });
+
+test("la fecha del detalle se imprime tal como se ingresó, sin correrse un día", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "adquisiciones");
+  await pagina.click("#addDetalleBtn");
+  const fila = pagina.locator("#detalleBox tbody tr").first();
+  await fila.locator('[data-det-field="tipo"]').fill("Factura Electrónica");
+  await fila.locator('[data-det-field="fecha"]').fill("2026-10-01");
+  await fila.locator('[data-det-field="monto"]').fill("50000");
+
+  await pagina.click("#previewBtn");
+  const detalle = await pagina.locator("#certificatePreview").textContent();
+  assert.match(detalle, /01-10-2026/);
+  assert.doesNotMatch(detalle, /30-09-2026/, "medianoche UTC es el día anterior en Chile");
+
+  // Lo mismo en el borde del año, y con una fecha importada desde la planilla.
+  assert.deepEqual(await pagina.evaluate(() =>
+    ["2026-01-01", "2026-12-31", normalizarFecha("45931")].map(f => shortDate(f))),
+    ["01-01-2026", "31-12-2026", "01-10-2025"]);
+  await pagina.context().close();
+});
