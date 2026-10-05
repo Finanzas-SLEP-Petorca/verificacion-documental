@@ -170,3 +170,19 @@ test("los Servicios Básicos ya emitidos se reimprimen como se emitieron, sin la
   assert.ok(nombres.some(n => n.startsWith(RECEPCION)), nombres.join(" | "));
   await pagina.context().close();
 });
+
+test("la modalidad de contratación de Adquisiciones ofrece Compra Ágil", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "adquisiciones");
+  const modalidad = pagina.locator('#docList [data-row="01"] select[data-field="docType"]');
+  assert.deepEqual(await modalidad.evaluate(s => [...s.options].map(o => o.value).filter(Boolean)),
+    ["Compra Ágil", "Convenio Marco", "Licitación Pública", "Trato Directo"]);
+
+  // Elegida, queda en el certificado.
+  await modalidad.selectOption("Compra Ágil");
+  await pagina.locator('#docList [data-row="01"] input[data-field="number"]').fill("1234");
+  await pagina.locator('#docList [data-check="01"]').check();
+  await pagina.click("#previewBtn");
+  assert.match(await pagina.textContent("#certificatePreview"), /Compra Ágil/);
+  await pagina.context().close();
+});
