@@ -143,7 +143,7 @@ y filtrar por ministro y por estado.
 |---|---|---|
 | A | Remuneraciones | 7 |
 | B | Honorarios | 5 |
-| C | Servicios Básicos | 6 |
+| C | Servicios Básicos | 7 |
 | D | Adquisiciones | 12, más los condicionales |
 | E | Viáticos y cometidos funcionarios | 8 |
 

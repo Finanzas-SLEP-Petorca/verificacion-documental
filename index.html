@@ -1229,7 +1229,11 @@ const DOCS = {
     {no:"04", name:"Boletas", required:true, retirado:true, fields:[{key:"number",label:"Folio(s)",type:"text"}]},
     {no:"05", name:"Cupones de pago, cuando aplique", required:false, fields:[]},
     {no:"06", name:"Resolución de intereses, cuando corresponda", required:false, fields:[{key:"number",label:"N.º",type:"text"}]},
-    {no:"07", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]}
+    {no:"07", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    /* Agregado el 05-10-2026. Un certificado emitido antes no lo verificó, así que no se
+       le agrega al reimprimirlo: ver docAgregadoDespues. Si el set es de la Unidad
+       Central y no corresponde, se registra la excepción "No aplica". */
+    {no:"08", name:"Recepción Conforme (Establecimiento / Director o Directora)", required:true, agregado:true, fields:[]}
   ],
   viaticos: [
     {no:"01", name:"Resolución que aprueba el cometido funcionario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
@@ -2769,6 +2773,14 @@ function tieneDatos(ds){
    registro trae datos suyos. */
 function docVigente(d, docs){ return !d.retirado || tieneDatos((docs || {})[d.no]); }
 
+/* Un antecedente agregado después de que un certificado se emitió no estaba en su
+   checklist: el formulario guarda una entrada por cada fila que muestra, y ésa no la
+   tiene. Al reimprimirlo se omite, para que salga tal como se emitió. Los borradores
+   sí lo piden, porque todavía no se certifican. */
+function docAgregadoDespues(d, r){
+  return !!d.agregado && !!r.folio && !Object.prototype.hasOwnProperty.call(r.docs || {}, d.no);
+}
+
 /* Hay campos que sólo corresponden con cierto financiamiento: la acción y la
    dimensión del PME se piden con subvención SEP y con ninguna otra. */
 function campoVisible(f, d){
@@ -2786,6 +2798,7 @@ function visibleDocsForRecord(r){
   const docs=DOCS[r.nature]||[];
   return docs.filter(d=>{
     if(!docVigente(d, r.docs)) return false;
+    if(docAgregadoDespues(d, r)) return false;
     if(d.conditional==="factoring") return !!r.factoring;
     if(d.conditional==="refund") return !!r.refund;
     if(d.conditional==="complementario") return !!r.complementario;

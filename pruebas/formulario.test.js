@@ -4,7 +4,7 @@
 
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
-const { entorno, abrir } = require("./apoyo");
+const { entorno, abrir, registroEmitido } = require("./apoyo");
 
 let ent;
 before(async () => { ent = await entorno(); });
@@ -124,5 +124,49 @@ test("la fecha del detalle se imprime tal como se ingresó, sin correrse un día
   assert.deepEqual(await pagina.evaluate(() =>
     ["2026-01-01", "2026-12-31", normalizarFecha("45931")].map(f => shortDate(f))),
     ["01-01-2026", "31-12-2026", "01-10-2025"]);
+  await pagina.context().close();
+});
+
+const RECEPCION = "Recepción Conforme (Establecimiento / Director o Directora)";
+
+test("Servicios Básicos pide la Recepción Conforme del establecimiento", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "servicios");
+  const nombres = await pagina.$$eval("#docList .doc-name", ds => ds.map(d => d.textContent.trim()));
+  assert.ok(nombres.some(n => n.startsWith(RECEPCION)), nombres.join(" | "));
+  const fila = pagina.locator("#docList .doc-row", { hasText: RECEPCION });
+  const rotulo = `${(await fila.locator(".doc-no").textContent()).trim()} ${RECEPCION}`;
+
+  let errores = await pagina.evaluate(() => validate());
+  assert.ok(errores.includes(`${rotulo}: debe verificarse o registrar una excepción.`), errores.join("\n"));
+
+  // Si no corresponde —un set de la Unidad Central— se registra la excepción "No aplica".
+  await fila.locator("[data-ex]").click();
+  await fila.locator("[data-ex-type]").selectOption("No aplica");
+  errores = await pagina.evaluate(() => validate());
+  assert.ok(!errores.some(e => e.includes(RECEPCION)), errores.join("\n"));
+  await pagina.context().close();
+});
+
+test("los Servicios Básicos ya emitidos se reimprimen como se emitieron, sin la fila nueva", async () => {
+  // Un certificado emitido antes del cambio: su checklist no trae la recepción conforme.
+  const docs = {};
+  for(const no of ["01", "02", "03", "05", "06", "07"]) docs[no] = { checked: true, fields: { number: "1" } };
+  const emitido = registroEmitido({ id: "sb-1", folio: "CMF-2026-P01-SAF104-011", nature: "servicios",
+    natureLabel: "Servicios Básicos", docs });
+  const borrador = registroEmitido({ id: "sb-2", folio: null, status: "draft", issuedAt: null,
+    nature: "servicios", natureLabel: "Servicios Básicos", docs });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [emitido, borrador] });
+
+  await pagina.evaluate(() => viewRecord("sb-1"));
+  const impreso = await pagina.textContent("#certificatePreview");
+  assert.doesNotMatch(impreso, /Recepción Conforme/, "lo emitido no cambia");
+  assert.match(impreso, /06\s*Compromiso Presupuestario/, "ni se corre la numeración");
+  await pagina.click("#closePreviewBtn");
+
+  // Un borrador, en cambio, sí la pide: todavía no se ha certificado.
+  await pagina.evaluate(() => editRecord("sb-2"));
+  const nombres = await pagina.$$eval("#docList .doc-name", ds => ds.map(d => d.textContent.trim()));
+  assert.ok(nombres.some(n => n.startsWith(RECEPCION)), nombres.join(" | "));
   await pagina.context().close();
 });
