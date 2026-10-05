@@ -132,6 +132,7 @@ const RECEPCION = "Recepción Conforme (Establecimiento / Director o Directora)"
 test("Servicios Básicos pide la Recepción Conforme del establecimiento", async () => {
   const { pagina } = await abrir(ent, { conectado: false });
   await pagina.selectOption("#natureSelect", "servicios");
+  await pagina.selectOption("#programaSelect", "Programa 02");
   const nombres = await pagina.$$eval("#docList .doc-name", ds => ds.map(d => d.textContent.trim()));
   assert.ok(nombres.some(n => n.startsWith(RECEPCION)), nombres.join(" | "));
   const fila = pagina.locator("#docList .doc-row", { hasText: RECEPCION });
@@ -164,10 +165,12 @@ test("los Servicios Básicos ya emitidos se reimprimen como se emitieron, sin la
   assert.match(impreso, /06\s*Compromiso Presupuestario/, "ni se corre la numeración");
   await pagina.click("#closePreviewBtn");
 
-  // Un borrador, en cambio, sí la pide: todavía no se ha certificado.
+  // Un borrador, en cambio, sí pide lo nuevo: todavía no se ha certificado. Es de
+  // Programa 01, así que la recepción es la del Servicio.
   await pagina.evaluate(() => editRecord("sb-2"));
   const nombres = await pagina.$$eval("#docList .doc-name", ds => ds.map(d => d.textContent.trim()));
-  assert.ok(nombres.some(n => n.startsWith(RECEPCION)), nombres.join(" | "));
+  for(const doc of ["Recepción Conforme (Servicio)", "Datos Bancarios"])
+    assert.ok(nombres.some(n => n.startsWith(doc)), nombres.join(" | "));
   await pagina.context().close();
 });
 
@@ -184,5 +187,75 @@ test("la modalidad de contratación de Adquisiciones ofrece Compra Ágil", async
   await pagina.locator('#docList [data-check="01"]').check();
   await pagina.click("#previewBtn");
   assert.match(await pagina.textContent("#certificatePreview"), /Compra Ágil/);
+  await pagina.context().close();
+});
+
+const RECEPCION_SERVICIO = "Recepción Conforme (Servicio)";
+const DATOS_BANCARIOS = "Datos Bancarios";
+
+async function checklist(pagina){
+  return pagina.$$eval("#docList .doc-row", rs => rs.map(r =>
+    `${r.querySelector(".doc-no").textContent.trim()} ${r.querySelector(".doc-name").textContent.trim()}`));
+}
+
+test("Servicios Básicos con Programa 01: recepción del Servicio y datos bancarios, sin la del establecimiento", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "servicios");
+  await pagina.selectOption("#programaSelect", "Programa 01");
+  const filas = await checklist(pagina);
+  assert.deepEqual(filas.slice(-3), [
+    "06 Compromiso Presupuestario", `07 ${RECEPCION_SERVICIO}`, `08 ${DATOS_BANCARIOS}`]);
+  assert.ok(!filas.some(f => f.includes(RECEPCION)), filas.join(" | "));
+
+  const errores = await pagina.evaluate(() => validate());
+  for(const doc of [`07 ${RECEPCION_SERVICIO}`, `08 ${DATOS_BANCARIOS}`])
+    assert.ok(errores.includes(`${doc}: debe verificarse o registrar una excepción.`), errores.join("\n"));
+  assert.ok(!errores.some(e => e.includes(RECEPCION)));
+  assert.match(await pagina.textContent("#optionalBox"), /Recepción Conforme \(Establecimiento/);
+  await pagina.context().close();
+});
+
+test("Servicios Básicos con Programa 02 o Extrapresupuestario: recepción del establecimiento y datos bancarios", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "servicios");
+  for(const programa of ["Programa 02", "Programa Extrapresupuestario"]){
+    await pagina.selectOption("#programaSelect", programa);
+    const filas = await checklist(pagina);
+    assert.deepEqual(filas.slice(-3), [
+      "06 Compromiso Presupuestario", `07 ${RECEPCION}`, `08 ${DATOS_BANCARIOS}`], programa);
+    assert.ok(!filas.some(f => f.includes(RECEPCION_SERVICIO)), programa);
+  }
+  await pagina.context().close();
+});
+
+test("cambiar a Programa 01 deja fuera del certificado la recepción del establecimiento ya marcada", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "servicios");
+  await pagina.selectOption("#programaSelect", "Programa 02");
+  await pagina.locator("#docList .doc-row", { hasText: RECEPCION }).locator("[data-check]").check();
+  await pagina.selectOption("#programaSelect", "Programa 01");
+  await pagina.selectOption("#subvencionSelect", "RESTO");
+
+  const impreso = await pagina.evaluate(() => {
+    const r = makeRecord("issued");
+    r.folio = "CMF-2026-P01-GAB700-020";
+    return visibleDocsForRecord(r).map(d => d.name);
+  });
+  assert.ok(!impreso.includes(RECEPCION), impreso.join(" | "));
+  assert.ok(impreso.includes(RECEPCION_SERVICIO), impreso.join(" | "));
+  await pagina.context().close();
+});
+
+test("uno con Programa 01 emitido cuando se pedía la del establecimiento se reimprime igual", async () => {
+  const docs = {};
+  for(const no of ["01", "02", "03", "05", "06", "07", "08"]) docs[no] = { checked: true, fields: { number: "1" } };
+  const emitido = registroEmitido({ id: "sb-p01", folio: "CMF-2026-P01-SAF104-014", nature: "servicios",
+    natureLabel: "Servicios Básicos", programa: "Programa 01", docs });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [emitido] });
+  await pagina.evaluate(() => viewRecord("sb-p01"));
+  const impreso = await pagina.textContent("#certificatePreview");
+  assert.match(impreso, /07\s*Recepción Conforme \(Establecimiento/, "lo verificado se imprime");
+  assert.doesNotMatch(impreso, /Recepción Conforme \(Servicio\)/, "lo que no se pedía, no");
+  assert.doesNotMatch(impreso, /Datos Bancarios/);
   await pagina.context().close();
 });

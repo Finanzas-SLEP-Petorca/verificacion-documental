@@ -1230,10 +1230,16 @@ const DOCS = {
     {no:"05", name:"Cupones de pago, cuando aplique", required:false, fields:[]},
     {no:"06", name:"Resolución de intereses, cuando corresponda", required:false, fields:[{key:"number",label:"N.º",type:"text"}]},
     {no:"07", name:"Compromiso Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
-    /* Agregado el 05-10-2026. Un certificado emitido antes no lo verificó, así que no se
-       le agrega al reimprimirlo: ver docAgregadoDespues. Si el set es de la Unidad
-       Central y no corresponde, se registra la excepción "No aplica". */
-    {no:"08", name:"Recepción Conforme (Establecimiento / Director o Directora)", required:true, agregado:true, fields:[]}
+    /* Agregados el 05-10-2026. Un certificado emitido antes no los verificó, así que no
+       se le agregan al reimprimirlo: ver docAgregadoDespues. Las dos recepciones conformes
+       ocupan la misma fila según el programa: con el 01 la recibe el Servicio, con el 02
+       y el extrapresupuestario, el establecimiento. Las claves no siguen el orden en que
+       se muestran porque la "08" ya estaba en uso cuando se agregó la "09". */
+    {no:"09", name:"Recepción Conforme (Servicio)", required:true, agregado:true,
+     programa:{ solo:"Programa 01" }, fields:[]},
+    {no:"08", name:"Recepción Conforme (Establecimiento / Director o Directora)", required:true, agregado:true,
+     programa:{ excepto:"Programa 01" }, fields:[]},
+    {no:"10", name:"Datos Bancarios", required:true, agregado:true, fields:[]}
   ],
   viaticos: [
     {no:"01", name:"Resolución que aprueba el cometido funcionario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
@@ -1426,7 +1432,18 @@ function attachSegments(){
   });
 }
 
+/* Antecedentes que dependen del programa presupuestario: `solo` lo pide únicamente con
+   ese programa; `excepto`, con cualquier otro (también antes de elegirlo). */
+function aplicaPorPrograma(doc, programa){
+  const p = doc.programa;
+  if(!p) return true;
+  if(p.solo) return programa === p.solo;
+  if(p.excepto) return programa !== p.excepto;
+  return true;
+}
+
 function conditionVisible(doc){
+  if(!aplicaPorPrograma(doc, state.programa)) return false;
   if(doc.conditional === "factoring") return state.factoring;
   if(doc.conditional === "refund") return state.refund;
   if(doc.conditional === "complementario") return state.complementario;
@@ -1837,11 +1854,12 @@ function renderChecklist(){
     </div>`;
   }).join("");
 
-  const hiddenConditionals = docs.filter(d => d.conditional && !conditionVisible(d));
+  const hiddenConditionals = docs.filter(d => (d.conditional || d.programa) && !conditionVisible(d));
   if(hiddenConditionals.length){
     $("optionalBox").classList.remove("hidden");
     const etiquetas = {factoring:"factoring", refund:"reembolso", complementario:"complementario D.1"};
-    const motivos = [...new Set(hiddenConditionals.map(d=>etiquetas[d.conditional]||d.conditional))];
+    const motivos = [...new Set(hiddenConditionals.map(d=>
+      d.programa ? "programa presupuestario" : etiquetas[d.conditional]||d.conditional))];
     $("optionalBox").innerHTML =
       `<div class="optional-title">
          <span>Antecedentes que no aplican según la selección actual (${escapeHtml(motivos.join(" · "))})</span>
@@ -1940,6 +1958,18 @@ function validate(){
 function esDefinitivo(r){ return r && r.status === "issued" && !!r.folio && !esDePilotaje(r.folio); }
 function esAnulado(r){ return r && r.status === "cancelled" && !!r.folio; }
 
+/* Al emitir no se guarda lo marcado en antecedentes que el programa elegido no pide
+   (se marcó con otro programa y después se cambió): no se verificó para este set y no
+   va en el certificado. En un borrador se conserva, por si se vuelve al programa. */
+function docsParaGuardar(status){
+  const docs = JSON.parse(JSON.stringify(state.docs));
+  if(status === "issued")
+    (DOCS[state.nature] || []).forEach(d => {
+      if(!aplicaPorPrograma(d, state.programa)) delete docs[d.no];
+    });
+  return docs;
+}
+
 function makeRecord(status){
   syncStateFromForm();
   const m=currentMinister();
@@ -1967,7 +1997,7 @@ function makeRecord(status){
     period:state.period,
     amount:state.amount,
     declaration:state.declaration,
-    docs:JSON.parse(JSON.stringify(state.docs)),
+    docs:docsParaGuardar(status),
     detalle:JSON.parse(JSON.stringify(state.detalle||[])),
     otros:(state.otros||[]).slice(),
     updatedAt:new Date().toISOString(),
@@ -2799,6 +2829,12 @@ function visibleDocsForRecord(r){
   return docs.filter(d=>{
     if(!docVigente(d, r.docs)) return false;
     if(docAgregadoDespues(d, r)) return false;
+    /* Un emitido que trae datos de un antecedente que hoy su programa no pide se emitió
+       cuando sí se pedía —la recepción del establecimiento se exigió también con el
+       Programa 01 hasta el 05-10-2026—, y se reimprime tal como se emitió. Al emitir se
+       descartan los que el programa no pide (ver makeRecord), así que esto no ocurre
+       con los nuevos. */
+    if(!aplicaPorPrograma(d, r.programa) && !(r.folio && tieneDatos((r.docs||{})[d.no]))) return false;
     if(d.conditional==="factoring") return !!r.factoring;
     if(d.conditional==="refund") return !!r.refund;
     if(d.conditional==="complementario") return !!r.complementario;

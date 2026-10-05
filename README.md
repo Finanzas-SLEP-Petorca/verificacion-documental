@@ -143,7 +143,7 @@ y filtrar por ministro y por estado.
 |---|---|---|
 | A | Remuneraciones | 7 |
 | B | Honorarios | 5 |
-| C | Servicios Básicos | 7 |
+| C | Servicios Básicos | 8 |
 | D | Adquisiciones | 12, más los condicionales |
 | E | Viáticos y cometidos funcionarios | 8 |
 
@@ -157,6 +157,8 @@ Algunos antecedentes aparecen solo cuando corresponden:
 - **Acción y dimensión del PME** (Solicitud de Compra / REX, en Adquisiciones): se piden
   solo con subvención SEP, y entonces son obligatorias.
 - **Reembolso** (Viáticos): CDP y compromiso presupuestario por ese concepto.
+- **Recepción conforme** (Servicios Básicos): con Programa 01 la da el Servicio; con
+  Programa 02 y el extrapresupuestario, el establecimiento o su director o directora.
 
 Adquisiciones, Honorarios y Servicios Básicos incluyen además una tabla de **detalle de
 documentos, folios y montos**, con total automático.
