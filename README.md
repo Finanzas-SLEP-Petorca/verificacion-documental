@@ -142,7 +142,7 @@ y filtrar por ministro y por estado.
 | | Naturaleza | Documentos |
 |---|---|---|
 | A | Remuneraciones | 7 |
-| B | Honorarios | 5 |
+| B | Honorarios | 6 |
 | C | Servicios Básicos | 8 |
 | D | Adquisiciones | 12, más los condicionales |
 | E | Viáticos y cometidos funcionarios | 8 |

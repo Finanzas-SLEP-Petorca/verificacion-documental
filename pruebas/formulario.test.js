@@ -259,3 +259,24 @@ test("uno con Programa 01 emitido cuando se pedía la del establecimiento se rei
   assert.doesNotMatch(impreso, /Datos Bancarios/);
   await pagina.context().close();
 });
+
+test("Honorarios pide Datos Bancarios, y lo ya emitido se reimprime sin esa fila", async () => {
+  const docs = {};
+  for(const no of ["01", "02", "03", "04", "05"]) docs[no] = { checked: true, fields: { number: "1" } };
+  const emitido = registroEmitido({ id: "hon-1", folio: "CMF-2026-P01-GAB700-015", nature: "honorarios",
+    natureLabel: "Honorarios", docs });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [emitido] });
+
+  await pagina.selectOption("#natureSelect", "honorarios");
+  const filas = await checklist(pagina);
+  assert.equal(filas[filas.length - 1], `06 ${DATOS_BANCARIOS}`, filas.join(" | "));
+  const errores = await pagina.evaluate(() => validate());
+  assert.ok(errores.includes(`06 ${DATOS_BANCARIOS}: debe verificarse o registrar una excepción.`),
+    errores.join("\n"));
+
+  await pagina.evaluate(() => viewRecord("hon-1"));
+  const impreso = await pagina.textContent("#certificatePreview");
+  assert.doesNotMatch(impreso, /Datos Bancarios/, "lo emitido no cambia");
+  assert.match(impreso, /05\s*Requerimiento Presupuestario/);
+  await pagina.context().close();
+});

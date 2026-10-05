@@ -1212,7 +1212,10 @@ const DOCS = {
       {key:"number",label:"N.º",type:"text"},
       {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
-    {no:"05", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]}
+    {no:"05", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    /* Agregado el 05-10-2026: un certificado emitido antes no lo verificó y se reimprime
+       sin él (ver docAgregadoDespues). */
+    {no:"06", name:"Datos Bancarios", required:true, agregado:true, fields:[]}
   ],
   servicios: [
     {no:"01", name:"REX que aprueba pago de consumos básicos", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
