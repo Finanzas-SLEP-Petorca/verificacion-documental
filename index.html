@@ -747,7 +747,7 @@
       </div>
       <div style="overflow:auto">
         <table class="records-table">
-          <thead><tr><th>Folio / Borrador</th><th>Ministro</th><th>Naturaleza</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <thead><tr><th>Folio / Borrador</th><th>Fecha de emisión</th><th>Ministro</th><th>Naturaleza</th><th>Unidad</th><th>Estado</th><th>Acciones</th></tr></thead>
           <tbody id="recordsBody"></tbody>
         </table>
       </div>
@@ -2578,6 +2578,7 @@ function renderRecords(){
       <td><strong>${escapeHtml(r.folio||"Borrador")}</strong>${
         esDePilotaje(r.folio)?`<span class="tag-pilotaje" title="Etapa de prueba: sin validez como certificado">pilotaje</span>`:""}${
         r.ajeno?`<span class="tag-central" title="Emitido en otro equipo del Servicio">otro equipo</span>`:""}</td>
+      <td style="white-space:nowrap">${r.folio && r.issuedAt ? escapeHtml(shortDate(r.issuedAt)) : "—"}</td>
       <td>${escapeHtml(r.ministerName)}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
       <td>${escapeHtml(r.unit)}</td>
@@ -2590,7 +2591,7 @@ function renderRecords(){
         ${r.status==="issued"?`<button class="btn small danger" onclick="anularRecord('${r.id}')">Anular</button>`:""}
         ${!noEsEditable(r)?`<button class="btn small danger" onclick="deleteRecord('${r.id}')">Eliminar</button>`:""}`}
       </td>
-    </tr>`).join(""):`<tr><td colspan="6" style="color:var(--muted)">No hay registros.</td></tr>`;
+    </tr>`).join(""):`<tr><td colspan="7" style="color:var(--muted)">No hay registros.</td></tr>`;
 }
 
 function loadRecordIntoState(r, duplicate=false){

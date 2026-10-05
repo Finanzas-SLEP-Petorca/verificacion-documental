@@ -146,3 +146,23 @@ test("si el Servicio no responde, se sigue mostrando la última lectura", async 
   assert.match(await pagina.textContent("#recordsBody"), new RegExp(AJENO));
   await pagina.context().close();
 });
+
+test("el registro muestra la fecha de emisión, en hora de Chile", async () => {
+  const propio = registroEmitido({ id: "propio-1", folio: FOLIO, issuedAt: "2026-10-01T15:30:00.000Z" });
+  const borrador = registroEmitido({ id: "borr-1", folio: null, status: "draft", issuedAt: null,
+    reference: "Borrador sin emitir" });
+  const ajeno = registroEmitido({ id: "ajeno-5", folio: AJENO, ministro: "SAF103" });
+  // A las 02:00 UTC del 1 de octubre en Chile todavía es el 30 de septiembre.
+  await ent.registro.control({ reiniciar: true,
+    filas: [filaDe(ajeno, { FechaEmision: "2026-10-01T02:00:00Z" })] });
+  const { pagina } = await abrir(ent, { registros: [propio, borrador] });
+  await irAlRegistro(pagina);
+
+  const encabezados = await pagina.locator("#recordsView thead th").allTextContents();
+  assert.equal(encabezados[1], "Fecha de emisión");
+  const fecha = async texto => (await filaDelRegistro(pagina, texto).locator("td").nth(1).textContent()).trim();
+  assert.equal(await fecha(FOLIO), "01-10-2026");
+  assert.equal(await fecha(AJENO), "30-09-2026");
+  assert.equal(await fecha("Borrador"), "—", "un borrador no tiene fecha de emisión");
+  await pagina.context().close();
+});

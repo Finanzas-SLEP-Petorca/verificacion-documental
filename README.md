@@ -131,8 +131,9 @@ en un borrador nuevo, que al emitirse toma el folio siguiente. El ciclo completo
 ### Borradores y registro
 
 Un certificado se puede guardar como borrador, editarlo y retomarlo después. La pestaña
-**Registro de certificados** permite buscar por folio, unidad o referencia, y filtrar
-por ministro y por estado.
+**Registro de certificados** muestra la fecha de emisión de cada certificado —en hora de
+Chile, también para los de otros equipos—, permite buscar por folio, unidad o referencia,
+y filtrar por ministro y por estado.
 
 ---
 
