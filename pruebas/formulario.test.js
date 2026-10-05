@@ -280,3 +280,29 @@ test("Honorarios pide Datos Bancarios, y lo ya emitido se reimprime sin esa fila
   assert.match(impreso, /05\s*Requerimiento Presupuestario/);
   await pagina.context().close();
 });
+
+test("Viáticos pide Datos Bancarios, con y sin reembolso, y lo ya emitido no cambia", async () => {
+  const docs = {};
+  for(const no of ["01", "02", "03", "04", "05", "06", "07", "08"]) docs[no] = { checked: true, fields: { number: "1" } };
+  const emitido = registroEmitido({ id: "via-1", folio: "CMF-2026-P01-GAB700-016", nature: "viaticos",
+    natureLabel: "Viáticos y cometidos funcionarios", refund: true, docs });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [emitido] });
+
+  await pagina.selectOption("#natureSelect", "viaticos");
+  let filas = await checklist(pagina);
+  assert.equal(filas[filas.length - 1], `07 ${DATOS_BANCARIOS}`, filas.join(" | "));
+  const errores = await pagina.evaluate(() => validate());
+  assert.ok(errores.includes(`07 ${DATOS_BANCARIOS}: debe verificarse o registrar una excepción.`),
+    errores.join("\n"));
+
+  await pagina.click('#refundSegment button[data-value="yes"]');
+  filas = await checklist(pagina);
+  assert.deepEqual(filas.slice(-3), [`07 ${DATOS_BANCARIOS}`,
+    "08 CDP por concepto de reembolso", "09 Compromiso Presupuestario por concepto de reembolso"]);
+
+  await pagina.evaluate(() => viewRecord("via-1"));
+  const impreso = await pagina.textContent("#certificatePreview");
+  assert.doesNotMatch(impreso, /Datos Bancarios/, "lo emitido no cambia");
+  assert.match(impreso, /07\s*CDP por concepto de reembolso/, "ni se corre la numeración");
+  await pagina.context().close();
+});

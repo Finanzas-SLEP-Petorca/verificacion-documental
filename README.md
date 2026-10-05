@@ -145,7 +145,7 @@ y filtrar por ministro y por estado.
 | B | Honorarios | 6 |
 | C | Servicios Básicos | 8 |
 | D | Adquisiciones | 12, más los condicionales |
-| E | Viáticos y cometidos funcionarios | 8 |
+| E | Viáticos y cometidos funcionarios | 9 |
 
 Algunos antecedentes aparecen solo cuando corresponden:
 

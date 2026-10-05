@@ -1254,6 +1254,9 @@ const DOCS = {
       {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
     ]},
     {no:"06", name:"Requerimiento Presupuestario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},
+    /* Agregado el 05-10-2026, antes de los del reembolso para que tenga siempre la misma
+       fila. Un certificado emitido antes se reimprime sin él (ver docAgregadoDespues). */
+    {no:"09", name:"Datos Bancarios", required:true, agregado:true, fields:[]},
     {no:"07", name:"CDP por concepto de reembolso", required:true, conditional:"refund", fields:[
       {key:"number",label:"N.º",type:"text"},
       {retirado:true, key:"subsidy",label:"Subvención",type:"select",options:SUBSIDIES}
