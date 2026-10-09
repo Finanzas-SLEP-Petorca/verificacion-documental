@@ -4,7 +4,7 @@
 const { test, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const { ANIO, entorno, abrir, llenarFormulario, emitir, registrosLocales, irAlRegistro,
-        cerrarVistaPrevia, registroEmitido } = require("./apoyo");
+        cerrarVistaPrevia, registroEmitido, elegirUnidad, valorUnidad } = require("./apoyo");
 
 const E = [
   "COLEGIO BICENTENARIO — RBD 40242-7",
@@ -24,13 +24,13 @@ after(async () => { await ent.cerrar(); });
 
 async function agregar(pagina, nombre){
   await pagina.click("#addUnidadBtn");
-  await pagina.locator("[data-unidad-extra]").last().selectOption(nombre);
+  await elegirUnidad(pagina, pagina.locator("[data-unidad-extra]").last(), nombre);
 }
 
 /* Un certificado completo de Programa 02 con el principal y los adicionales dados. */
 async function conVarios(pagina, principal, adicionales){
   await llenarFormulario(pagina, { programa: "Programa 02", financiamiento: "SUBV. GENERAL" });
-  await pagina.selectOption("#unitSelect", principal);
+  await elegirUnidad(pagina, "#unitSelect .sel-est", principal);
   for(const u of adicionales) await agregar(pagina, u);
 }
 
@@ -49,12 +49,13 @@ test("sólo el Programa 02 ofrece agregar establecimientos", async () => {
 test("la lista ofrece sólo establecimientos y no repite los ya elegidos", async () => {
   const { pagina } = await abrir(ent, { conectado: false });
   await pagina.selectOption("#programaSelect", "Programa 02");
-  await pagina.selectOption("#unitSelect", E[0]);
+  await elegirUnidad(pagina, "#unitSelect .sel-est", E[0]);
   await agregar(pagina, E[1]);
   await pagina.click("#addUnidadBtn");
+  await pagina.locator("[data-unidad-extra]").last().click();
 
-  const opciones = await pagina.locator("[data-unidad-extra]").last().evaluate(s =>
-    [...s.options].filter(o => o.value).map(o => ({ v: o.value, off: o.disabled })));
+  const opciones = await pagina.$$eval("#selUnidadPanel .op", os => os.map(o =>
+    ({ v: o.dataset.v, off: o.getAttribute("aria-disabled") === "true" })));
   assert.ok(!opciones.some(o => o.v.startsWith("Subdirección") || o.v.startsWith("Gabinete")),
     "las subdirecciones de la Unidad Central no son establecimientos");
   assert.equal(opciones.length, 68);
@@ -73,7 +74,7 @@ test("una fila sin elegir o un establecimiento repetido no se emiten", async () 
   assert.deepEqual(await pagina.evaluate(() => validate()), []);
 
   // Si el principal se cambia a uno que ya estaba entre los adicionales.
-  await pagina.selectOption("#unitSelect", E[1]);
+  await elegirUnidad(pagina, "#unitSelect .sel-est", E[1]);
   errores = await pagina.evaluate(() => validate());
   assert.ok(errores.includes(`El establecimiento "${E[1]}" está repetido en el set.`), errores.join("\n"));
   await pagina.context().close();
@@ -156,12 +157,12 @@ test("duplicar y retomar un borrador conservan los establecimientos", async () =
   const { pagina } = await abrir(ent, { conectado: false, registros: [borrador, emitido] });
 
   await pagina.evaluate(() => editRecord("b-varios"));
-  assert.equal(await pagina.inputValue("#unitSelect"), E[0]);
-  assert.deepEqual(await pagina.$$eval("[data-unidad-extra]", ss => ss.map(s => s.value)), [E[1], E[2]]);
+  assert.equal(await valorUnidad(pagina.locator("#unitSelect .sel-est")), E[0]);
+  assert.deepEqual(await pagina.$$eval("[data-unidad-extra]", ss => ss.map(s => s.dataset.valor)), [E[1], E[2]]);
 
   await pagina.evaluate(() => duplicateRecord("e-varios"));
-  assert.equal(await pagina.inputValue("#unitSelect"), E[3]);
-  assert.deepEqual(await pagina.$$eval("[data-unidad-extra]", ss => ss.map(s => s.value)), [E[4]]);
+  assert.equal(await valorUnidad(pagina.locator("#unitSelect .sel-est")), E[3]);
+  assert.deepEqual(await pagina.$$eval("[data-unidad-extra]", ss => ss.map(s => s.dataset.valor)), [E[4]]);
   await pagina.context().close();
 });
 
@@ -172,5 +173,62 @@ test("los certificados de un solo establecimiento se imprimen como antes", async
   const meta = await pagina.textContent("#certificatePreview .cert-meta");
   assert.match(meta, /Unidad \/ Establecimiento:\s*COLEGIO BICENTENARIO/);
   assert.doesNotMatch(meta, /Establecimientos del set/);
+  await pagina.context().close();
+});
+
+/* ── El selector con buscador ─────────────────────────────────────────────── */
+
+async function lista(pagina){
+  return pagina.$$eval("#selUnidadPanel .lista > *", els => els.map(e =>
+    e.classList.contains("grupo") ? `# ${e.textContent}` :
+    e.classList.contains("sub") ? `## ${e.textContent}` : e.dataset.v || e.textContent.trim()));
+}
+
+test("la lista separa, en cada comuna, establecimientos y jardines infantiles", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.locator("#unitSelect .sel-est").click();
+  const l = await lista(pagina);
+  assert.equal(l[0], "# Unidad Central", "el principal también ofrece la Unidad Central");
+  const laLigua = l.slice(l.indexOf("# La Ligua"), l.indexOf("# Papudo"));
+  const jardines = laLigua.slice(laLigua.indexOf("## Jardines infantiles") + 1);
+  assert.deepEqual(jardines, ["EL CARMEN CUNCUNITA — RBD 33530", "HUMBERTO BASULTO", "MANITOS DE ANGEL",
+    "MANITOS DE COLORES", "PULMAHUE — RBD 33527", "SANTA TERESA — RBD 33526"]);
+  assert.ok(laLigua.includes("LICEO PULMAHUE DE LA LIGUA — RBD 1121-5"));
+  assert.ok(laLigua.indexOf("LICEO PULMAHUE DE LA LIGUA — RBD 1121-5") < laLigua.indexOf("## Jardines infantiles"),
+    "el liceo va con los establecimientos");
+  assert.equal(l.filter(x => x === "## Jardines infantiles").length, 4, "las cuatro comunas tienen jardines");
+  await pagina.context().close();
+});
+
+test("el buscador encuentra por RBD, por nombre sin tildes, por comuna y por tipo", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.locator("#unitSelect .sel-est").click();
+  const buscar = async q => { await pagina.fill("#selUnidadPanel input", q); return (await lista(pagina)).filter(x => !x.startsWith("#")); };
+
+  assert.deepEqual(await buscar("1180"), [E[2]], "RBD sin dígito");
+  assert.deepEqual(await buscar("11800"), [E[2]], "RBD sin guion");
+  assert.deepEqual(await buscar("vina"), [E[5]], "sin tilde encuentra LA VIÑA");
+  assert.deepEqual(await buscar("papudo jardines"), ["BARQUITO DE PAPEL", "RAYITO DE SOL"]);
+  assert.equal((await buscar("petorca liceo")).length, 2);
+  assert.deepEqual(await buscar("no existe"), ["Ningún establecimiento coincide con la búsqueda."]);
+  await pagina.context().close();
+});
+
+test("con el teclado: flechas y Enter eligen, Escape cierra sin cambiar", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  const boton = pagina.locator("#unitSelect .sel-est");
+  await boton.click();
+  await pagina.keyboard.type("G-4");
+  await pagina.keyboard.press("ArrowDown");
+  await pagina.keyboard.press("Enter");
+  assert.equal(await valorUnidad(boton), E[3], "la segunda coincidencia: G-47");
+  assert.equal(await pagina.evaluate(() => state.unit), E[3]);
+  assert.equal(await pagina.locator("#selUnidadPanel").count(), 0, "se cierra al elegir");
+
+  await pagina.locator("#unitSelect .sel-est").click();
+  await pagina.keyboard.type("1180");
+  await pagina.keyboard.press("Escape");
+  assert.equal(await pagina.locator("#selUnidadPanel").count(), 0);
+  assert.equal(await pagina.evaluate(() => state.unit), E[3], "Escape no cambia lo elegido");
   await pagina.context().close();
 });

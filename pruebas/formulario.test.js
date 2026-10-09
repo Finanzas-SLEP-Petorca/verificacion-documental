@@ -334,3 +334,18 @@ test("Servicios Básicos tiene el ítem Otros, opcional y con su lista libre", a
   assert.match(await pagina.textContent("#certificatePreview"), /Certificado de consumo del proveedor/);
   await pagina.context().close();
 });
+
+test("la referencia del set no pasa de 255 caracteres", async () => {
+  const largo = "x".repeat(300);
+  const borrador = registroEmitido({ id: "ref-larga", folio: null, status: "draft", issuedAt: null,
+    reference: largo });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [borrador] });
+  assert.equal(await pagina.getAttribute("#referenceInput", "maxlength"), "255");
+  await pagina.fill("#referenceInput", largo);
+  assert.equal((await pagina.inputValue("#referenceInput")).length, 255, "el campo no deja escribir más");
+
+  // Un borrador antiguo podría traerla más larga: la validación lo dice.
+  const errores = await pagina.evaluate(() => revisarDatos(getRecords()[0]));
+  assert.ok(errores.includes("La referencia del set tiene 300 caracteres; el máximo es 255."), errores.join("\n"));
+  await pagina.context().close();
+});

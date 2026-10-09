@@ -42,7 +42,10 @@ Se regenera desde `guia/guia-uso.html`.
    *OTRO*— exige además describir por escrito de qué se trata. Con el extrapresupuestario
    se pide también el nombre del programa.
 4. **Unidad o establecimiento.** Las 6 subdirecciones de la Unidad Central y los 68
-   establecimientos del Servicio, agrupados por comuna y con su RBD. Con Programa 02 un
+   establecimientos del Servicio, agrupados por comuna y, dentro de cada comuna, separados
+   en establecimientos y jardines infantiles. La lista tiene un buscador: encuentra por
+   nombre (con o sin tildes), por RBD (con o sin dígito verificador), por comuna o por
+   tipo, y se maneja también con flechas y Enter. Con Programa 02 un
    set puede abarcar varios establecimientos: el principal se elige aquí y los demás con
    **+ Agregar establecimiento**, sin repetir. El certificado los imprime todos en la
    identificación del set; el encabezado muestra el principal y cuántos más.
@@ -189,7 +192,8 @@ y de Servicios Básicos abre una lista libre para individualizar qué lo compone
 ## El certificado
 
 1. Encabezado institucional con los logos del Servicio y del Ministerio.
-2. Folio, fecha de emisión, naturaleza, programa, financiamiento, unidad y referencia.
+2. Folio, fecha de emisión, naturaleza, programa, financiamiento, unidad y referencia
+   (ésta, de hasta 255 caracteres: es lo que admite su columna en el registro del Servicio).
 3. `I.` Identificación del set de pago.
 4. `II.` Documentación verificada.
 5. `II.a` Detalle del ítem "Otros", cuando corresponde.

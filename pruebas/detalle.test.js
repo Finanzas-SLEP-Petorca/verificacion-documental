@@ -7,7 +7,7 @@ const assert = require("node:assert/strict");
 const fs = require("node:fs");
 const os = require("node:os");
 const path = require("node:path");
-const { entorno, abrir, registroEmitido } = require("./apoyo");
+const { entorno, abrir, registroEmitido, elegirUnidad } = require("./apoyo");
 
 const BICENTENARIO = "COLEGIO BICENTENARIO — RBD 40242-7";
 const G45 = "ESCUELA BASICA G-45 — RBD 1180-0";
@@ -34,21 +34,32 @@ test("cada documento puede indicar su establecimiento; los del set van primero",
   const { pagina } = await abrir(ent, { conectado: false });
   await pagina.selectOption("#natureSelect", "servicios");
   await pagina.selectOption("#programaSelect", "Programa 02");
-  await pagina.selectOption("#unitSelect", G45);
+  await elegirUnidad(pagina, "#unitSelect .sel-est", G45);
   await pagina.click("#addUnidadBtn");
-  await pagina.locator("[data-unidad-extra]").last().selectOption(G47);
+  await elegirUnidad(pagina, pagina.locator("[data-unidad-extra]").last(), G47);
   await pagina.click("#addDetalleBtn");
 
   const encabezados = await pagina.locator("#detalleBox thead th").allTextContents();
   assert.ok(encabezados.includes("Establecimiento (opcional)"), encabezados.join(" | "));
-  const select = pagina.locator('[data-det-field="establecimiento"]').first();
-  const grupos = await select.evaluate(s => [...s.querySelectorAll("optgroup")].map(g =>
-    [g.label, [...g.querySelectorAll("option")].map(o => o.value)]));
+  const selector = pagina.locator('[data-det-field="establecimiento"]').first();
+  assert.equal(await selector.getAttribute("data-valor"), "", "es opcional: parte vacío");
+
+  await selector.click();
+  const grupos = await pagina.$$eval("#selUnidadPanel .lista > *", els => {
+    const g = [];
+    els.forEach(e => {
+      if(e.classList.contains("grupo")) g.push([e.textContent, []]);
+      else if(e.classList.contains("op") && e.dataset.v && g.length) g[g.length - 1][1].push(e.dataset.v);
+    });
+    return g;
+  });
   assert.deepEqual(grupos[0], ["Del set", [G45, G47]]);
   assert.equal(grupos.slice(1).reduce((n, [, os]) => n + os.length, 0), 66, "el resto, sin repetir");
-  assert.equal(await select.inputValue(), "", "es opcional: parte vacío");
+  assert.ok(await pagina.locator("#selUnidadPanel .op", { hasText: "Sin establecimiento" }).count(),
+    "se puede dejar sin establecimiento");
+  await pagina.keyboard.press("Escape");
 
-  await select.selectOption(G47);
+  await elegirUnidad(pagina, selector, "1182-7");
   assert.equal(await pagina.evaluate(() => state.detalle[0].establecimiento), G47);
   await pagina.context().close();
 });
@@ -70,7 +81,7 @@ test("el certificado agrega la columna sólo si algún documento indica establec
   };
   assert.ok(!(await cabeceraII_b()).includes("Establecimiento"), "sin establecimientos, como antes");
 
-  await pagina.locator('[data-det="0"][data-det-field="establecimiento"]').selectOption(LA_VINA);
+  await elegirUnidad(pagina, pagina.locator('[data-det="0"][data-det-field="establecimiento"]'), "1178-9");
   assert.ok((await cabeceraII_b()).includes("Establecimiento"));
   await pagina.click("#previewBtn");
   const filas = await pagina.locator(".cert-section", { hasText: "II.b" }).locator("tbody tr").allTextContents();
@@ -97,6 +108,8 @@ test("la plantilla es un Excel con listas desplegables, y se vuelve a importar t
   assert.match(texto, /<dataValidation type="list"[^>]*sqref="E2:E1000"><formula1>Listas!\$A\$2:\$A\$69<\/formula1>/);
   assert.match(texto, /<dataValidation type="list"[^>]*sqref="A2:A1000"><formula1>Listas!\$B\$2:\$B\$6<\/formula1>/);
   assert.ok(texto.includes("MUNDO DE PEQUES — RBD 33549-5"), "trae los 68 establecimientos");
+  assert.match(texto, /Comuna.*Tipo/, "la hoja Listas trae comuna y tipo");
+  assert.ok(texto.includes("Jardín infantil"));
 
   const resumen = await importar(pagina, dialogos, "plantilla.xlsx", bytes);
   assert.match(resumen, /Se leyeron 2 documento\(s\)/);
@@ -152,8 +165,12 @@ test("en la lista del detalle, el RBD se ve primero", async () => {
   const { pagina } = await abrir(ent, { conectado: false });
   await pagina.selectOption("#natureSelect", "servicios");
   await pagina.click("#addDetalleBtn");
-  const opcion = await pagina.locator('[data-det-field="establecimiento"] option', { hasText: "G-45" })
-    .evaluate(o => [o.value, o.textContent]);
+  await pagina.locator('[data-det-field="establecimiento"]').click();
+  const opcion = await pagina.locator("#selUnidadPanel .op", { hasText: "G-45" })
+    .evaluate(o => [o.dataset.v, o.textContent.trim()]);
   assert.deepEqual(opcion, [G45, "RBD 1180-0 · ESCUELA BASICA G-45"]);
+  await pagina.locator("#selUnidadPanel .op", { hasText: "G-45" }).click();
+  assert.equal((await pagina.locator('[data-det-field="establecimiento"]').textContent()).trim(),
+    "RBD 1180-0 · ESCUELA BASICA G-45", "también en el botón");
   await pagina.context().close();
 });

@@ -124,6 +124,31 @@
     input[readonly]{background:#f4f7fa;color:#657789}
     textarea{min-height:72px;resize:vertical}
 
+    /* Selector de establecimiento con buscador: un botón con el aspecto de un select
+       que abre un panel flotante (position:fixed, para que no lo recorte la tabla). */
+    .sel-est{width:100%;display:flex;align-items:center;gap:8px;text-align:left;cursor:pointer;
+      border:1px solid #cbd8e3;border-radius:9px;padding:10px 11px;background:#fff;color:var(--text);
+      min-height:40px;font-size:inherit}
+    .sel-est:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(45,118,184,.12)}
+    .sel-est .txt{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .sel-est .txt.vacio{color:#7b8b99}
+    .sel-est::after{content:"";width:8px;height:8px;border-right:2px solid #50667a;border-bottom:2px solid #50667a;
+      transform:rotate(45deg) translateY(-3px);flex:none}
+    .dtable .sel-est,.otros-row .sel-est{min-height:34px;padding:7px 9px;font-size:13px}
+    #selUnidadPanel{position:fixed;z-index:1000;background:#fff;border:1px solid var(--line);border-radius:10px;
+      box-shadow:0 12px 32px rgba(13,47,87,.18);padding:8px;width:440px;max-width:calc(100vw - 16px)}
+    #selUnidadPanel input{min-height:36px;padding:8px 10px;font-size:13px}
+    #selUnidadPanel .lista{max-height:320px;overflow:auto;margin-top:6px}
+    #selUnidadPanel .grupo{font-weight:900;color:var(--navy);font-size:12.5px;padding:8px 8px 2px;position:sticky;
+      top:0;background:#fff}
+    #selUnidadPanel .sub{font-weight:800;color:var(--muted);font-size:10.5px;letter-spacing:.04em;
+      text-transform:uppercase;padding:4px 8px 2px 16px}
+    #selUnidadPanel .op{padding:6px 10px 6px 24px;cursor:pointer;border-radius:6px;font-size:13px}
+    #selUnidadPanel .op.activa{background:var(--blue-light)}
+    #selUnidadPanel .op.elegida{font-weight:800;color:var(--navy)}
+    #selUnidadPanel .op[aria-disabled="true"]{color:#a7b3bd;cursor:not-allowed}
+    #selUnidadPanel .nada{padding:12px;color:var(--muted);font-size:13px}
+
     .segmented{display:flex;border:1px solid #cbd8e3;border-radius:9px;overflow:hidden;background:#fff}
     .segmented button{border:0;background:#fff;padding:10px 18px;color:var(--muted);font-weight:800;flex:1}
     .segmented button.active{background:var(--navy-2);color:#fff}
@@ -620,12 +645,12 @@
 
         <div class="field">
           <label>Unidad / Establecimiento del set *</label>
-          <select id="unitSelect"></select>
+          <div id="unitSelect"></div>
         </div>
 
         <div class="field span-2" id="referenceField">
           <label>Referencia del set</label>
-          <input id="referenceInput" placeholder="Ej: Materiales de oficina, año 2026" />
+          <input id="referenceInput" maxlength="255" placeholder="Ej: Materiales de oficina, año 2026" />
         </div>
 
         <div class="field span-4 hidden" id="unidadesExtraField">
@@ -903,7 +928,8 @@
       <p>El tipo de documento ofrece los más usados —factura electrónica, factura exenta,
       boleta, boleta de honorarios y nota de crédito— y acepta cualquier otro texto.</p>
       <p>El establecimiento de cada documento también se puede elegir directamente en la
-      tabla. Al importar se reconoce por su nombre o por su RBD, con o sin dígito
+      tabla; la lista tiene un buscador por nombre, RBD o comuna, y separa los
+      establecimientos de los jardines infantiles. Al importar se reconoce por su nombre o por su RBD, con o sin dígito
       verificador. Si algún documento lo indica, el certificado agrega esa columna al
       detalle.</p>
 
@@ -1370,15 +1396,7 @@ function populateProgramas(){
     PROGRAMAS.map(p => `<option value="${escapeHtml(p)}">${escapeHtml(p)}</option>`).join("");
 }
 
-function populateUnidades(){
-  $("unitSelect").innerHTML =
-    `<option value="">Seleccione...</option>` +
-    UNIDADES.map(g =>
-      `<optgroup label="${escapeHtml(g.grupo)}">` +
-      g.items.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("") +
-      `</optgroup>`
-    ).join("");
-}
+function populateUnidades(){ renderUnidadPrincipal(); }
 
 /* Un set del Programa 02 puede abarcar varios establecimientos. El principal sigue en
    `unit`, como siempre —así lo leen los certificados ya emitidos—, y los demás van en
@@ -1401,11 +1419,181 @@ function rotuloUnidades(r){
   return unidadesDe(r).length > 1 ? "Establecimientos del set" : "Unidad / Establecimiento";
 }
 
+/* Jardines infantiles del Servicio. No hay un dato que los distinga: no llevan RBD o
+   tienen uno de la serie 33.5xx, y sus nombres no son de escuela. Se listan a mano para
+   poder corregir uno sin tocar la regla. */
+const JARDINES = new Set([
+  "RINCONCITO", "SANTA MARTA",
+  "EL CARMEN CUNCUNITA", "HUMBERTO BASULTO", "MANITOS DE ANGEL", "MANITOS DE COLORES",
+  "PULMAHUE", "SANTA TERESA",
+  "BARQUITO DE PAPEL", "RAYITO DE SOL",
+  "LAMPARITA", "MIS PRIMEROS PASOS", "MUNDO DE PEQUES"
+]);
+function nombreSinRbd(u){ return String(u || "").split(" — RBD")[0]; }
+function rbdTexto(u){ const m = / — RBD (\S+)$/.exec(String(u || "")); return m ? m[1] : ""; }
+function esJardin(u){ return JARDINES.has(nombreSinRbd(u)); }
+function comunaDe(u){ const g = UNIDADES.find(g => g.items.includes(u)); return g ? g.grupo : ""; }
+
+/* Grupos de un selector: la comuna, y dentro, establecimientos y jardines por separado.
+   `delSet` va primero (en el detalle, los establecimientos del set). */
+function gruposUnidades({ unidadCentral = false, delSet = [] } = {}){
+  const grupos = [];
+  if(delSet.length) grupos.push({ titulo: "Del set", subgrupos: [{ titulo: "", items: delSet }] });
+  UNIDADES.forEach(g => {
+    if(g.grupo === "Unidad Central"){
+      if(unidadCentral) grupos.push({ titulo: g.grupo, subgrupos: [{ titulo: "", items: g.items }] });
+      return;
+    }
+    const resto = g.items.filter(u => !delSet.includes(u));
+    grupos.push({ titulo: g.grupo, subgrupos: [
+      { titulo: "Establecimientos", items: resto.filter(u => !esJardin(u)) },
+      { titulo: "Jardines infantiles", items: resto.filter(esJardin) }
+    ].filter(sg => sg.items.length) });
+  });
+  return grupos;
+}
+
+/* Botón que muestra el valor y abre el panel con buscador. `cfg`:
+   valor, vacio (texto sin valor), etiqueta(u), grupos() (se calcula al abrir),
+   deshabilitados() (idem), permiteVacio (ofrece quitar el valor), onChange(v). */
+function crearSelectorUnidad(cfg){
+  const b = document.createElement("button");
+  b.type = "button";
+  b.className = "sel-est";
+  b.dataset.valor = cfg.valor || "";
+  const etiqueta = cfg.etiqueta || (u => u);
+  b.innerHTML = `<span class="txt${cfg.valor ? "" : " vacio"}">${escapeHtml(cfg.valor ? etiqueta(cfg.valor) : (cfg.vacio || "Seleccione..."))}</span>`;
+  if(cfg.valor) b.title = cfg.valor;
+  b.addEventListener("click", () => abrirSelectorUnidad(b, cfg));
+  b.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown" || e.key === "Enter" || e.key === " "){ e.preventDefault(); abrirSelectorUnidad(b, cfg); }
+  });
+  return b;
+}
+
+let selectorAbierto = null;
+function cerrarSelectorUnidad(){
+  const p = $("selUnidadPanel");
+  if(p) p.remove();
+  if(selectorAbierto){ const b = selectorAbierto; selectorAbierto = null; if(b.isConnected) b.focus({ preventScroll: true }); }
+}
+function abrirSelectorUnidad(boton, cfg){
+  cerrarSelectorUnidad();
+  selectorAbierto = boton;
+  const etiqueta = cfg.etiqueta || (u => u);
+  const grupos = cfg.grupos();
+  const deshabilitados = new Set((cfg.deshabilitados ? cfg.deshabilitados() : []).filter(Boolean));
+  const panel = document.createElement("div");
+  panel.id = "selUnidadPanel";
+  panel.setAttribute("role", "dialog");
+  panel.innerHTML = `<input type="search" placeholder="Buscar por nombre, RBD o comuna" aria-label="Buscar establecimiento" />
+    <div class="lista" role="listbox"></div>`;
+  document.body.appendChild(panel);
+  posicionarSelectorUnidad();
+
+  const buscar = panel.querySelector("input"), lista = panel.querySelector(".lista");
+  const norm = t => String(t || "").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+  let activa = -1;
+  const pintar = () => {
+    const q = norm(buscar.value).trim().split(/\s+/).filter(Boolean);
+    const coincide = (u, g, sg) => q.every(p => norm(`${u} ${g} ${sg} ${rbdTexto(u).replace("-", "")}`).includes(p));
+    let html = cfg.permiteVacio && !q.length
+      ? `<div class="op" role="option" data-v="">— Sin establecimiento</div>` : "";
+    grupos.forEach(g => {
+      const subs = g.subgrupos.map(sg => ({ ...sg, items: sg.items.filter(u => coincide(u, g.titulo, sg.titulo)) }))
+        .filter(sg => sg.items.length);
+      if(!subs.length) return;
+      html += `<div class="grupo">${escapeHtml(g.titulo)}</div>` + subs.map(sg =>
+        (sg.titulo ? `<div class="sub">${escapeHtml(sg.titulo)}</div>` : "") +
+        sg.items.map(u => `<div class="op${u === boton.dataset.valor ? " elegida" : ""}" role="option"
+          data-v="${escapeHtml(u)}"${deshabilitados.has(u) && u !== boton.dataset.valor ? ' aria-disabled="true"' : ""}
+          aria-selected="${u === boton.dataset.valor}">${escapeHtml(etiqueta(u))}</div>`).join("")).join("");
+    });
+    lista.innerHTML = html || `<div class="nada">Ningún establecimiento coincide con la búsqueda.</div>`;
+    activa = -1;
+    marcar(0);
+  };
+  const opciones = () => [...lista.querySelectorAll('.op:not([aria-disabled="true"])')];
+  /* Desplaza sólo la lista: scrollIntoView podía mover también la página. */
+  const mostrarEnLista = op => {
+    if(op.offsetTop < lista.scrollTop) lista.scrollTop = op.offsetTop;
+    else if(op.offsetTop + op.offsetHeight > lista.scrollTop + lista.clientHeight)
+      lista.scrollTop = op.offsetTop + op.offsetHeight - lista.clientHeight;
+  };
+  const marcar = d => {
+    const ops = opciones();
+    if(!ops.length) return;
+    activa = Math.max(0, Math.min(ops.length - 1, activa + d));
+    ops.forEach((o, i) => o.classList.toggle("activa", i === activa));
+    mostrarEnLista(ops[activa]);
+  };
+  const elegir = op => {
+    if(!op || op.getAttribute("aria-disabled") === "true") return;
+    const v = op.dataset.v;
+    cerrarSelectorUnidad();
+    if(v !== boton.dataset.valor) cfg.onChange(v);
+  };
+  buscar.addEventListener("input", pintar);
+  buscar.addEventListener("keydown", e => {
+    if(e.key === "ArrowDown"){ e.preventDefault(); marcar(1); }
+    else if(e.key === "ArrowUp"){ e.preventDefault(); marcar(-1); }
+    else if(e.key === "Enter"){ e.preventDefault(); elegir(opciones()[activa]); }
+    else if(e.key === "Escape"){ e.preventDefault(); cerrarSelectorUnidad(); }
+    else if(e.key === "Tab") cerrarSelectorUnidad();
+  });
+  lista.addEventListener("mousedown", e => e.preventDefault());       // no le quita el foco al buscador
+  lista.addEventListener("click", e => elegir(e.target.closest(".op")));
+  pintar();
+  const elegida = lista.querySelector(".op.elegida");
+  if(elegida) lista.scrollTop = Math.max(0, elegida.offsetTop - lista.clientHeight / 2);
+  buscar.focus({ preventScroll: true });
+}
+
+/* El panel es fijo en la pantalla: si la página se desplaza o cambia de tamaño, se
+   vuelve a poner junto a su botón. Cerrarlo en cada desplazamiento lo cerraba también
+   con los que hace el propio navegador al enfocar. */
+function posicionarSelectorUnidad(){
+  const panel = $("selUnidadPanel");
+  if(!panel || !selectorAbierto) return;
+  if(!selectorAbierto.isConnected){ cerrarSelectorUnidad(); return; }
+  const r = selectorAbierto.getBoundingClientRect();
+  const ancho = Math.min(440, window.innerWidth - 16);
+  panel.style.left = Math.max(8, Math.min(r.left, window.innerWidth - ancho - 8)) + "px";
+  /* Abre hacia donde haya más espacio, y la lista se acorta para no salirse de la pantalla. */
+  const abajo = window.innerHeight - r.bottom, arriba = r.top;
+  const haciaArriba = abajo < 260 && arriba > abajo;
+  if(haciaArriba){
+    panel.style.top = ""; panel.style.bottom = (window.innerHeight - r.top + 4) + "px";
+  }else{
+    panel.style.bottom = ""; panel.style.top = (r.bottom + 4) + "px";
+  }
+  const lista = panel.querySelector(".lista");
+  if(lista) lista.style.maxHeight = Math.max(140, Math.min(320, (haciaArriba ? arriba : abajo) - 72)) + "px";
+}
+document.addEventListener("mousedown", e => {
+  if(selectorAbierto && !e.target.closest("#selUnidadPanel") && e.target.closest(".sel-est") !== selectorAbierto)
+    cerrarSelectorUnidad();
+});
+addEventListener("resize", posicionarSelectorUnidad);
+addEventListener("scroll", posicionarSelectorUnidad);
+
+/* Establecimiento principal del set: todos, incluida la Unidad Central. */
+function renderUnidadPrincipal(){
+  const caja = $("unitSelect");
+  caja.innerHTML = "";
+  caja.appendChild(crearSelectorUnidad({
+    valor: state.unit,
+    grupos: () => gruposUnidades({ unidadCentral: true }),
+    onChange: v => { state.unit = v; renderUnidadPrincipal(); renderUnidadesExtra(); }
+  }));
+}
+
 /* La columna Unidad de la lista del Servicio es de una línea: SharePoint rechaza el
    elemento si pasa de 255 caracteres, y la emisión fallaría. Caben unos seis
    establecimientos; con más, va el principal y cuántos más. La lista completa queda
    igual en Datos. */
 const UNIDAD_MAX = 255;
+const REFERENCIA_MAX = 255;
 function unidadParaRegistro(r){
   const todas = unidadesDe(r);
   const completa = todas.join("; ");
@@ -1418,25 +1606,24 @@ function renderUnidadesExtra(){
   const activo = admiteVariasUnidades(state.programa);
   $("unidadesExtraField").classList.toggle("hidden", !activo);
   if(!activo){ $("unidadesExtraList").innerHTML = ""; return; }
-  const elegidas = [state.unit, ...state.unidadesExtra].filter(Boolean);
   $("unidadesExtraList").innerHTML = state.unidadesExtra.map((u, i) => `
     <div class="otros-row">
       <span class="n">${i + 2}</span>
-      <select data-unidad-extra="${i}">
-        <option value="">Seleccione...</option>
-        ${ESTABLECIMIENTOS.map(g =>
-          `<optgroup label="${escapeHtml(g.grupo)}">` +
-          g.items.map(x => `<option value="${escapeHtml(x)}"${x === u ? " selected" : ""}${
-            x !== u && elegidas.includes(x) ? " disabled" : ""}>${escapeHtml(x)}</option>`).join("") +
-          `</optgroup>`).join("")}
-      </select>
+      <span data-unidad-extra-ph="${i}"></span>
       <button type="button" class="rm-btn" data-unidad-rm="${i}" title="Quitar">✕</button>
     </div>`).join("");
-  $("unidadesExtraList").querySelectorAll("[data-unidad-extra]").forEach(el =>
-    el.addEventListener("change", () => {
-      state.unidadesExtra[+el.dataset.unidadExtra] = el.value;
-      renderUnidadesExtra();                 // para deshabilitar lo recién elegido en las demás
-    }));
+  /* Lo ya elegido —el principal y los demás adicionales— aparece deshabilitado. */
+  $("unidadesExtraList").querySelectorAll("[data-unidad-extra-ph]").forEach(ph => {
+    const i = +ph.dataset.unidadExtraPh;
+    const sel = crearSelectorUnidad({
+      valor: state.unidadesExtra[i],
+      grupos: () => gruposUnidades(),
+      deshabilitados: () => [state.unit, ...state.unidadesExtra],
+      onChange: v => { state.unidadesExtra[i] = v; renderUnidadesExtra(); }
+    });
+    sel.dataset.unidadExtra = i;
+    ph.replaceWith(sel);
+  });
   $("unidadesExtraList").querySelectorAll("[data-unidad-rm]").forEach(btn =>
     btn.addEventListener("click", () => {
       state.unidadesExtra.splice(+btn.dataset.unidadRm, 1);
@@ -1473,7 +1660,6 @@ function syncStateFromForm(){
   state.subvencion = $("subvencionSelect").value;
   state.subvencionDetalle = $("subvencionDetalle").value.trim();
   state.complementario = aplicaComplementario(state);
-  state.unit = $("unitSelect").value;
   state.reference = $("referenceInput").value.trim();
   state.period = $("periodInput").value.trim();
   state.amount = $("amountInput").value.trim();
@@ -1712,12 +1898,17 @@ function plantillaXLSX(){
 <dataValidation type="list" allowBlank="1" showErrorMessage="1" errorTitle="Establecimiento" error="Elija un establecimiento de la lista." sqref="E2:E1000"><formula1>Listas!$A$2:$A$${ultimaEst}</formula1></dataValidation>
 </dataValidations>
 </worksheet>`;
-  const filasListas = [filaXLSX(1, ["Establecimiento", "Tipo de documento"], 1)];
-  for(let i = 0; i < Math.max(establecimientos.length, TIPOS_DOCUMENTO.length); i++)
-    filasListas.push(filaXLSX(i + 2, [establecimientos[i] || "", TIPOS_DOCUMENTO[i] || ""]));
+  /* Comuna y tipo junto a cada establecimiento, para ubicarlo; la lista desplegable de
+     Excel no agrupa, así que la separación entre establecimientos y jardines se ve aquí. */
+  const filasListas = [filaXLSX(1, ["Establecimiento", "Tipo de documento", "Comuna", "Tipo"], 1)];
+  for(let i = 0; i < Math.max(establecimientos.length, TIPOS_DOCUMENTO.length); i++){
+    const u = establecimientos[i] || "";
+    filasListas.push(filaXLSX(i + 2, [u, TIPOS_DOCUMENTO[i] || "", u ? comunaDe(u) : "",
+      u ? (esJardin(u) ? "Jardín infantil" : "Establecimiento") : ""]));
+  }
   const listas = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <worksheet ${XLSX_NS}>
-<cols><col min="1" max="1" width="62" customWidth="1"/><col min="2" max="2" width="26" customWidth="1"/></cols>
+<cols><col min="1" max="1" width="62" customWidth="1"/><col min="2" max="2" width="26" customWidth="1"/><col min="3" max="3" width="12" customWidth="1"/><col min="4" max="4" width="18" customWidth="1"/></cols>
 <sheetData>${filasListas.join("")}</sheetData>
 </worksheet>`;
   return zipSinComprimir([
@@ -1927,18 +2118,30 @@ async function importarPlanilla(archivo){
   renderDetalle();
 }
 
-/* Lista del establecimiento de cada documento del detalle. Arriba los del set, que son
-   los que se usarán casi siempre; después todos, por comuna. */
-function opcionesEstablecimientoDetalle(elegido){
-  const todos = ESTABLECIMIENTOS.flatMap(g => g.items);
-  const delSet = unidadesDe(state).filter(u => todos.includes(u));
-  /* El RBD va adelante en lo que se ve: la columna es angosta y es lo que distingue. */
-  const etiqueta = u => { const m = /^(.*) — RBD (\S+)$/.exec(u); return m ? `RBD ${m[2]} · ${m[1]}` : u; };
-  const opcion = u => `<option value="${escapeHtml(u)}"${u === elegido ? " selected" : ""}>${escapeHtml(etiqueta(u))}</option>`;
-  return `<option value="">—</option>` +
-    (delSet.length ? `<optgroup label="Del set">${delSet.map(opcion).join("")}</optgroup>` : "") +
-    ESTABLECIMIENTOS.map(g => `<optgroup label="${escapeHtml(g.grupo)}">` +
-      g.items.filter(u => !delSet.includes(u)).map(opcion).join("") + `</optgroup>`).join("");
+/* Establecimiento de cada documento del detalle. Arriba los del set, que son los que se
+   usarán casi siempre; después todos, por comuna. El RBD va adelante en lo que se ve:
+   la columna es angosta y es lo que distingue. */
+function etiquetaRbd(u){ const r = rbdTexto(u); return r ? `RBD ${r} · ${nombreSinRbd(u)}` : u; }
+function selectorEstablecimientoDetalle(i){
+  const sel = crearSelectorUnidad({
+    valor: state.detalle[i].establecimiento || "",
+    vacio: "—",
+    etiqueta: etiquetaRbd,
+    permiteVacio: true,
+    grupos: () => {
+      const todos = ESTABLECIMIENTOS.flatMap(g => g.items);
+      return gruposUnidades({ delSet: unidadesDe(state).filter(u => todos.includes(u)) });
+    },
+    onChange: v => {
+      state.detalle[i].establecimiento = v;
+      const nuevo = selectorEstablecimientoDetalle(i);
+      sel.replaceWith(nuevo);
+      nuevo.focus();
+    }
+  });
+  sel.dataset.det = i;
+  sel.dataset.detField = "establecimiento";
+  return sel;
 }
 
 function renderDetalle(){
@@ -1952,7 +2155,7 @@ function renderDetalle(){
       <td><input data-det="${i}" data-det-field="tipo" list="tiposDocumento" value="${escapeHtml(d.tipo||"")}" placeholder="Elija o escriba" /></td>
       <td><input data-det="${i}" data-det-field="folio" value="${escapeHtml(d.folio||"")}" placeholder="Folio" /></td>
       <td><input data-det="${i}" data-det-field="fecha" type="date" value="${escapeHtml(d.fecha||"")}" /></td>
-      <td><select data-det="${i}" data-det-field="establecimiento">${opcionesEstablecimientoDetalle(d.establecimiento)}</select></td>
+      <td style="min-width:200px"><span data-det-est-ph="${i}"></span></td>
       <td><input data-det="${i}" data-det-field="monto" inputmode="numeric" value="${escapeHtml(d.monto||"")}" placeholder="0" /></td>
       <td class="rm"><button type="button" class="rm-btn" data-det-rm="${i}" title="Eliminar">✕</button></td>
     </tr>`).join("");
@@ -1997,7 +2200,9 @@ function renderDetalle(){
     try{ await importarPlanilla(archivo); }
     catch(e){ alert("No fue posible leer la planilla:\n\n" + e.message); }
   });
-  box.querySelectorAll("[data-det-field]").forEach(el=>el.addEventListener("input",()=>{
+  box.querySelectorAll("[data-det-est-ph]").forEach(ph =>
+    ph.replaceWith(selectorEstablecimientoDetalle(+ph.dataset.detEstPh)));
+  box.querySelectorAll("input[data-det-field]").forEach(el=>el.addEventListener("input",()=>{
     state.detalle[+el.dataset.det][el.dataset.detField] = el.value;
     if(el.dataset.detField === "monto"){
       const t = $("detalleTotal");
@@ -2152,6 +2357,11 @@ function revisarDatos(d){
   if(pideDetalleFinanciamiento(d.programa, d.subvencion) && !String(d.subvencionDetalle||"").trim())
     errors.push(`Especifique a qué corresponde "${d.subvencion}".`);
   if(!d.unit) errors.push("Seleccione unidad / establecimiento.");
+  /* La referencia va a una columna de una línea del registro del Servicio: SharePoint
+     rechaza más de 255 caracteres y la emisión fallaría. El campo ya no deja escribir
+     más, pero un borrador antiguo podría traerla más larga. */
+  if(String(d.reference || "").length > REFERENCIA_MAX)
+    errors.push(`La referencia del set tiene ${String(d.reference).length} caracteres; el máximo es ${REFERENCIA_MAX}.`);
   if(admiteVariasUnidades(d.programa)){
     (d.unidadesExtra || []).forEach((u, i) => {
       if(!String(u || "").trim()) errors.push(`Seleccione el establecimiento N° ${i + 2} o quítelo.`);
@@ -2904,7 +3114,7 @@ function populateFormFromState(){
   $("programaNombre").value=state.programaNombre||"";
   $("subvencionDetalle").value=state.subvencionDetalle||"";
   syncProgramaNombre();
-  $("unitSelect").value=state.unit;
+  renderUnidadPrincipal();
   renderUnidadesExtra();
   $("referenceInput").value=state.reference;
   $("periodInput").value=state.period;
@@ -3416,10 +3626,6 @@ $("subvencionSelect").addEventListener("change",()=>{
   syncProgramaNombre();          // la opción "otros" abre el detalle
 });
 $("subvencionDetalle").addEventListener("input",()=>state.subvencionDetalle=$("subvencionDetalle").value);
-$("unitSelect").addEventListener("change",()=>{
-  state.unit=$("unitSelect").value;
-  renderUnidadesExtra();                     // el principal no se ofrece entre los adicionales
-});
 $("addUnidadBtn").addEventListener("click",()=>{ state.unidadesExtra.push(""); renderUnidadesExtra(); });
 $("saveDraftBtn").addEventListener("click",saveDraft);
 $("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));

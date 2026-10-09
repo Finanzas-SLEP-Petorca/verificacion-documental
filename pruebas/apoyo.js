@@ -156,9 +156,7 @@ async function llenarFormulario(pagina, { ministro = "GAB700", programa = "Progr
   await pagina.selectOption("#natureSelect", "remuneraciones");
   await pagina.selectOption("#programaSelect", programa);
   await pagina.selectOption("#subvencionSelect", financiamiento);
-  const unidad = await pagina.$eval("#unitSelect", s =>
-    [...s.options].find(o => o.value && !o.disabled).value);
-  await pagina.selectOption("#unitSelect", unidad);
+  await elegirUnidad(pagina, "#unitSelect .sel-est", "Subdirección de Administración y Finanzas");
   await pagina.fill("#referenceInput", referencia);
   await pagina.fill("#periodInput", "Septiembre 2026");
   await pagina.fill("#amountInput", "1.000.000");
@@ -176,6 +174,17 @@ async function llenarFormulario(pagina, { ministro = "GAB700", programa = "Progr
   }
   await pagina.check("#declarationCheck");
 }
+
+/* Elige en un selector de establecimiento: abre el panel, busca y pulsa la opción. */
+async function elegirUnidad(pagina, boton, texto){
+  const b = typeof boton === "string" ? pagina.locator(boton) : boton;
+  await b.click();
+  await pagina.fill("#selUnidadPanel input", texto);
+  await pagina.locator("#selUnidadPanel .op", { hasText: texto }).first().click();
+}
+
+/* Valor elegido en un selector de establecimiento. */
+function valorUnidad(boton){ return boton.getAttribute("data-valor"); }
 
 /* Pulsa Emitir y espera a que la emisión termine, bien o mal. */
 async function emitir(pagina){
@@ -215,5 +224,5 @@ function registroEmitido({ id, folio, ministro = "GAB700", status = "issued", ..
 
 module.exports = {
   ANIO, CLAVES, entorno, abrir, llenarFormulario, emitir, registrosLocales, irAlRegistro,
-  cerrarVistaPrevia, registroEmitido
+  cerrarVistaPrevia, registroEmitido, elegirUnidad, valorUnidad
 };
