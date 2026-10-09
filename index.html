@@ -891,7 +891,9 @@
       <p>Si el set trae cincuenta facturas, no las escriba una por una:</p>
       <ol>
         <li>Pulse <strong>Descargar plantilla</strong>.</li>
-        <li>Ábrala en Excel y complete las columnas: tipo de documento, folio, fecha y monto.</li>
+        <li>Ábrala en Excel y complete las columnas: tipo de documento, folio, fecha y monto.
+        Si el set abarca varios establecimientos, elija en la última columna, de la lista
+        desplegable, a cuál pertenece cada documento; es opcional.</li>
         <li>Guárdela y pulse <strong>Importar planilla</strong>. Se aceptan
         <code>.xlsx</code> y <code>.csv</code>.</li>
       </ol>
@@ -900,6 +902,10 @@
       montos: las filas repetidas se omiten.</p>
       <p>El tipo de documento ofrece los más usados —factura electrónica, factura exenta,
       boleta, boleta de honorarios y nota de crédito— y acepta cualquier otro texto.</p>
+      <p>El establecimiento de cada documento también se puede elegir directamente en la
+      tabla. Al importar se reconoce por su nombre o por su RBD, con o sin dígito
+      verificador. Si algún documento lo indica, el certificado agrega esa columna al
+      detalle.</p>
 
       <h4 id="g6">6. Lo que la aplicación pide sola</h4>
       <p>Hay antecedentes que aparecen o desaparecen según lo que usted ya declaró, para no
@@ -1624,21 +1630,138 @@ function detalleTotal(list){
    Adquisiciones. Se puede bajar una plantilla, llenarla en Excel y subirla.
    Se leen .xlsx y .csv sin depender de ninguna librería externa: la aplicación es
    un archivo estático y tiene que seguir funcionando sin red. */
-const COLUMNAS_PLANTILLA = ["Tipo de documento", "Folio", "Fecha de emisión", "Monto"];
+const COLUMNAS_PLANTILLA = ["Tipo de documento", "Folio", "Fecha de emisión", "Monto",
+                            "Establecimiento (opcional)"];
+
+/* --- Escritura de .xlsx ---------------------------------------------------------
+   La plantilla es un Excel de verdad, no un CSV, para que la columna Establecimiento
+   traiga su lista desplegable nativa (validación de datos de Excel), alimentada desde
+   la hoja "Listas". Un .xlsx es un ZIP con XML dentro; se guarda sin comprimir, que
+   Excel acepta igual y no necesita ninguna biblioteca. */
+const CRC_TABLA = (() => {
+  const t = new Uint32Array(256);
+  for(let n = 0; n < 256; n++){
+    let c = n;
+    for(let k = 0; k < 8; k++) c = c & 1 ? 0xEDB88320 ^ (c >>> 1) : c >>> 1;
+    t[n] = c >>> 0;
+  }
+  return t;
+})();
+function crc32(u8){
+  let c = 0xFFFFFFFF;
+  for(let i = 0; i < u8.length; i++) c = CRC_TABLA[(c ^ u8[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+function zipSinComprimir(archivos){
+  const enc = new TextEncoder(), partes = [], central = [];
+  let offset = 0;
+  const FECHA_DOS = (1 << 5) | 1;                       // 01-01-1980
+  for(const { nombre, texto } of archivos){
+    const n = enc.encode(nombre), d = enc.encode(texto), crc = crc32(d);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true);
+    local.setUint16(6, 0x0800, true);     local.setUint16(8, 0, true);
+    local.setUint16(10, 0, true);         local.setUint16(12, FECHA_DOS, true);
+    local.setUint32(14, crc, true);       local.setUint32(18, d.length, true);
+    local.setUint32(22, d.length, true);  local.setUint16(26, n.length, true);
+    local.setUint16(28, 0, true);
+    const cen = new DataView(new ArrayBuffer(46));
+    cen.setUint32(0, 0x02014b50, true);   cen.setUint16(4, 20, true);
+    cen.setUint16(6, 20, true);           cen.setUint16(8, 0x0800, true);
+    cen.setUint16(10, 0, true);           cen.setUint16(12, 0, true);
+    cen.setUint16(14, FECHA_DOS, true);   cen.setUint32(16, crc, true);
+    cen.setUint32(20, d.length, true);    cen.setUint32(24, d.length, true);
+    cen.setUint16(28, n.length, true);    cen.setUint32(42, offset, true);
+    partes.push(local, n, d);
+    central.push(cen, n);
+    offset += 30 + n.length + d.length;
+  }
+  const tamCentral = central.reduce((s, p) => s + p.byteLength, 0);
+  const fin = new DataView(new ArrayBuffer(22));
+  fin.setUint32(0, 0x06054b50, true);
+  fin.setUint16(8, archivos.length, true);  fin.setUint16(10, archivos.length, true);
+  fin.setUint32(12, tamCentral, true);      fin.setUint32(16, offset, true);
+  return new Blob([...partes, ...central, fin],
+    { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+}
+
+const XLSX_NS = 'xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" ' +
+                'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"';
+function letraColumna(i){ return String.fromCharCode(65 + i); }     // hasta la Z basta
+function filaXLSX(n, valores, estilo){
+  return `<row r="${n}">` + valores.map((v, i) => {
+    const ref = letraColumna(i) + n, s = estilo ? ` s="${estilo}"` : "";
+    if(typeof v === "number") return `<c r="${ref}"${s}><v>${v}</v></c>`;
+    return `<c r="${ref}"${s} t="inlineStr"><is><t xml:space="preserve">${escapeHtml(v)}</t></is></c>`;
+  }).join("") + `</row>`;
+}
+
+function plantillaXLSX(){
+  const establecimientos = ESTABLECIMIENTOS.flatMap(g => g.items);
+  const ultimaEst = establecimientos.length + 1, ultimoTipo = TIPOS_DOCUMENTO.length + 1;
+  const detalle = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet ${XLSX_NS}>
+<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>
+<cols><col min="1" max="1" width="26" customWidth="1"/><col min="2" max="2" width="12" customWidth="1"/><col min="3" max="3" width="16" customWidth="1"/><col min="4" max="4" width="14" customWidth="1"/><col min="5" max="5" width="62" customWidth="1"/></cols>
+<sheetData>${
+    filaXLSX(1, COLUMNAS_PLANTILLA, 1) +
+    filaXLSX(2, ["Factura Electrónica", "55501", "20-08-2026", 1250000, establecimientos[0]]) +
+    filaXLSX(3, ["Nota de Crédito", "128", "22-08-2026", -90000, ""])}</sheetData>
+<dataValidations count="2">
+<dataValidation type="list" allowBlank="1" showErrorMessage="0" sqref="A2:A1000"><formula1>Listas!$B$2:$B$${ultimoTipo}</formula1></dataValidation>
+<dataValidation type="list" allowBlank="1" showErrorMessage="1" errorTitle="Establecimiento" error="Elija un establecimiento de la lista." sqref="E2:E1000"><formula1>Listas!$A$2:$A$${ultimaEst}</formula1></dataValidation>
+</dataValidations>
+</worksheet>`;
+  const filasListas = [filaXLSX(1, ["Establecimiento", "Tipo de documento"], 1)];
+  for(let i = 0; i < Math.max(establecimientos.length, TIPOS_DOCUMENTO.length); i++)
+    filasListas.push(filaXLSX(i + 2, [establecimientos[i] || "", TIPOS_DOCUMENTO[i] || ""]));
+  const listas = `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<worksheet ${XLSX_NS}>
+<cols><col min="1" max="1" width="62" customWidth="1"/><col min="2" max="2" width="26" customWidth="1"/></cols>
+<sheetData>${filasListas.join("")}</sheetData>
+</worksheet>`;
+  return zipSinComprimir([
+    { nombre: "[Content_Types].xml", texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/><Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/></Types>` },
+    { nombre: "_rels/.rels", texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/></Relationships>` },
+    { nombre: "xl/workbook.xml", texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<workbook ${XLSX_NS}><sheets><sheet name="Detalle" sheetId="1" r:id="rId1"/><sheet name="Listas" sheetId="2" r:id="rId2"/></sheets></workbook>` },
+    { nombre: "xl/_rels/workbook.xml.rels", texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/></Relationships>` },
+    { nombre: "xl/styles.xml", texto: `<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>` },
+    { nombre: "xl/worksheets/sheet1.xml", texto: detalle },
+    { nombre: "xl/worksheets/sheet2.xml", texto: listas }
+  ]);
+}
 
 function descargarPlantilla(){
-  const filas = [
-    COLUMNAS_PLANTILLA,
-    ["Factura Electrónica", "55501", "20-08-2026", "1250000"],
-    ["Nota de Crédito", "128", "22-08-2026", "-90000"]
-  ];
-  // Punto y coma y BOM: es lo que Excel en español abre en columnas sin preguntar.
-  const csv = "\uFEFF" + filas.map(f => f.join(";")).join("\r\n") + "\r\n";
-  const url = URL.createObjectURL(new Blob([csv], {type:"text/csv;charset=utf-8"}));
+  const url = URL.createObjectURL(plantillaXLSX());
   const a = document.createElement("a");
-  a.href = url; a.download = "detalle-documentos-plantilla.csv";
+  a.href = url; a.download = "detalle-documentos-plantilla.xlsx";
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/* Establecimiento de un documento del detalle, a partir de lo que venga en la planilla:
+   el texto de la lista ("ESCUELA … — RBD 1180-0"), sólo el RBD con o sin dígito
+   verificador ("1180-0", "1180", "RBD 1180") o sólo el nombre. "" si viene vacío; null
+   si no corresponde a ningún establecimiento del Servicio. */
+function buscarEstablecimiento(texto){
+  const norm = t => String(t || "").toLowerCase().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, " ").trim();
+  const t = norm(texto);
+  if(!t) return "";
+  const todos = ESTABLECIMIENTOS.flatMap(g => g.items);
+  let x = todos.find(u => norm(u) === t) || todos.find(u => norm(u.split(" — RBD")[0]) === t);
+  if(x) return x;
+  const m = /^(?:rbd\s*)?(\d{3,6})(?:\s*-\s*([\dk]))?$/.exec(t);
+  if(!m) return null;
+  return todos.find(u => {
+    const r = /RBD\s*(\d+)-([\dKk])/.exec(u);
+    return r && r[1] === m[1] && (!m[2] || r[2].toLowerCase() === m[2]);
+  }) || null;
 }
 
 /* --- Lectura de .xlsx: es un ZIP con XML dentro --- */
@@ -1738,11 +1861,12 @@ function mapearColumnas(filas){
       tipo:  f.findIndex(c => c.startsWith("tipo")),
       folio: f.findIndex(c => c.startsWith("folio") || c.startsWith("n°") || c === "numero"),
       fecha: f.findIndex(c => c.startsWith("fecha")),
-      monto: f.findIndex(c => c.startsWith("monto") || c.startsWith("valor") || c.startsWith("total"))
+      monto: f.findIndex(c => c.startsWith("monto") || c.startsWith("valor") || c.startsWith("total")),
+      estab: f.findIndex(c => c.startsWith("establecimiento") || c.startsWith("rbd"))
     };
     if(col.tipo >= 0 && col.monto >= 0) return { col, desde: i + 1 };
   }
-  return { col:{ tipo:0, folio:1, fecha:2, monto:3 }, desde: 0 };
+  return { col:{ tipo:0, folio:1, fecha:2, monto:3, estab:4 }, desde: 0 };
 }
 
 async function importarPlanilla(archivo){
@@ -1754,7 +1878,7 @@ async function importarPlanilla(archivo){
   const { col, desde } = mapearColumnas(filas);
   const dato = (f, i) => (i >= 0 && f[i] != null) ? String(f[i]).trim() : "";
 
-  const nuevas = [], descartadas = [];
+  const nuevas = [], descartadas = [], sinEstablecimiento = [];
   filas.slice(desde).forEach((f, n) => {
     const fila = {
       tipo:  dato(f, col.tipo),
@@ -1768,6 +1892,10 @@ async function importarPlanilla(archivo){
       return;
     }
     fila.monto = String(parseMonto(fila.monto));
+    // El establecimiento es opcional: si no se reconoce, el documento entra igual, sin él.
+    const est = dato(f, col.estab);
+    fila.establecimiento = buscarEstablecimiento(est) || "";
+    if(est && !fila.establecimiento) sinEstablecimiento.push(`fila ${desde + n + 1}: "${est}"`);
     nuevas.push(fila);
   });
 
@@ -1789,11 +1917,28 @@ async function importarPlanilla(archivo){
     (repetidas ? `${repetidas} ya estaban en la tabla y no se repiten.\n` : "") +
     (descartadas.length ? `${descartadas.length} fila(s) no se pudieron leer:\n• ` +
       descartadas.slice(0,8).join("\n• ") + (descartadas.length > 8 ? "\n• …" : "") + "\n" : "") +
+    (sinEstablecimiento.length ? `${sinEstablecimiento.length} documento(s) traen un establecimiento ` +
+      `o RBD que no es del Servicio y se agregan sin él:\n• ` +
+      sinEstablecimiento.slice(0,8).join("\n• ") + (sinEstablecimiento.length > 8 ? "\n• …" : "") + "\n" : "") +
     `\n¿Agregarlos al detalle?`;
   if(!confirm(resumen)) return;
 
   state.detalle = (state.detalle || []).concat(agregar);
   renderDetalle();
+}
+
+/* Lista del establecimiento de cada documento del detalle. Arriba los del set, que son
+   los que se usarán casi siempre; después todos, por comuna. */
+function opcionesEstablecimientoDetalle(elegido){
+  const todos = ESTABLECIMIENTOS.flatMap(g => g.items);
+  const delSet = unidadesDe(state).filter(u => todos.includes(u));
+  /* El RBD va adelante en lo que se ve: la columna es angosta y es lo que distingue. */
+  const etiqueta = u => { const m = /^(.*) — RBD (\S+)$/.exec(u); return m ? `RBD ${m[2]} · ${m[1]}` : u; };
+  const opcion = u => `<option value="${escapeHtml(u)}"${u === elegido ? " selected" : ""}>${escapeHtml(etiqueta(u))}</option>`;
+  return `<option value="">—</option>` +
+    (delSet.length ? `<optgroup label="Del set">${delSet.map(opcion).join("")}</optgroup>` : "") +
+    ESTABLECIMIENTOS.map(g => `<optgroup label="${escapeHtml(g.grupo)}">` +
+      g.items.filter(u => !delSet.includes(u)).map(opcion).join("") + `</optgroup>`).join("");
 }
 
 function renderDetalle(){
@@ -1807,6 +1952,7 @@ function renderDetalle(){
       <td><input data-det="${i}" data-det-field="tipo" list="tiposDocumento" value="${escapeHtml(d.tipo||"")}" placeholder="Elija o escriba" /></td>
       <td><input data-det="${i}" data-det-field="folio" value="${escapeHtml(d.folio||"")}" placeholder="Folio" /></td>
       <td><input data-det="${i}" data-det-field="fecha" type="date" value="${escapeHtml(d.fecha||"")}" /></td>
+      <td><select data-det="${i}" data-det-field="establecimiento">${opcionesEstablecimientoDetalle(d.establecimiento)}</select></td>
       <td><input data-det="${i}" data-det-field="monto" inputmode="numeric" value="${escapeHtml(d.monto||"")}" placeholder="0" /></td>
       <td class="rm"><button type="button" class="rm-btn" data-det-rm="${i}" title="Eliminar">✕</button></td>
     </tr>`).join("");
@@ -1816,16 +1962,17 @@ function renderDetalle(){
       <span class="muted-pill">Opcional</span>
     </div>
     <div style="font-size:12px;color:var(--muted);margin-top:4px">
-      Individualice cada documento de respaldo asociado a este set, indicando tipo, folio, fecha de emisión y monto.
+      Individualice cada documento de respaldo asociado a este set, indicando tipo, folio, fecha de emisión y monto,
+      y si corresponde, el establecimiento (RBD) al que pertenece.
       Si son muchos, descargue la plantilla, complétela en Excel y súbala.
     </div>
     <datalist id="tiposDocumento">${TIPOS_DOCUMENTO.map(t=>`<option value="${escapeHtml(t)}"></option>`).join("")}</datalist>
     <div style="overflow:auto">
       <table class="dtable">
-        <thead><tr><th>N.º</th><th>Tipo de documento</th><th>Folio</th><th>Fecha de emisión</th><th>Monto a pagar</th><th></th></tr></thead>
+        <thead><tr><th>N.º</th><th>Tipo de documento</th><th>Folio</th><th>Fecha de emisión</th><th>Establecimiento (opcional)</th><th>Monto a pagar</th><th></th></tr></thead>
         <tbody>
           ${rows}
-          <tr class="total-row"><td colspan="4" class="total-label">Total</td><td id="detalleTotal">${fmtMonto(detalleTotal(state.detalle))}</td><td></td></tr>
+          <tr class="total-row"><td colspan="5" class="total-label">Total</td><td id="detalleTotal">${fmtMonto(detalleTotal(state.detalle))}</td><td></td></tr>
         </tbody>
       </table>
     </div>
@@ -1838,7 +1985,7 @@ function renderDetalle(){
     </div>`;
 
   $("addDetalleBtn").addEventListener("click",()=>{
-    state.detalle.push({tipo:"",folio:"",fecha:"",monto:""});
+    state.detalle.push({tipo:"",folio:"",fecha:"",establecimiento:"",monto:""});
     renderDetalle();
   });
   $("tplDetalleBtn").addEventListener("click", descargarPlantilla);
@@ -2982,8 +3129,11 @@ function certificateHtml(r){
   const minister=MINISTERS.find(m=>m.id===r.ministerId)||{name:r.ministerName,code:r.ministerCode,rut:r.ministerRut,unit:r.ministerUnit,cargo:r.ministerCargo,role:r.ministerRole};
   const folio=r.folio||"BORRADOR / SIN FOLIO";
   const otrosCert=(r.otros||[]).filter(t=>String(t||"").trim());
+  /* La columna Establecimiento sólo aparece si algún documento lo indica: así los
+     certificados ya emitidos, y los que no lo usan, se imprimen igual que antes. */
   const detalleCert=(r.detalle||[]).filter(d=>
     String(d.tipo||"").trim() || String(d.folio||"").trim() || String(d.monto||"").trim());
+  const conEst=detalleCert.some(d=>String(d.establecimiento||"").trim());
   return `
   <article class="certificate" id="certificatePrint">
     ${esDePilotaje(r.folio)
@@ -3076,8 +3226,10 @@ function certificateHtml(r){
       <div class="cert-section-title">II.b &nbsp; Detalle de documentos, folios y montos</div>
       <table class="cert-table">
         <thead><tr>
-          <th style="width:8%">N.º</th><th>Tipo de documento</th><th style="width:18%">Folio</th>
-          <th style="width:18%">Fecha de emisión</th><th style="width:18%;text-align:right">Monto</th>
+          <th style="width:8%">N.º</th><th>Tipo de documento</th><th style="width:${conEst ? 12 : 18}%">Folio</th>
+          <th style="width:${conEst ? 13 : 18}%">Fecha de emisión</th>
+          ${conEst ? `<th style="width:30%">Establecimiento</th>` : ""}
+          <th style="width:${conEst ? 14 : 18}%;text-align:right">Monto</th>
         </tr></thead>
         <tbody>
           ${detalleCert.map((d,i)=>`<tr>
@@ -3085,10 +3237,11 @@ function certificateHtml(r){
             <td>${escapeHtml(d.tipo||"—")}</td>
             <td>${escapeHtml(d.folio||"—")}</td>
             <td>${d.fecha?escapeHtml(shortDate(d.fecha)):"—"}</td>
+            ${conEst ? `<td>${escapeHtml(d.establecimiento||"—")}</td>` : ""}
             <td style="text-align:right">${escapeHtml(fmtMonto(parseMonto(d.monto)))}</td>
           </tr>`).join("")}
           <tr>
-            <th colspan="4" style="text-align:right">Total</th>
+            <th colspan="${conEst ? 5 : 4}" style="text-align:right">Total</th>
             <th style="text-align:right">${escapeHtml(fmtMonto(detalleTotal(detalleCert)))}</th>
           </tr>
         </tbody>

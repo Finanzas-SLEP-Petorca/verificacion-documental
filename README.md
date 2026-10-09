@@ -169,8 +169,12 @@ documentos, folios y montos**, con total automático.
 El tipo de documento ofrece los cinco más usados —factura electrónica, factura exenta
 electrónica, boleta, boleta de honorarios y nota de crédito— y acepta cualquier otro
 texto. Cuando los
-documentos son muchos, el botón **Descargar plantilla** entrega un archivo para llenar
-en Excel e **Importar planilla** lo incorpora a la tabla. Se leen `.xlsx` y `.csv`, con
+documentos son muchos, el botón **Descargar plantilla** entrega un Excel (`.xlsx`) para
+llenar e **Importar planilla** lo incorpora a la tabla. Cada documento puede indicar, si se
+quiere, el establecimiento al que pertenece: en la tabla y en la plantilla se elige de una
+lista desplegable —la de Excel es nativa, alimentada desde la hoja *Listas*—, y al importar
+se reconoce por nombre o por RBD, con o sin dígito verificador. El certificado agrega esa
+columna al detalle sólo si algún documento la usa. Se leen `.xlsx` y `.csv`, con
 las fechas en cualquiera de los formatos de uso corriente y los montos como se escriben
 en Chile. Antes de agregar nada se muestra cuántos documentos se leyeron, por qué monto
 y qué filas quedaron fuera; las que ya están en la tabla no se repiten, de modo que
