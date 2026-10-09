@@ -1250,7 +1250,10 @@ const DOCS = {
      programa:{ solo:"Programa 01" }, fields:[]},
     {no:"08", name:"Recepción Conforme (Establecimiento / Director o Directora)", required:true, agregado:true,
      programa:{ excepto:"Programa 01" }, fields:[]},
-    {no:"10", name:"Datos Bancarios", required:true, agregado:true, fields:[]}
+    {no:"10", name:"Datos Bancarios", required:true, agregado:true, fields:[]},
+    /* Agregado el 09-10-2026, como el de Adquisiciones: abre la lista libre para
+       individualizar qué lo compone. */
+    {no:"11", name:"Otros", required:false, otros:true, agregado:true, fields:[]}
   ],
   viaticos: [
     {no:"01", name:"Resolución que aprueba el cometido funcionario", required:true, fields:[{key:"number",label:"N.º",type:"text"}]},

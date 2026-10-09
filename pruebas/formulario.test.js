@@ -203,8 +203,9 @@ test("Servicios Básicos con Programa 01: recepción del Servicio y datos bancar
   await pagina.selectOption("#natureSelect", "servicios");
   await pagina.selectOption("#programaSelect", "Programa 01");
   const filas = await checklist(pagina);
-  assert.deepEqual(filas.slice(-3), [
-    "06 Compromiso Presupuestario", `07 ${RECEPCION_SERVICIO}`, `08 ${DATOS_BANCARIOS}`]);
+  assert.deepEqual(filas.slice(-4), [
+    "06 Compromiso Presupuestario", `07 ${RECEPCION_SERVICIO}`, `08 ${DATOS_BANCARIOS}`,
+    "09 Otros (opcional)"]);
   assert.ok(!filas.some(f => f.includes(RECEPCION)), filas.join(" | "));
 
   const errores = await pagina.evaluate(() => validate());
@@ -221,8 +222,9 @@ test("Servicios Básicos con Programa 02 o Extrapresupuestario: recepción del e
   for(const programa of ["Programa 02", "Programa Extrapresupuestario"]){
     await pagina.selectOption("#programaSelect", programa);
     const filas = await checklist(pagina);
-    assert.deepEqual(filas.slice(-3), [
-      "06 Compromiso Presupuestario", `07 ${RECEPCION}`, `08 ${DATOS_BANCARIOS}`], programa);
+    assert.deepEqual(filas.slice(-4), [
+      "06 Compromiso Presupuestario", `07 ${RECEPCION}`, `08 ${DATOS_BANCARIOS}`,
+      "09 Otros (opcional)"], programa);
     assert.ok(!filas.some(f => f.includes(RECEPCION_SERVICIO)), programa);
   }
   await pagina.context().close();
@@ -304,5 +306,31 @@ test("Viáticos pide Datos Bancarios, con y sin reembolso, y lo ya emitido no ca
   const impreso = await pagina.textContent("#certificatePreview");
   assert.doesNotMatch(impreso, /Datos Bancarios/, "lo emitido no cambia");
   assert.match(impreso, /07\s*CDP por concepto de reembolso/, "ni se corre la numeración");
+  await pagina.context().close();
+});
+
+test("Servicios Básicos tiene el ítem Otros, opcional y con su lista libre", async () => {
+  const { pagina } = await abrir(ent, { conectado: false });
+  await pagina.selectOption("#natureSelect", "servicios");
+  await pagina.selectOption("#programaSelect", "Programa 01");
+  const filas = await checklist(pagina);
+  assert.equal(filas[filas.length - 1], "09 Otros (opcional)", filas.join(" | "));
+  assert.ok(await pagina.isHidden("#otrosBox"), "la lista se abre sólo al marcarlo");
+
+  // Opcional: sin marcar no se exige.
+  let errores = await pagina.evaluate(() => validate());
+  assert.ok(!errores.some(e => e.includes("Otros")), errores.join("\n"));
+
+  // Marcado, pide individualizar al menos uno, y se imprime en II.a.
+  await pagina.locator('#docList .doc-row', { hasText: "Otros" }).locator("[data-check]").check();
+  assert.ok(await pagina.isVisible("#otrosBox"));
+  errores = await pagina.evaluate(() => validate());
+  assert.ok(errores.includes('09 Otros: detalle al menos un documento del ítem "Otros".'), errores.join("\n"));
+  await pagina.click("#addOtrosBtn");
+  await pagina.fill('[data-otros="0"]', "Certificado de consumo del proveedor");
+  errores = await pagina.evaluate(() => validate());
+  assert.ok(!errores.some(e => e.includes("Otros")), errores.join("\n"));
+  await pagina.click("#previewBtn");
+  assert.match(await pagina.textContent("#certificatePreview"), /Certificado de consumo del proveedor/);
   await pagina.context().close();
 });

@@ -146,7 +146,7 @@ y filtrar por ministro y por estado.
 |---|---|---|
 | A | Remuneraciones | 7 |
 | B | Honorarios | 6 |
-| C | Servicios Básicos | 8 |
+| C | Servicios Básicos | 9 |
 | D | Adquisiciones | 12, más los condicionales |
 | E | Viáticos y cometidos funcionarios | 9 |
 
@@ -178,7 +178,7 @@ importar dos veces el mismo archivo no duplica montos. El folio de cada document
 antecedente propio era repetirlo, así que se retiraron las **boletas** de Servicios
 Básicos y los **documentos tributarios** de Adquisiciones. Los certificados emitidos cuando sí se pedía se siguen reimprimiendo tal
 como se emitieron, con sus boletas en el lugar que ocupaban. El ítem **Otros** de Adquisiciones
-abre una lista libre para individualizar qué lo compone.
+y de Servicios Básicos abre una lista libre para individualizar qué lo compone.
 
 ---
 
