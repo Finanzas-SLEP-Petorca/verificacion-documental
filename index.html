@@ -928,8 +928,8 @@
       <p>El tipo de documento ofrece los más usados —factura electrónica, factura exenta,
       boleta, boleta de honorarios y nota de crédito— y acepta cualquier otro texto.</p>
       <p>El establecimiento de cada documento también se puede elegir directamente en la
-      tabla; la lista tiene un buscador por nombre, RBD o comuna, y separa los
-      establecimientos de los jardines infantiles. Al importar se reconoce por su nombre o por su RBD, con o sin dígito
+      tabla; la lista tiene un buscador por nombre, RBD, GESPARVU o comuna, y separa los
+      establecimientos de los jardines infantiles. Al importar se reconoce por su nombre, por su GESPARVU o por su RBD, con o sin dígito
       verificador. Si algún documento lo indica, el certificado agrega esa columna al
       detalle.</p>
 
@@ -1054,7 +1054,7 @@ const UNIDADES = [
       "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA — RBD 12336-6",
       "LICEO Y ESCUELA MUNICIPAL — RBD 1167-3",
       "RINCONCITO — RBD 33539",
-      "SANTA MARTA"
+      "SANTA MARTA — GESPARVU 5402002"
     ]
   },
   {
@@ -1063,7 +1063,7 @@ const UNIDADES = [
       "CARMEN SANCHEZ ARAYA — RBD 1134-7",
       "CENTRO DE EDUCACION DE ADULTOS LA LIGUA — RBD 1120-7",
       "COLEGIO LUIS CRUZ MARTINEZ — RBD 11199-6",
-      "EL CARMEN CUNCUNITA — RBD 33530",
+      "EL CARMEN CUNCUNITA — GESPARVU 5401006",
       "ESC. BASICA CASAS VIEJAS DE LONGOTOMA — RBD 1131-2",
       "ESC. BASICA LOS HORNOS DE HUAQUEN — RBD 1130-4",
       "ESC.BASICA LAS CASAS DE HUAQUEN — RBD 1133-9",
@@ -1084,22 +1084,22 @@ const UNIDADES = [
       "ESCUELA LA CANELA — RBD 1142-8",
       "ESCUELA MINISTRO GOMEZ MILLAS — RBD 1139-8",
       "ESCUELA REPUBLICA DE VENEZUELA — RBD 1122-3",
-      "HUMBERTO BASULTO",
+      "HUMBERTO BASULTO — GESPARVU 5401007",
       "LICEO PULMAHUE DE LA LIGUA — RBD 1121-5",
-      "MANITOS DE ANGEL",
-      "MANITOS DE COLORES",
-      "PULMAHUE — RBD 33527",
-      "SANTA TERESA — RBD 33526"
+      "MANITOS DE ANGEL — GESPARVU 5401005",
+      "MANITOS DE COLORES — GESPARVU 5401004",
+      "PULMAHUE — GESPARVU 5401003",
+      "SANTA TERESA — GESPARVU 5401002"
     ]
   },
   {
     "grupo": "Papudo",
     "items": [
-      "BARQUITO DE PAPEL",
+      "BARQUITO DE PAPEL — GESPARVU 5403002",
       "ESCUELA PAPUDO — RBD 1191-6",
       "ESCUELA RURAL PULLALLY — RBD 1192-4",
       "LICEO TECNICO PROFESIONAL PAPUDO — RBD 40099-8",
-      "RAYITO DE SOL"
+      "RAYITO DE SOL — GESPARVU 5403001"
     ]
   },
   {
@@ -1115,11 +1115,11 @@ const UNIDADES = [
       "ESCUELA EDUARDO FREI MONTALVA — RBD 1152-5",
       "ESCUELA FERNANDO GARCIA OLDINI — RBD 1147-9",
       "ESCUELA HOGAR FRONTERIZA DE CHALACO — RBD 1160-6",
-      "LAMPARITA — RBD 33548-7",
+      "LAMPARITA — GESPARVU 5404001",
       "LICEO CORDILLERA — RBD 1149-5",
       "LICEO JOSE MANUEL BORGOÑO NUNEZ — RBD 1148-7",
-      "MIS PRIMEROS PASOS — RBD 33550-9",
-      "MUNDO DE PEQUES — RBD 33549-5"
+      "MIS PRIMEROS PASOS — GESPARVU 5404003",
+      "MUNDO DE PEQUES — GESPARVU 5404002"
     ]
   }
 ];
@@ -1419,9 +1419,9 @@ function rotuloUnidades(r){
   return unidadesDe(r).length > 1 ? "Establecimientos del set" : "Unidad / Establecimiento";
 }
 
-/* Jardines infantiles del Servicio. No hay un dato que los distinga: no llevan RBD o
-   tienen uno de la serie 33.5xx, y sus nombres no son de escuela. Se listan a mano para
-   poder corregir uno sin tocar la regla. */
+/* Jardines infantiles del Servicio, confirmados por el Subdepartamento de Finanzas. Se
+   listan por nombre para poder corregir uno sin tocar nada más. Su código es el
+   GESPARVU, que en los jardines hace las veces del RBD. */
 const JARDINES = new Set([
   "RINCONCITO", "SANTA MARTA",
   "EL CARMEN CUNCUNITA", "HUMBERTO BASULTO", "MANITOS DE ANGEL", "MANITOS DE COLORES",
@@ -1429,9 +1429,40 @@ const JARDINES = new Set([
   "BARQUITO DE PAPEL", "RAYITO DE SOL",
   "LAMPARITA", "MIS PRIMEROS PASOS", "MUNDO DE PEQUES"
 ]);
-function nombreSinRbd(u){ return String(u || "").split(" — RBD")[0]; }
-function rbdTexto(u){ const m = / — RBD (\S+)$/.exec(String(u || "")); return m ? m[1] : ""; }
+/* Hasta el 09-10-2026 los jardines figuraban sin código o con un número de la serie
+   33.5xx; desde entonces, con su GESPARVU. Lo emitido conserva el texto con que se
+   certificó; un borrador, un duplicado o una planilla con el nombre anterior se pasan
+   al de ahora. */
+const UNIDADES_RENOMBRADAS = {
+  "SANTA MARTA": "SANTA MARTA — GESPARVU 5402002",
+  "EL CARMEN CUNCUNITA — RBD 33530": "EL CARMEN CUNCUNITA — GESPARVU 5401006",
+  "HUMBERTO BASULTO": "HUMBERTO BASULTO — GESPARVU 5401007",
+  "MANITOS DE ANGEL": "MANITOS DE ANGEL — GESPARVU 5401005",
+  "MANITOS DE COLORES": "MANITOS DE COLORES — GESPARVU 5401004",
+  "PULMAHUE — RBD 33527": "PULMAHUE — GESPARVU 5401003",
+  "SANTA TERESA — RBD 33526": "SANTA TERESA — GESPARVU 5401002",
+  "BARQUITO DE PAPEL": "BARQUITO DE PAPEL — GESPARVU 5403002",
+  "RAYITO DE SOL": "RAYITO DE SOL — GESPARVU 5403001",
+  "LAMPARITA — RBD 33548-7": "LAMPARITA — GESPARVU 5404001",
+  "MIS PRIMEROS PASOS — RBD 33550-9": "MIS PRIMEROS PASOS — GESPARVU 5404003",
+  "MUNDO DE PEQUES — RBD 33549-5": "MUNDO DE PEQUES — GESPARVU 5404002"
+};
+function unidadVigente(u){ return UNIDADES_RENOMBRADAS[u] || u; }
+
+/* Código de cada unidad: RBD en los establecimientos, GESPARVU en los jardines. */
+function codigoDe(u){
+  const m = / — (RBD|GESPARVU) (\S+)$/.exec(String(u || ""));
+  return m ? { tipo: m[1], num: m[2] } : null;
+}
+function nombreSinRbd(u){ return String(u || "").split(" — ")[0]; }
 function esJardin(u){ return JARDINES.has(nombreSinRbd(u)); }
+/* Lo que el buscador compara además del texto: el código sin guion y, si cambió de
+   nombre, el texto anterior (así un número viejo sigue encontrándolo). */
+function textoBusqueda(u){
+  const c = codigoDe(u);
+  const antes = Object.keys(UNIDADES_RENOMBRADAS).filter(a => UNIDADES_RENOMBRADAS[a] === u);
+  return [u, c ? c.num.replace("-", "") : "", ...antes].join(" ");
+}
 function comunaDe(u){ const g = UNIDADES.find(g => g.items.includes(u)); return g ? g.grupo : ""; }
 
 /* Grupos de un selector: la comuna, y dentro, establecimientos y jardines por separado.
@@ -1486,7 +1517,7 @@ function abrirSelectorUnidad(boton, cfg){
   const panel = document.createElement("div");
   panel.id = "selUnidadPanel";
   panel.setAttribute("role", "dialog");
-  panel.innerHTML = `<input type="search" placeholder="Buscar por nombre, RBD o comuna" aria-label="Buscar establecimiento" />
+  panel.innerHTML = `<input type="search" placeholder="Buscar por nombre, RBD, GESPARVU o comuna" aria-label="Buscar establecimiento" />
     <div class="lista" role="listbox"></div>`;
   document.body.appendChild(panel);
   posicionarSelectorUnidad();
@@ -1496,7 +1527,7 @@ function abrirSelectorUnidad(boton, cfg){
   let activa = -1;
   const pintar = () => {
     const q = norm(buscar.value).trim().split(/\s+/).filter(Boolean);
-    const coincide = (u, g, sg) => q.every(p => norm(`${u} ${g} ${sg} ${rbdTexto(u).replace("-", "")}`).includes(p));
+    const coincide = (u, g, sg) => q.every(p => norm(`${textoBusqueda(u)} ${g} ${sg}`).includes(p));
     let html = cfg.permiteVacio && !q.length
       ? `<div class="op" role="option" data-v="">— Sin establecimiento</div>` : "";
     grupos.forEach(g => {
@@ -1937,7 +1968,7 @@ function descargarPlantilla(){
 
 /* Establecimiento de un documento del detalle, a partir de lo que venga en la planilla:
    el texto de la lista ("ESCUELA … — RBD 1180-0"), sólo el RBD con o sin dígito
-   verificador ("1180-0", "1180", "RBD 1180") o sólo el nombre. "" si viene vacío; null
+   verificador ("1180-0", "1180", "RBD 1180"), el GESPARVU de un jardín o sólo el nombre. "" si viene vacío; null
    si no corresponde a ningún establecimiento del Servicio. */
 function buscarEstablecimiento(texto){
   const norm = t => String(t || "").toLowerCase().normalize("NFD")
@@ -1945,14 +1976,21 @@ function buscarEstablecimiento(texto){
   const t = norm(texto);
   if(!t) return "";
   const todos = ESTABLECIMIENTOS.flatMap(g => g.items);
-  let x = todos.find(u => norm(u) === t) || todos.find(u => norm(u.split(" — RBD")[0]) === t);
-  if(x) return x;
-  const m = /^(?:rbd\s*)?(\d{3,6})(?:\s*-\s*([\dk]))?$/.exec(t);
+  // El texto de la lista o el nombre solo, de ahora o de antes del cambio de código.
+  const candidatos = [...todos.map(u => [u, u]),
+    ...Object.entries(UNIDADES_RENOMBRADAS).map(([antes, ahora]) => [antes, ahora])];
+  let x = candidatos.find(([u]) => norm(u) === t) || candidatos.find(([u]) => norm(nombreSinRbd(u)) === t);
+  if(x) return x[1];
+  // Sólo el código: RBD con o sin dígito verificador, o GESPARVU.
+  const m = /^(?:(?:rbd|gesparvu)\s*)?(\d{3,8})(?:\s*-\s*([\dk]))?$/.exec(t);
   if(!m) return null;
-  return todos.find(u => {
-    const r = /RBD\s*(\d+)-([\dKk])/.exec(u);
-    return r && r[1] === m[1] && (!m[2] || r[2].toLowerCase() === m[2]);
-  }) || null;
+  x = candidatos.find(([u]) => {
+    const c = codigoDe(u);
+    if(!c) return false;
+    const [num, dv] = c.num.toLowerCase().split("-");
+    return num === m[1] && (!m[2] || dv === m[2]);
+  });
+  return x ? x[1] : null;
 }
 
 /* --- Lectura de .xlsx: es un ZIP con XML dentro --- */
@@ -2119,9 +2157,9 @@ async function importarPlanilla(archivo){
 }
 
 /* Establecimiento de cada documento del detalle. Arriba los del set, que son los que se
-   usarán casi siempre; después todos, por comuna. El RBD va adelante en lo que se ve:
+   usarán casi siempre; después todos, por comuna. El código (RBD o GESPARVU) va adelante en lo que se ve:
    la columna es angosta y es lo que distingue. */
-function etiquetaRbd(u){ const r = rbdTexto(u); return r ? `RBD ${r} · ${nombreSinRbd(u)}` : u; }
+function etiquetaRbd(u){ const c = codigoDe(u); return c ? `${c.tipo} ${c.num} · ${nombreSinRbd(u)}` : u; }
 function selectorEstablecimientoDetalle(i){
   const sel = crearSelectorUnidad({
     valor: state.detalle[i].establecimiento || "",
@@ -3090,8 +3128,8 @@ function loadRecordIntoState(r, duplicate=false){
     programaNombre:r.programaNombre||"",
     subvencion:normalizarSubvencion(r.subvencion),
     subvencionDetalle:r.subvencionDetalle||"",
-    unit:r.unit,
-    unidadesExtra:(r.unidadesExtra||[]).slice(),
+    unit:unidadVigente(r.unit),
+    unidadesExtra:(r.unidadesExtra||[]).map(unidadVigente),
     reference:r.reference||"",
     factoring:!!r.factoring,
     refund:!!r.refund,
@@ -3100,7 +3138,8 @@ function loadRecordIntoState(r, duplicate=false){
     amount:r.amount||"",
     declaration: duplicate ? false : !!r.declaration,
     docs:JSON.parse(JSON.stringify(r.docs||{})),
-    detalle:JSON.parse(JSON.stringify(r.detalle||[])),
+    detalle:JSON.parse(JSON.stringify(r.detalle||[]))
+      .map(d => Object.assign(d, d.establecimiento ? { establecimiento: unidadVigente(d.establecimiento) } : {})),
     otros:(r.otros||[]).slice()
   };
   populateFormFromState();

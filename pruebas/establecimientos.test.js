@@ -191,8 +191,9 @@ test("la lista separa, en cada comuna, establecimientos y jardines infantiles", 
   assert.equal(l[0], "# Unidad Central", "el principal también ofrece la Unidad Central");
   const laLigua = l.slice(l.indexOf("# La Ligua"), l.indexOf("# Papudo"));
   const jardines = laLigua.slice(laLigua.indexOf("## Jardines infantiles") + 1);
-  assert.deepEqual(jardines, ["EL CARMEN CUNCUNITA — RBD 33530", "HUMBERTO BASULTO", "MANITOS DE ANGEL",
-    "MANITOS DE COLORES", "PULMAHUE — RBD 33527", "SANTA TERESA — RBD 33526"]);
+  assert.deepEqual(jardines, ["EL CARMEN CUNCUNITA — GESPARVU 5401006", "HUMBERTO BASULTO — GESPARVU 5401007",
+    "MANITOS DE ANGEL — GESPARVU 5401005", "MANITOS DE COLORES — GESPARVU 5401004",
+    "PULMAHUE — GESPARVU 5401003", "SANTA TERESA — GESPARVU 5401002"]);
   assert.ok(laLigua.includes("LICEO PULMAHUE DE LA LIGUA — RBD 1121-5"));
   assert.ok(laLigua.indexOf("LICEO PULMAHUE DE LA LIGUA — RBD 1121-5") < laLigua.indexOf("## Jardines infantiles"),
     "el liceo va con los establecimientos");
@@ -208,7 +209,11 @@ test("el buscador encuentra por RBD, por nombre sin tildes, por comuna y por tip
   assert.deepEqual(await buscar("1180"), [E[2]], "RBD sin dígito");
   assert.deepEqual(await buscar("11800"), [E[2]], "RBD sin guion");
   assert.deepEqual(await buscar("vina"), [E[5]], "sin tilde encuentra LA VIÑA");
-  assert.deepEqual(await buscar("papudo jardines"), ["BARQUITO DE PAPEL", "RAYITO DE SOL"]);
+  assert.deepEqual(await buscar("papudo jardines"),
+    ["BARQUITO DE PAPEL — GESPARVU 5403002", "RAYITO DE SOL — GESPARVU 5403001"]);
+  assert.deepEqual(await buscar("5401007"), ["HUMBERTO BASULTO — GESPARVU 5401007"], "por GESPARVU");
+  assert.deepEqual(await buscar("33530"), ["EL CARMEN CUNCUNITA — GESPARVU 5401006"],
+    "el número que tenía antes también lo encuentra");
   assert.equal((await buscar("petorca liceo")).length, 2);
   assert.deepEqual(await buscar("no existe"), ["Ningún establecimiento coincide con la búsqueda."]);
   await pagina.context().close();
@@ -230,5 +235,32 @@ test("con el teclado: flechas y Enter eligen, Escape cierra sin cambiar", async 
   await pagina.keyboard.press("Escape");
   assert.equal(await pagina.locator("#selUnidadPanel").count(), 0);
   assert.equal(await pagina.evaluate(() => state.unit), E[3], "Escape no cambia lo elegido");
+  await pagina.context().close();
+});
+
+test("los jardines se identifican por su GESPARVU; lo emitido con el nombre anterior no cambia", async () => {
+  const CUNCUNITA = "EL CARMEN CUNCUNITA — GESPARVU 5401006";
+  const borrador = registroEmitido({ id: "j-borr", folio: null, status: "draft", issuedAt: null,
+    nature: "servicios", natureLabel: "Servicios Básicos",
+    programa: "Programa 02", subvencion: "JUNJI", unit: "EL CARMEN CUNCUNITA — RBD 33530",
+    unidadesExtra: ["MUNDO DE PEQUES — RBD 33549-5"],
+    detalle: [{ tipo: "Boleta", folio: "1", fecha: "", monto: "1000", establecimiento: "SANTA MARTA" }] });
+  const emitido = registroEmitido({ id: "j-emit", folio: `CMF-${ANIO}-P02-GAB700-018`,
+    programa: "Programa 02", subvencion: "JUNJI", unit: "EL CARMEN CUNCUNITA — RBD 33530" });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [borrador, emitido] });
+
+  // Un borrador con los nombres de antes se retoma con los de ahora.
+  await pagina.evaluate(() => editRecord("j-borr"));
+  assert.equal(await valorUnidad(pagina.locator("#unitSelect .sel-est")), CUNCUNITA);
+  assert.deepEqual(await pagina.evaluate(() => [state.unidadesExtra, state.detalle[0].establecimiento]),
+    [["MUNDO DE PEQUES — GESPARVU 5404002"], "SANTA MARTA — GESPARVU 5402002"]);
+
+  // En el detalle, el código va adelante, con su nombre.
+  assert.equal((await pagina.locator('[data-det-field="establecimiento"]').textContent()).trim(),
+    "GESPARVU 5402002 · SANTA MARTA");
+
+  // Lo emitido se imprime con lo que se certificó.
+  await pagina.evaluate(() => viewRecord("j-emit"));
+  assert.match(await pagina.textContent("#certificatePreview"), /EL CARMEN CUNCUNITA — RBD 33530/);
   await pagina.context().close();
 });

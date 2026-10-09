@@ -107,7 +107,7 @@ test("la plantilla es un Excel con listas desplegables, y se vuelve a importar t
   assert.match(texto, /<sheet name="Detalle"[^>]*\/><sheet name="Listas"/);
   assert.match(texto, /<dataValidation type="list"[^>]*sqref="E2:E1000"><formula1>Listas!\$A\$2:\$A\$69<\/formula1>/);
   assert.match(texto, /<dataValidation type="list"[^>]*sqref="A2:A1000"><formula1>Listas!\$B\$2:\$B\$6<\/formula1>/);
-  assert.ok(texto.includes("MUNDO DE PEQUES — RBD 33549-5"), "trae los 68 establecimientos");
+  assert.ok(texto.includes("MUNDO DE PEQUES — GESPARVU 5404002"), "trae los 68 establecimientos");
   assert.match(texto, /Comuna.*Tipo/, "la hoja Listas trae comuna y tipo");
   assert.ok(texto.includes("Jardín infantil"));
 
@@ -130,12 +130,16 @@ test("al importar, el establecimiento se reconoce por nombre o por RBD, con o si
               "Boleta;4;01-10-2026;400;Escuela Básica La Viña\n" +
               `Boleta;5;01-10-2026;500;${BICENTENARIO}\n` +
               "Boleta;6;01-10-2026;600;9999-9\n" +
-              "Boleta;7;01-10-2026;700;\n";
+              "Boleta;7;01-10-2026;700;\n" +
+              "Boleta;8;01-10-2026;800;5401007\n" +
+              "Boleta;9;01-10-2026;900;GESPARVU 5404002\n" +
+              "Boleta;10;01-10-2026;1000;33530\n";
   const resumen = await importar(pagina, dialogos, "rbd.csv", csv);
-  assert.match(resumen, /Se leyeron 7 documento\(s\)/);
+  assert.match(resumen, /Se leyeron 10 documento\(s\)/);
   assert.match(resumen, /1 documento\(s\) traen un establecimiento o RBD que no es del Servicio[\s\S]*fila 7: "9999-9"/);
   assert.deepEqual((await filasDetalle(pagina)).map(f => f[3]),
-    [G45, G47, LA_VINA, LA_VINA, BICENTENARIO, "", ""]);
+    [G45, G47, LA_VINA, LA_VINA, BICENTENARIO, "", "", "HUMBERTO BASULTO — GESPARVU 5401007",
+     "MUNDO DE PEQUES — GESPARVU 5404002", "EL CARMEN CUNCUNITA — GESPARVU 5401006"]);
   await pagina.context().close();
 });
 

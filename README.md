@@ -43,9 +43,10 @@ Se regenera desde `guia/guia-uso.html`.
    se pide también el nombre del programa.
 4. **Unidad o establecimiento.** Las 6 subdirecciones de la Unidad Central y los 68
    establecimientos del Servicio, agrupados por comuna y, dentro de cada comuna, separados
-   en establecimientos y jardines infantiles. La lista tiene un buscador: encuentra por
-   nombre (con o sin tildes), por RBD (con o sin dígito verificador), por comuna o por
-   tipo, y se maneja también con flechas y Enter. Con Programa 02 un
+   en establecimientos —identificados por su RBD— y jardines infantiles —por su código
+   GESPARVU—. La lista tiene un buscador: encuentra por nombre (con o sin tildes), por RBD
+   (con o sin dígito verificador), por GESPARVU, por comuna o por tipo, y se maneja también
+   con flechas y Enter. Con Programa 02 un
    set puede abarcar varios establecimientos: el principal se elige aquí y los demás con
    **+ Agregar establecimiento**, sin repetir. El certificado los imprime todos en la
    identificación del set; el encabezado muestra el principal y cuántos más.
