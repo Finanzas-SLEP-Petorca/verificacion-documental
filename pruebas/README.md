@@ -49,13 +49,15 @@ errores que corren una fecha al día anterior.
 | `anulacion.test.js` | Anular exige el Servicio, pide motivo y deja el folio consumido. Un emitido o anulado no vuelve a ser borrador, no se revive y no se elimina. |
 | `pilotaje.test.js` | Los certificados del pilotaje, en los tres formatos de folio, se reconocen, se marcan, se imprimen con **PILOTAJE** y nunca se borran. |
 | `verificacion.test.js` | *Verificar correlativos*: folios repetidos, números saltados desde el 010, lo emitido aquí que el Servicio no tiene, filas sin folio. |
+| `establecimientos.test.js` | Varios establecimientos por set, sólo con Programa 02: qué se ofrece, qué no se repite, qué se imprime, qué recibe el Servicio en `Unidad` sin pasar de 255 caracteres, y que lo de un solo establecimiento siga igual. |
 | `llamadas.test.js` | La tabla *Cuántas veces llama la aplicación*: abrir, recargar, entrar al registro, Actualizar, Probar conexión, y que salir de la página no dispare un segundo POST. |
 | `formulario.test.js` | Financiamiento según programa, complementario D.1, campos del PME, aviso del borrador, importación de planilla sin duplicar montos y fechas del detalle impresas sin correrse un día. Los antecedentes agregados después: Compra Ágil en Adquisiciones; la recepción conforme de Servicios Básicos según programa (del Servicio con el 01, del establecimiento con el 02 y el extrapresupuestario); Datos Bancarios en Servicios Básicos, Honorarios y Viáticos. Y que lo ya emitido se reimprima tal como se emitió, sin esas filas ni la numeración corrida. |
 
 ### Los simulacros
 
-`registro_simulado.py` responde como el flujo en producción y, cuando una prueba lo
-pide, falla de una de cinco maneras:
+`registro_simulado.py` responde como el flujo en producción —incluido que SharePoint
+rechaza una columna de texto de más de 255 caracteres— y, cuando una prueba lo pide,
+falla de una de cinco maneras:
 
 | Simulacro | Qué hace el Servicio | Qué debe hacer la página |
 |---|---|---|

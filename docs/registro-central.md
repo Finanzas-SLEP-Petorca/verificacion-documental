@@ -59,7 +59,7 @@ En el sitio de SharePoint del Subdepartamento de Finanzas, cree una lista llamad
 | `MinistroCargo` | Texto | |
 | `Programa` | Texto | |
 | `Naturaleza` | Texto | |
-| `Unidad` | Texto | |
+| `Unidad` | Texto | Varios establecimientos (Programa 02) van separados por `; `. Si no caben en 255 caracteres, el principal y cuántos más; la lista completa está en `Datos` |
 | `Referencia` | Texto | |
 | `FechaEmision` | Fecha y hora | |
 | `Estado` | Texto | `Emitido` o `Anulado` |

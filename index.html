@@ -628,6 +628,14 @@
           <input id="referenceInput" placeholder="Ej: Materiales de oficina, año 2026" />
         </div>
 
+        <div class="field span-4 hidden" id="unidadesExtraField">
+          <label>Otros establecimientos del set</label>
+          <span style="font-size:12px;color:var(--muted)">Con Programa 02 un set puede abarcar
+            varios establecimientos: el principal va arriba y los demás se agregan aquí.</span>
+          <div id="unidadesExtraList"></div>
+          <button type="button" class="btn small" id="addUnidadBtn" style="align-self:flex-start">+ Agregar establecimiento</button>
+        </div>
+
         <div class="field" id="factoringField">
           <label>Factura cedida a factoring</label>
           <div class="segmented" id="factoringSegment">
@@ -1294,6 +1302,7 @@ let state = {
   subvencion:"",
   subvencionDetalle:"",
   unit:"",
+  unidadesExtra:[],
   reference:"",
   factoring:false,
   refund:false,
@@ -1360,6 +1369,70 @@ function populateUnidades(){
       g.items.map(u => `<option value="${escapeHtml(u)}">${escapeHtml(u)}</option>`).join("") +
       `</optgroup>`
     ).join("");
+}
+
+/* Un set del Programa 02 puede abarcar varios establecimientos. El principal sigue en
+   `unit`, como siempre —así lo leen los certificados ya emitidos—, y los demás van en
+   `unidadesExtra`. Los adicionales son sólo establecimientos: las subdirecciones de la
+   Unidad Central no se suman a un set de subvención. */
+const PROGRAMA_VARIOS_ESTABLECIMIENTOS = "Programa 02";
+const ESTABLECIMIENTOS = UNIDADES.filter(g => g.grupo !== "Unidad Central");
+function admiteVariasUnidades(programa){ return programa === PROGRAMA_VARIOS_ESTABLECIMIENTOS; }
+function unidadesDe(r){
+  return [r.unit, ...(r.unidadesExtra || [])].filter(u => String(u || "").trim());
+}
+/* En el encabezado del certificado la columna es angosta: va el principal y cuántos más.
+   La lista completa se imprime en la identificación del set (sección I). */
+function unidadesResumen(r){
+  const todas = unidadesDe(r);
+  if(todas.length < 2) return todas[0] || "—";
+  return `${todas[0]} y ${todas.length - 1} más (detalle en I.)`;
+}
+function rotuloUnidades(r){
+  return unidadesDe(r).length > 1 ? "Establecimientos del set" : "Unidad / Establecimiento";
+}
+
+/* La columna Unidad de la lista del Servicio es de una línea: SharePoint rechaza el
+   elemento si pasa de 255 caracteres, y la emisión fallaría. Caben unos seis
+   establecimientos; con más, va el principal y cuántos más. La lista completa queda
+   igual en Datos. */
+const UNIDAD_MAX = 255;
+function unidadParaRegistro(r){
+  const todas = unidadesDe(r);
+  const completa = todas.join("; ");
+  if(completa.length <= UNIDAD_MAX) return completa;
+  const resto = todas.length - 1;
+  return `${todas[0]} y ${resto} establecimiento${resto === 1 ? "" : "s"} más`.slice(0, UNIDAD_MAX);
+}
+
+function renderUnidadesExtra(){
+  const activo = admiteVariasUnidades(state.programa);
+  $("unidadesExtraField").classList.toggle("hidden", !activo);
+  if(!activo){ $("unidadesExtraList").innerHTML = ""; return; }
+  const elegidas = [state.unit, ...state.unidadesExtra].filter(Boolean);
+  $("unidadesExtraList").innerHTML = state.unidadesExtra.map((u, i) => `
+    <div class="otros-row">
+      <span class="n">${i + 2}</span>
+      <select data-unidad-extra="${i}">
+        <option value="">Seleccione...</option>
+        ${ESTABLECIMIENTOS.map(g =>
+          `<optgroup label="${escapeHtml(g.grupo)}">` +
+          g.items.map(x => `<option value="${escapeHtml(x)}"${x === u ? " selected" : ""}${
+            x !== u && elegidas.includes(x) ? " disabled" : ""}>${escapeHtml(x)}</option>`).join("") +
+          `</optgroup>`).join("")}
+      </select>
+      <button type="button" class="rm-btn" data-unidad-rm="${i}" title="Quitar">✕</button>
+    </div>`).join("");
+  $("unidadesExtraList").querySelectorAll("[data-unidad-extra]").forEach(el =>
+    el.addEventListener("change", () => {
+      state.unidadesExtra[+el.dataset.unidadExtra] = el.value;
+      renderUnidadesExtra();                 // para deshabilitar lo recién elegido en las demás
+    }));
+  $("unidadesExtraList").querySelectorAll("[data-unidad-rm]").forEach(btn =>
+    btn.addEventListener("click", () => {
+      state.unidadesExtra.splice(+btn.dataset.unidadRm, 1);
+      renderUnidadesExtra();
+    }));
 }
 
 function applyLogo(){
@@ -1929,6 +2002,16 @@ function revisarDatos(d){
   if(pideDetalleFinanciamiento(d.programa, d.subvencion) && !String(d.subvencionDetalle||"").trim())
     errors.push(`Especifique a qué corresponde "${d.subvencion}".`);
   if(!d.unit) errors.push("Seleccione unidad / establecimiento.");
+  if(admiteVariasUnidades(d.programa)){
+    (d.unidadesExtra || []).forEach((u, i) => {
+      if(!String(u || "").trim()) errors.push(`Seleccione el establecimiento N° ${i + 2} o quítelo.`);
+    });
+    const vistas = new Set();
+    unidadesDe(d).forEach(u => {
+      if(vistas.has(u)) errors.push(`El establecimiento "${u}" está repetido en el set.`);
+      vistas.add(u);
+    });
+  }
   if(!d.declaration) errors.push("Debe aceptar la declaración.");
 
   visibleDocsForRecord(d).forEach((doc,i)=>{
@@ -1996,6 +2079,7 @@ function makeRecord(status){
     subvencion:state.subvencion,
     subvencionDetalle:state.subvencionDetalle,
     unit:state.unit,
+    unidadesExtra: admiteVariasUnidades(state.programa) ? state.unidadesExtra.slice() : [],
     reference:state.reference,
     factoring:state.factoring,
     refund:state.refund,
@@ -2168,7 +2252,7 @@ const RC = {
       ministroCargo: rec.ministerCargo,
       programa: programaTexto(rec),
       naturaleza: rec.natureLabel,
-      unidad: rec.unit,
+      unidad: unidadParaRegistro(rec),
       referencia: rec.reference,
       registro: rec
     });
@@ -2608,7 +2692,7 @@ function renderRecords(){
   const mf=$("recordMinisterFilter").value;
   const sf=$("recordStatusFilter").value;
   const rows=registrosVisibles().filter(r=>{
-    const hay=[r.folio,r.unit,r.reference,r.natureLabel,r.ministerName].join(" ").toLowerCase();
+    const hay=[r.folio,...unidadesDe(r),r.reference,r.natureLabel,r.ministerName].join(" ").toLowerCase();
     const m = mf ? MINISTERS.find(x=>x.id===mf) : null;
     return (!q||hay.includes(q)) && (!m||esDelMinistro(r,m)) && (!sf||r.status===sf);
   }).sort((a,b)=>(b.updatedAt||"").localeCompare(a.updatedAt||""));
@@ -2621,7 +2705,9 @@ function renderRecords(){
       <td style="white-space:nowrap">${r.folio && r.issuedAt ? escapeHtml(shortDate(r.issuedAt)) : "—"}</td>
       <td>${escapeHtml(r.ministerName)}</td>
       <td>${escapeHtml(r.natureLabel)}</td>
-      <td>${escapeHtml(r.unit)}</td>
+      <td>${escapeHtml(r.unit)}${(r.unidadesExtra||[]).filter(Boolean).length
+        ? `<span class="tag-central" title="${escapeHtml(unidadesDe(r).join("\n"))}">+${
+            (r.unidadesExtra||[]).filter(Boolean).length}</span>` : ""}</td>
       <td>${statusLabel(r.status)}</td>
       <td>
         ${r.ajeno ? `<button class="btn small" onclick="verRecordCentral('${r.id}', this)">Ver</button>` : `
@@ -2645,6 +2731,7 @@ function loadRecordIntoState(r, duplicate=false){
     subvencion:normalizarSubvencion(r.subvencion),
     subvencionDetalle:r.subvencionDetalle||"",
     unit:r.unit,
+    unidadesExtra:(r.unidadesExtra||[]).slice(),
     reference:r.reference||"",
     factoring:!!r.factoring,
     refund:!!r.refund,
@@ -2668,6 +2755,7 @@ function populateFormFromState(){
   $("subvencionDetalle").value=state.subvencionDetalle||"";
   syncProgramaNombre();
   $("unitSelect").value=state.unit;
+  renderUnidadesExtra();
   $("referenceInput").value=state.reference;
   $("periodInput").value=state.period;
   $("amountInput").value=state.amount;
@@ -2939,7 +3027,7 @@ function certificateHtml(r){
       <div class="wide${r.subvencion ? " con-subvencion" : ""}${r.subvencionDetalle ? " con-detalle" : ""}">
         <span><small>Programa Presupuestario:</small><strong>${escapeHtml(programaTexto(r))}</strong></span>
         ${r.subvencion ? `<span><small>${escapeHtml(rotuloFinanciamiento(r.programa))}:</small><strong>${escapeHtml(financiamientoTexto(r))}</strong></span>` : ""}
-        <span><small>Unidad / Establecimiento:</small><strong>${escapeHtml(r.unit||"—")}</strong></span>
+        <span><small>${escapeHtml(rotuloUnidades(r))}:</small><strong>${escapeHtml(unidadesResumen(r))}</strong></span>
         <span><small>Referencia del set:</small><strong>${escapeHtml(r.reference||"—")}</strong></span>
       </div>
     </div>
@@ -2950,7 +3038,7 @@ function certificateHtml(r){
         <tr><th>Ministro de Fe</th><td>${escapeHtml(minister.name)}</td><th>Código</th><td>${escapeHtml(minister.code)}</td></tr>
         <tr><th>RUT</th><td>${escapeHtml(minister.rut||"—")}</td><th>Cargo</th><td>${escapeHtml(minister.cargo||"—")}</td></tr>
         <tr><th>Unidad del Ministro de Fe</th><td colspan="3">${escapeHtml(minister.unit||"—")}</td></tr>
-        <tr><th>Naturaleza del set</th><td>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</td><th>Unidad / Establecimiento del set</th><td>${escapeHtml(r.unit||"—")}</td></tr>
+        <tr><th>Naturaleza del set</th><td>${escapeHtml(r.natureLabel||NATURE_LABELS[r.nature]||"")}</td><th>Unidad / Establecimiento del set</th><td>${unidadesDe(r).map(escapeHtml).join("<br>") || "—"}</td></tr>
         <tr><th>Estado del certificado</th><td>${escapeHtml(statusLabel(r.status))}</td><th>Correlativo personal</th><td>${escapeHtml(folio)}</td></tr>
         ${r.nature==="remuneraciones" ? `<tr><th>Período</th><td>${escapeHtml(r.period||"—")}</td><th>Monto total</th><td>${r.amount ? escapeHtml(fmtMonto(parseMonto(r.amount))) : "—"}</td></tr>`:""}
       </table>
@@ -3155,6 +3243,9 @@ function syncProgramaNombre(){
   const extras = (pideNombre ? 1 : 0) + (pideDetalle ? 1 : 0);
   $("referenceField").classList.toggle("span-2", extras % 2 === 1);
 
+  if(!admiteVariasUnidades(state.programa)) state.unidadesExtra = [];
+  renderUnidadesExtra();
+
   // El complementario D.1 y los campos del PME dependen de lo que se acaba de elegir.
   state.complementario = aplicaComplementario(state);
   renderChecklist();
@@ -3169,7 +3260,11 @@ $("subvencionSelect").addEventListener("change",()=>{
   syncProgramaNombre();          // la opción "otros" abre el detalle
 });
 $("subvencionDetalle").addEventListener("input",()=>state.subvencionDetalle=$("subvencionDetalle").value);
-$("unitSelect").addEventListener("change",()=>state.unit=$("unitSelect").value);
+$("unitSelect").addEventListener("change",()=>{
+  state.unit=$("unitSelect").value;
+  renderUnidadesExtra();                     // el principal no se ofrece entre los adicionales
+});
+$("addUnidadBtn").addEventListener("click",()=>{ state.unidadesExtra.push(""); renderUnidadesExtra(); });
 $("saveDraftBtn").addEventListener("click",saveDraft);
 $("previewBtn").addEventListener("click",()=>openPreview(currentPreviewRecord()));
 $("issueBtn").addEventListener("click",issueCertificate);

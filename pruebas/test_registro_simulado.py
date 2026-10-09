@@ -128,6 +128,13 @@ class RegistroSimuladoTest(unittest.TestCase):
             "id", "folio", "ministerName", "ministerCode", "natureLabel", "unit", "reference",
             "status", "cancelReason", "cancelledAt", "issuedAt", "updatedAt"})
 
+    def test_rechaza_textos_de_mas_de_255_caracteres_como_sharepoint(self):
+        codigo, r, _ = self.emitir("largo", unidad="x" * 256)
+        self.assertEqual(codigo, 500)
+        self.assertEqual(self.registro.filas, [])
+        codigo, r, _ = self.emitir("justo", unidad="x" * 255)
+        self.assertEqual(codigo, 200)
+
     def test_simulacro_caido(self):
         self.registro.fallas["emitir"] = {"modo": "caido"}
         codigo, r, encabezados = self.emitir("x")

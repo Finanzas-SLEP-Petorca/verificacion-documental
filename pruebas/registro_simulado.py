@@ -43,6 +43,12 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 # pilotaje. El arranque lo impone el flujo, no la página.
 SERIE_DESDE = 10
 
+# Las columnas de tipo Texto de la lista son de una línea: SharePoint rechaza el
+# elemento si alguna pasa de 255 caracteres, y "Crear elemento" falla.
+TEXTO_MAX = 255
+COLUMNAS_TEXTO = ("Title", "Folio", "CodigoMinistro", "IdEmision", "Ministro", "MinistroRut",
+                  "MinistroCargo", "Programa", "Naturaleza", "Unidad", "Referencia")
+
 
 def ahora():
     return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -108,7 +114,7 @@ class Registro:
             clave = f"{codigo}|{anio}|{numero}"
             if any(f.get("ClaveCorrelativo") == clave for f in self.filas):
                 return 500, {"ok": False, "error": "No fue posible registrar la emisión."}
-            self.filas.append({
+            fila = {
                 "Title": folio, "Folio": folio, "Anio": anio, "Numero": numero,
                 "ClaveCorrelativo": clave,
                 "CodigoMinistro": codigo, "IdEmision": id_emision,
@@ -123,7 +129,10 @@ class Registro:
                 "Estado": "Emitido", "MotivoAnulacion": "", "FechaAnulacion": "",
                 # Se escribe una sola vez y no se vuelve a tocar.
                 "Datos": json.dumps(entrada.get("registro") or {}, ensure_ascii=False),
-            })
+            }
+            if any(len(str(fila.get(c) or "")) > TEXTO_MAX for c in COLUMNAS_TEXTO):
+                return 500, {"ok": False, "error": "No fue posible registrar la emisión."}
+            self.filas.append(fila)
             return 200, {"ok": True, "folio": folio, "numero": numero}
 
     def obtener(self, entrada, crudo=False):
