@@ -253,14 +253,42 @@ test("los jardines se identifican por su GESPARVU; lo emitido con el nombre ante
   await pagina.evaluate(() => editRecord("j-borr"));
   assert.equal(await valorUnidad(pagina.locator("#unitSelect .sel-est")), CUNCUNITA);
   assert.deepEqual(await pagina.evaluate(() => [state.unidadesExtra, state.detalle[0].establecimiento]),
-    [["MUNDO DE PEQUES — GESPARVU 5404002"], "SANTA MARTA — GESPARVU 5402002"]);
+    [["MUNDO DE PEQUES — GESPARVU 5404002"], "SANTA MARTA — GESPARVU 5402004"]);
 
   // En el detalle, el código va adelante, con su nombre.
   assert.equal((await pagina.locator('[data-det-field="establecimiento"]').textContent()).trim(),
-    "GESPARVU 5402002 · SANTA MARTA");
+    "GESPARVU 5402004 · SANTA MARTA");
 
   // Lo emitido se imprime con lo que se certificó.
   await pagina.evaluate(() => viewRecord("j-emit"));
   assert.match(await pagina.textContent("#certificatePreview"), /EL CARMEN CUNCUNITA — RBD 33530/);
+  await pagina.context().close();
+});
+
+test("SANTA MARTA es 5402004 y el 5402002 es de RINCONCITO, aunque estuvo asignado a SANTA MARTA", async () => {
+  const MARTA = "SANTA MARTA — GESPARVU 5402004", RINCONCITO = "RINCONCITO — GESPARVU 5402002";
+  // Un borrador del 09-10, cuando a SANTA MARTA se le dio por error el 5402002.
+  const borrador = registroEmitido({ id: "m-borr", folio: null, status: "draft", issuedAt: null,
+    programa: "Programa 02", subvencion: "JUNJI", unit: "SANTA MARTA — GESPARVU 5402002",
+    unidadesExtra: ["RINCONCITO — RBD 33539"] });
+  const { pagina } = await abrir(ent, { conectado: false, registros: [borrador] });
+
+  await pagina.locator("#unitSelect .sel-est").click();
+  const buscar = async q => { await pagina.fill("#selUnidadPanel input", q);
+    return (await lista(pagina)).filter(x => !x.startsWith("#")); };
+  assert.deepEqual(await buscar("5402002"), [RINCONCITO], "el número lleva sólo a RINCONCITO");
+  assert.deepEqual(await buscar("5402004"), [MARTA]);
+  assert.deepEqual(await buscar("33539"), [RINCONCITO], "el número anterior de RINCONCITO también");
+  await pagina.keyboard.press("Escape");
+
+  // El texto completo de antes sí es SANTA MARTA; el número solo, RINCONCITO.
+  assert.deepEqual(await pagina.evaluate(() => [
+    buscarEstablecimiento("SANTA MARTA — GESPARVU 5402002"), buscarEstablecimiento("5402002"),
+    buscarEstablecimiento("GESPARVU 5402004"), buscarEstablecimiento("RINCONCITO — RBD 33539")]),
+    [MARTA, RINCONCITO, MARTA, RINCONCITO]);
+
+  await pagina.evaluate(() => editRecord("m-borr"));
+  assert.equal(await valorUnidad(pagina.locator("#unitSelect .sel-est")), MARTA);
+  assert.deepEqual(await pagina.evaluate(() => state.unidadesExtra), [RINCONCITO]);
   await pagina.context().close();
 });

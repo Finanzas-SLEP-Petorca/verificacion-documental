@@ -1053,8 +1053,8 @@ const UNIDADES = [
       "ESCUELA PABLO NERUDA — RBD 1176-2",
       "LICEO BICENTENARIO TECNICO PROFESIONAL DE MINERIA — RBD 12336-6",
       "LICEO Y ESCUELA MUNICIPAL — RBD 1167-3",
-      "RINCONCITO — RBD 33539",
-      "SANTA MARTA — GESPARVU 5402002"
+      "RINCONCITO — GESPARVU 5402002",
+      "SANTA MARTA — GESPARVU 5402004"
     ]
   },
   {
@@ -1430,11 +1430,14 @@ const JARDINES = new Set([
   "LAMPARITA", "MIS PRIMEROS PASOS", "MUNDO DE PEQUES"
 ]);
 /* Hasta el 09-10-2026 los jardines figuraban sin código o con un número de la serie
-   33.5xx; desde entonces, con su GESPARVU. Lo emitido conserva el texto con que se
-   certificó; un borrador, un duplicado o una planilla con el nombre anterior se pasan
-   al de ahora. */
+   33.5xx; desde entonces, con su GESPARVU. El 14-10-2026 se corrigieron dos: SANTA
+   MARTA es 5402004 (se le había dado el 5402002) y RINCONCITO, que seguía con su
+   número anterior, es 5402002. Lo emitido conserva el texto con que se certificó; un
+   borrador, un duplicado o una planilla con el nombre anterior se pasan al de ahora. */
 const UNIDADES_RENOMBRADAS = {
-  "SANTA MARTA": "SANTA MARTA — GESPARVU 5402002",
+  "SANTA MARTA": "SANTA MARTA — GESPARVU 5402004",
+  "SANTA MARTA — GESPARVU 5402002": "SANTA MARTA — GESPARVU 5402004",
+  "RINCONCITO — RBD 33539": "RINCONCITO — GESPARVU 5402002",
   "EL CARMEN CUNCUNITA — RBD 33530": "EL CARMEN CUNCUNITA — GESPARVU 5401006",
   "HUMBERTO BASULTO": "HUMBERTO BASULTO — GESPARVU 5401007",
   "MANITOS DE ANGEL": "MANITOS DE ANGEL — GESPARVU 5401005",
@@ -1457,10 +1460,14 @@ function codigoDe(u){
 function nombreSinRbd(u){ return String(u || "").split(" — ")[0]; }
 function esJardin(u){ return JARDINES.has(nombreSinRbd(u)); }
 /* Lo que el buscador compara además del texto: el código sin guion y, si cambió de
-   nombre, el texto anterior (así un número viejo sigue encontrándolo). */
+   nombre, el texto anterior (así un número viejo sigue encontrándolo). Si el número
+   anterior es hoy el código de otra unidad —el 5402002 de SANTA MARTA, que es de
+   RINCONCITO—, de ese texto anterior sólo cuenta el nombre. */
 function textoBusqueda(u){
   const c = codigoDe(u);
-  const antes = Object.keys(UNIDADES_RENOMBRADAS).filter(a => UNIDADES_RENOMBRADAS[a] === u);
+  const vigentes = new Set(UNIDADES.flatMap(g => g.items).map(x => (codigoDe(x) || {}).num).filter(Boolean));
+  const antes = Object.keys(UNIDADES_RENOMBRADAS).filter(a => UNIDADES_RENOMBRADAS[a] === u)
+    .map(a => { const ca = codigoDe(a); return ca && ca.num !== (c || {}).num && vigentes.has(ca.num) ? nombreSinRbd(a) : a; });
   return [u, c ? c.num.replace("-", "") : "", ...antes].join(" ");
 }
 function comunaDe(u){ const g = UNIDADES.find(g => g.items.includes(u)); return g ? g.grupo : ""; }
